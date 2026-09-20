@@ -75,6 +75,7 @@ export default function Studio() {
   const [video, setVideo] = useState<(Media & { duration: number | null }) | null>(null);
   const [images, setImages] = useState<Media[]>([]);
   const [prompt, setPrompt] = useState("");
+  const [showFullHdModels, setShowFullHdModels] = useState(false);
   const [model, setModel] = useState(DEFAULT_VIDEO_MODEL);
   const selectedModel = getVideoModel(model);
   const [resolution, setResolution] = useState("720p");
@@ -602,7 +603,7 @@ export default function Studio() {
             <div className="field-header"><h2>AI model</h2><span>Top 5 recommended</span></div>
             <AppSelect label="AI model" value={model} disabled={busy} onValueChange={(value) => {
               const next = getVideoModel(value);
-              setModel(value); setQuote(null); setError("");
+              setModel(value); setQuote(null); setError(""); setShowFullHdModels(false);
               if (!next.resolutions.includes(resolution as "480p" | "720p" | "1080p")) setResolution(next.resolutions[0]);
               if (!next.audio) setAudio(false);
             }} options={VIDEO_MODELS.map((m, i) => ({value:m.id,label:`${i < 5 ? `${i + 1}. ` : ""}${m.name}${i === 0 ? " · Recommended" : ""}`}))} />
@@ -615,10 +616,18 @@ export default function Studio() {
                   value={resolution}
                   disabled={busy}
                   onValueChange={(value) => {
+                    if (value === "choose-1080p") {
+                      setShowFullHdModels(true);
+                      return;
+                    }
+                    setShowFullHdModels(false);
                     setResolution(value);
                     setQuote(null);
                   }}
-                  options={selectedModel.resolutions.map(value => ({value,label:value === "1080p" ? "1080p Full HD" : value === "720p" ? "720p HD" : "480p"}))}
+                  options={[
+                    ...(!selectedModel.resolutions.includes("1080p") ? [{value:"choose-1080p",label:"1080p Full HD · Change model"}] : []),
+                    ...selectedModel.resolutions.map(value => ({value,label:value === "1080p" ? "1080p Full HD" : value === "720p" ? "720p HD" : "480p"})),
+                  ]}
                 />
               </label>
               <label>
@@ -632,6 +641,21 @@ export default function Studio() {
                 />
               </label>
             </div>
+            {showFullHdModels && (
+              <div className="full-hd-model-picker" role="region" aria-label="Choose a 1080p model">
+                <h3>Choose a model for 1080p</h3>
+                <p>{selectedModel.name} supports up to 720p. Choose an option below to switch the model and set Full HD quality. Your footage and prompt stay in place.</p>
+                {VIDEO_MODELS.filter(m => m.resolutions.includes("1080p")).map(m => {
+                  const tooLong = video?.duration != null && video.duration > m.maxSeconds;
+                  return <button type="button" key={m.id} disabled={busy || tooLong} onClick={() => {
+                    setModel(m.id); setResolution("1080p"); setQuote(null); setError("");
+                    if (!m.audio) setAudio(false);
+                    setShowFullHdModels(false);
+                  }}><strong>{m.name}</strong><span>{m.maxSeconds}s max · {m.minImages ? "1 reference photo required" : "Optional reference photos"}{tooLong ? " · Clip is too long" : ""}</span></button>;
+                })}
+                <button type="button" className="full-hd-cancel" onClick={() => setShowFullHdModels(false)}>Keep current model</button>
+              </div>
+            )}
             <p className="clip-length-note">Upload high-resolution footage, including 4K videos. Output uses the quality supported by your selected model, up to 1080p. Longer clips use more credits. Try a short clip first to check your look. You’ll see the full credit cost before you generate.</p>
             <label className="consent">
               <input

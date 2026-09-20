@@ -1501,3 +1501,12 @@ img {
 .generation-stage-labels { display: flex; justify-content: space-between; color: #526560; font-size: 11px; }
 .generation-progress p { font-size: 12px; line-height: 1.6; margin: 16px 0 0; }
 @media (prefers-reduced-motion: reduce) { .generation-stage-track > .is-current::after, .progress-track:after { animation: none; } }
+
+.full-hd-model-picker { margin: 16px 0; padding: 18px; border: 1px solid #8ddbd5; border-radius: 14px; background: #f1fcfa; }
+.full-hd-model-picker h3 { margin: 0 0 8px; font-size: 16px; }
+.full-hd-model-picker p { font-size: 13px; line-height: 1.6; color: #526560; margin-bottom: 12px; }
+.full-hd-model-picker button { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; width: 100%; padding: 12px; margin-top: 8px; border: 1px solid #cce9e5; border-radius: 9px; background: white; text-align: left; cursor: pointer; }
+.full-hd-model-picker button:hover { border-color: #0baca6; }
+.full-hd-model-picker button:disabled { opacity: .5; cursor: not-allowed; }
+.full-hd-model-picker button span { font-size: 12px; color: #526560; }
+.full-hd-model-picker .full-hd-cancel { background: transparent; border: none; font-size: 12px; }
