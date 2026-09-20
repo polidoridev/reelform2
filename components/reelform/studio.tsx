@@ -318,7 +318,13 @@ export default function Studio() {
     setPhase("Uploading your original video");
     try {
       if (!quote) {
-        const videoToken = await upload(video);
+        setPhase("Preparing your video for upload");
+        const { prepareVideo } = await import("@/lib/prepare-video");
+        const prepared = await prepareVideo(video.file, (progress) =>
+          setPhase(`Preparing your video · ${Math.round(progress * 100)}%`),
+        );
+        setPhase("Uploading your original video");
+        const videoToken = await upload({ ...video, file: prepared, contentType: "video/mp4" });
         setPhase("Verifying your video and calculating credits");
         const result = await jsonRequest<{
           quoteToken: string;
