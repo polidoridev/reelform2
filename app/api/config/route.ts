@@ -1,12 +1,12 @@
-import { getChatGPTUser } from "@/app/chatgpt-auth";
+import { currentUser } from "@/lib/supabase/server";
 import { isConfigured } from "@/lib/higgsfield";
+import { billingEnabled } from "@/lib/commerce/stripe";
+import { noStore } from "@/lib/http";
 export async function GET() {
-  return Response.json(
-    {
-      ready: isConfigured(),
-      authenticated: !!(await getChatGPTUser()),
-      model: "Seedance 2.5",
-    },
-    { headers: { "Cache-Control": "no-store" } },
-  );
+  return noStore({
+    ready: isConfigured(),
+    authenticated: !!(await currentUser()),
+    model: "Seedance 2.5",
+    billingReady: billingEnabled(),
+  });
 }

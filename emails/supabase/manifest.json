@@ -1,0 +1,54 @@
+{
+  "confirm-sign-up": {
+    "subject": "Confirm your Reelform account",
+    "file": "emails/supabase/confirm-sign-up.html"
+  },
+  "invite-user": {
+    "subject": "Your invitation to Reelform",
+    "file": "emails/supabase/invite-user.html"
+  },
+  "magic-link-or-otp": {
+    "subject": "Your Reelform sign-in link",
+    "file": "emails/supabase/magic-link-or-otp.html"
+  },
+  "change-email-address": {
+    "subject": "Confirm your new Reelform email",
+    "file": "emails/supabase/change-email-address.html"
+  },
+  "reset-password": {
+    "subject": "Reset your Reelform password",
+    "file": "emails/supabase/reset-password.html"
+  },
+  "reauthentication": {
+    "subject": "Your Reelform security code",
+    "file": "emails/supabase/reauthentication.html"
+  },
+  "password-changed": {
+    "subject": "Reelform security alert: Your password was changed.",
+    "file": "emails/supabase/password-changed.html"
+  },
+  "email-address-changed": {
+    "subject": "Reelform security alert: Your account email address was changed.",
+    "file": "emails/supabase/email-address-changed.html"
+  },
+  "phone-number-changed": {
+    "subject": "Reelform security alert: Your phone number was changed.",
+    "file": "emails/supabase/phone-number-changed.html"
+  },
+  "sign-in-method-linked": {
+    "subject": "Reelform security alert: A sign-in method was linked to your account.",
+    "file": "emails/supabase/sign-in-method-linked.html"
+  },
+  "sign-in-method-removed": {
+    "subject": "Reelform security alert: A sign-in method was removed from your account.",
+    "file": "emails/supabase/sign-in-method-removed.html"
+  },
+  "mfa-method-added": {
+    "subject": "Reelform security alert: A verification method was added to your account.",
+    "file": "emails/supabase/mfa-method-added.html"
+  },
+  "mfa-method-removed": {
+    "subject": "Reelform security alert: A verification method was removed from your account.",
+    "file": "emails/supabase/mfa-method-removed.html"
+  }
+}

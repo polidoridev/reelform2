@@ -70,6 +70,8 @@ export default function Landing() {
   const heroY = useTransform(scrollYProgress, [0, 0.65], [0, 100]);
   const heroOpacity = useTransform(scrollYProgress, [0, 0.38], [1, 0]);
   useEffect(() => {
+    // Read the browser preference after hydration to keep SSR deterministic.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPaused(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
   }, []);
   return (
@@ -90,9 +92,8 @@ export default function Landing() {
             <a href="#how-it-works" onClick={() => setMenu(false)}>
               How it works
             </a>
-            <a href="#faq" onClick={() => setMenu(false)}>
-              FAQs
-            </a>
+            <a href="/pricing">Pricing</a>
+            <a href="/account">My account</a>
           </nav>
           <a href="/studio" className="button button-small">
             Open studio <ArrowUpRight size={16} />

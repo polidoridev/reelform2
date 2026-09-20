@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import {
   ArrowLeft,
@@ -58,6 +59,13 @@ async function upload(media: Media) {
   return data.token as string;
 }
 export default function Studio() {
+  const [quote, setQuote] = useState<{
+    videoToken: string;
+    quoteToken: string;
+    credits: number;
+    requestId: string;
+  } | null>(null);
+  const [creditBalance, setCreditBalance] = useState<number | null>(null);
   const [video, setVideo] = useState<Media | null>(null);
   const [images, setImages] = useState<Media[]>([]);
   const [prompt, setPrompt] = useState("");
@@ -85,11 +93,21 @@ export default function Studio() {
       })
       .catch(() => setReady(false));
   useEffect(() => {
+    fetch("/api/account")
+      .then(async (r) => {
+        if (r.ok) {
+          const d = (await r.json()) as { balance: { total: number } };
+          setCreditBalance(d.balance.total);
+        }
+      })
+      .catch(() => {});
     configCheck();
     const scene = scenes.find(
       (s) => s.id === new URLSearchParams(window.location.search).get("scene"),
     );
     if (scene) {
+      // Browser query state is read after hydration.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPrompt(scene.prompt);
       setActiveScene(scene);
     }
@@ -105,16 +123,17 @@ export default function Studio() {
     const urls = assets.current;
     return () => urls.forEach((url) => URL.revokeObjectURL(url));
   }, []);
+  const jobToken = job?.token;
+  const jobFinished =
+    !!job && ["completed", "failed", "nsfw", "canceled"].includes(job.status);
   useEffect(() => {
-    if (
-      !job ||
-      ["completed", "failed", "nsfw", "canceled"].includes(job.status)
-    )
-      return;
+    if (!jobToken || jobFinished) return;
     let disposed = false;
     let timer: ReturnType<typeof setTimeout>;
     let tries = 0;
     let errors = 0;
+    // Reset the polling UI when subscribing to a new job.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPollStopped(false);
     async function poll() {
       if (disposed) return;
@@ -123,13 +142,15 @@ export default function Studio() {
           status: string;
           videoUrl: string;
           error?: string;
-        }>(`/api/jobs?token=${encodeURIComponent(job!.token)}`);
+          balance?: number;
+        }>(`/api/jobs?token=${encodeURIComponent(jobToken!)}`);
         if (disposed) return;
         errors = 0;
+        if (typeof data.balance === "number") setCreditBalance(data.balance);
         if (data.status === "completed") {
           if (!data.videoUrl) {
             setError(
-              "Your generation completed, but no video was returned. Check your Higgsfield account for the result.",
+              "Your generation completed, but no video was returned. Contact Reelform support with your generation ID.",
             );
           } else {
             setResult(data.videoUrl);
@@ -148,6 +169,15 @@ export default function Studio() {
           setJob((prev) => (prev ? { ...prev, status: data.status } : null));
           setPhase("");
           sessionStorage.removeItem("reelform-active-job");
+          return;
+        }
+        if (data.status === "unknown") {
+          setError(
+            data.error ||
+              "This request needs review. Do not resubmit; contact support with your generation ID.",
+          );
+          setPollStopped(true);
+          setPhase("");
           return;
         }
         setPhase(
@@ -180,7 +210,7 @@ export default function Studio() {
       disposed = true;
       clearTimeout(timer);
     };
-  }, [job?.token, pollAttempt]);
+  }, [jobToken, jobFinished, pollAttempt]);
   function media(file: File) {
     const url = URL.createObjectURL(file);
     assets.current.add(url);
@@ -227,6 +257,7 @@ export default function Studio() {
     }
     if (video) release(video);
     setVideo(item);
+    setQuote(null);
   }
   function chooseImages(files: FileList | null) {
     if (!files) return;
@@ -271,12 +302,27 @@ export default function Studio() {
       );
       return;
     }
+    if (!authenticated) {
+      window.location.assign("/login");
+      return;
+    }
     submitLock.current = true;
     setResult("");
     setExample(false);
     setPhase("Uploading your original video");
     try {
-      const videoToken = await upload(video);
+      if (!quote) {
+        const videoToken = await upload(video);
+        setPhase("Verifying your video and calculating credits");
+        const result = await jsonRequest<{
+          quoteToken: string;
+          credits: number;
+        }>("/api/quote", { videoToken, resolution });
+        setQuote({ ...result, videoToken, requestId: crypto.randomUUID() });
+        setPhase("");
+        return;
+      }
+      const videoToken = quote.videoToken;
       setPhase(
         images.length
           ? "Uploading your reference photos"
@@ -288,8 +334,12 @@ export default function Studio() {
         token: string;
         requestId: string;
         status: string;
+        balance: number;
+        error?: string;
       }>("/api/generate", {
         videoToken,
+        quoteToken: quote.quoteToken,
+        requestId: quote.requestId,
         imageTokens,
         prompt,
         resolution,
@@ -298,6 +348,17 @@ export default function Studio() {
       });
       const active = { ...data, started: Date.now() };
       setJob(active);
+      setQuote(null);
+      setCreditBalance(data.balance);
+      if (data.status === "failed") {
+        setError(
+          data.error ||
+            "The video could not start. Your credits were returned.",
+        );
+        setPhase("");
+        sessionStorage.removeItem("reelform-active-job");
+        return;
+      }
       try {
         sessionStorage.setItem("reelform-active-job", JSON.stringify(active));
       } catch {}
@@ -327,10 +388,15 @@ export default function Studio() {
       <header className="studio-header">
         <Brand />
         <div className="studio-header-right">
-          <span>Your creative playground</span>
-          <a className="text-link" href="/">
+          <Link className="text-link" href="/account?tab=credits">
+            <Sparkles size={14} />
+            {creditBalance === null
+              ? "My account"
+              : `${creditBalance.toLocaleString()} credits`}
+          </Link>
+          <Link className="text-link" href="/">
             <ArrowLeft size={15} /> Back to explore
-          </a>
+          </Link>
         </div>
       </header>
       <main id="studio-main" className="studio-shell">
@@ -343,14 +409,12 @@ export default function Studio() {
             <Sparkles size={13} /> Powered by Higgsfield
           </span>
         </div>
-        {ready && !authenticated && (
+        {!authenticated && (
           <div className="connection-note">
             <Info size={17} />
             <p>
-              <a href="/signin-with-chatgpt?return_to=/studio" target="_top">
-                Sign in with ChatGPT
-              </a>{" "}
-              to generate your own transformations.
+              <Link href="/login">Sign in to Reelform</Link> to generate your
+              own transformations.
             </p>
           </div>
         )}
@@ -358,9 +422,8 @@ export default function Studio() {
           <div className="connection-note">
             <Info size={17} />
             <p>
-              Explore the studio and preview an example.{" "}
-              <a href="/setup">Connect Higgsfield</a> to generate your own
-              transformations.
+              Explore the studio and preview an example. Video generation is
+              being connected. Explore the examples while we finish setup.
             </p>
             <button
               onClick={configCheck}
@@ -392,6 +455,7 @@ export default function Studio() {
                   onClick={() => {
                     release(video);
                     setVideo(null);
+                    setQuote(null);
                   }}
                   className="icon-button"
                   aria-label="Remove original video"
@@ -517,7 +581,10 @@ export default function Studio() {
                 <select
                   value={resolution}
                   disabled={busy}
-                  onChange={(e) => setResolution(e.target.value)}
+                  onChange={(e) => {
+                    setResolution(e.target.value);
+                    setQuote(null);
+                  }}
                 >
                   <option value="720p">720p HD</option>
                   <option value="480p">480p</option>
@@ -551,19 +618,41 @@ export default function Studio() {
                 {error}
               </div>
             )}
+            {quote && (
+              <div className="connection-note">
+                <Sparkles size={17} />
+                <p>
+                  <strong>{quote.credits.toLocaleString()} credits</strong> for
+                  this transformation. Failed generations return your credits.
+                  {creditBalance !== null && creditBalance < quote.credits && (
+                    <>
+                      {" "}
+                      <Link href="/account?tab=credits">Add credits</Link> to
+                      continue.
+                    </>
+                  )}
+                </p>
+              </div>
+            )}
             <button
               onClick={generate}
               disabled={busy || ready === null}
               className="button generate-button"
             >
               <WandSparkles size={18} />
-              {busy ? "Creating your new reality…" : "Reform my video"}
+              {busy
+                ? quote
+                  ? "Creating your new reality…"
+                  : "Preparing your video…"
+                : quote
+                  ? `Generate · ${quote.credits.toLocaleString()} credits`
+                  : "Get my credit quote"}
               {!busy && <ArrowUpRight size={17} />}
             </button>
             <p className="generate-note">
               The original clip guides the motion and length.
               <br />
-              Generation uses your connected Higgsfield API balance.
+              See your exact credit cost before you generate.
             </p>
           </section>
           <section className="studio-panel" aria-label="Video preview">

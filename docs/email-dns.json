@@ -1,0 +1,49 @@
+{
+  "object": "domain",
+  "id": "05f9ed05-fe6e-4543-bf87-2cef6ab181b5",
+  "name": "polidori.dev",
+  "created_at": "2026-09-20 17:59:17.74592+00",
+  "status": "not_started",
+  "capabilities": {
+    "sending": "enabled",
+    "receiving": "disabled"
+  },
+  "records": [
+    {
+      "record": "DKIM",
+      "name": "resend._domainkey",
+      "value": "p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDMyUH5r6WUJcnVkS4hpjqXv8zaoVREs5SZp/DAXJlg7PuU7q/RsEH0Xhn9f5cqi/GFu3/DI/QJmW0s3E0XNibW/zYmkybdZ2AvDV32UderqRfBXjUbgS2n3I/c2vVztceV6X2i3krgiSfTEKy6U9f5ngUp2nOmKFZKiwj9T/qVewIDAQAB",
+      "type": "TXT",
+      "status": "not_started",
+      "ttl": "Auto"
+    },
+    {
+      "record": "SPF",
+      "name": "send",
+      "type": "MX",
+      "ttl": "Auto",
+      "status": "not_started",
+      "value": "feedback-smtp.us-east-1.amazonses.com",
+      "priority": 10
+    },
+    {
+      "record": "SPF",
+      "name": "send",
+      "value": "v=spf1 include:amazonses.com ~all",
+      "type": "TXT",
+      "ttl": "Auto",
+      "status": "not_started"
+    },
+    {
+      "record": "SPF",
+      "name": "rsend",
+      "value": "send.forge.rmta.net",
+      "type": "CNAME",
+      "status": "not_started",
+      "ttl": "Auto"
+    }
+  ],
+  "region": "us-east-1",
+  "open_tracking": false,
+  "click_tracking": false
+}

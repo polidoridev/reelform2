@@ -46,6 +46,7 @@ export async function POST(request: Request) {
       user,
       kind: "upload",
       url: data.public_url,
+      bytes: size,
       media: contentType.startsWith("video/") ? "video" : "image",
       exp: Date.now() + 3600000,
     });

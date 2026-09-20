@@ -1,0 +1,11 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {Webhook} from 'svix';
+import {seal,unseal} from '../lib/commerce/seal';
+import {POST as emailWebhook} from '../app/api/webhooks/email/route';
+import {escapeHtml,emailFrame} from '../lib/commerce/email';
+process.env.APP_SIGNING_SECRET='only-a-temporary-unit-test-secret';
+process.env.RESEND_WEBHOOK_SECRET=`whsec_${Buffer.from('webhook-unit-test-secret').toString('base64')}`;
+test('unsubscribe/recovery signatures reject edits and expiry',()=>{const t=seal({user:'u1',kind:'unsubscribe',exp:Date.now()+60000});assert.equal(unseal(t).user,'u1');assert.throws(()=>unseal(t+'x'));assert.throws(()=>unseal(seal({user:'u1',exp:Date.now()-1})));});
+test('email webhook rejects untrusted requests and accepts a valid signature',async()=>{const payload=JSON.stringify({type:'email.sent',data:{}});assert.equal((await emailWebhook(new Request('http://localhost/api/webhooks/email',{method:'POST',body:payload}))).status,400);const id='msg_test',date=new Date(),signature=new Webhook(process.env.RESEND_WEBHOOK_SECRET!).sign(id,date,payload);const r=await emailWebhook(new Request('http://localhost/api/webhooks/email',{method:'POST',body:payload,headers:{'svix-id':id,'svix-timestamp':String(Math.floor(date.getTime()/1000)),'svix-signature':signature}}));assert.equal(r.status,200);});
+test('email names and URLs are HTML-escaped',()=>{assert.equal(escapeHtml('<img onerror="x">'),'&lt;img onerror=&quot;x&quot;&gt;');assert.ok(emailFrame('<script>','<p>Body</p>','Go','https://site.test/?x="y"','Footer').includes('&lt;script&gt;'));});

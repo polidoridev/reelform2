@@ -1,0 +1,18 @@
+{
+  "account": "acct_1TueyBFU3rOWIrJs",
+  "currency": "usd",
+  "STRIPE_PRICE_STARTER": "price_1UAYTlFU3rOWIrJs4n1yF8DQ",
+  "STRIPE_PRICE_STARTER_YEARLY": "price_1UHpCyFU3rOWIrJsp0x9P2E6",
+  "STRIPE_PRICE_PRO": "price_1UAYTuFU3rOWIrJs5IB6Ebti",
+  "STRIPE_PRICE_PRO_YEARLY": "price_1UHpF2FU3rOWIrJsCgBNaAlL",
+  "STRIPE_PRICE_STUDIO": "price_1UAYUHFU3rOWIrJs5G0sM9Xe",
+  "STRIPE_PRICE_STUDIO_YEARLY": "price_1UHpIbFU3rOWIrJsere9wSYb",
+  "topup_products": {
+    "small": "prod_VAuJ3DODOCaTtq",
+    "medium": "prod_VAuJgSZYhu5Ttm",
+    "large": "prod_VAuJvQhnCRJ72H"
+  },
+  "STRIPE_PRICE_TOPUP_SMALL": "price_1UAYUTFU3rOWIrJsZ3lfxFLF",
+  "STRIPE_PRICE_TOPUP_MEDIUM": "price_1UAYUWFU3rOWIrJsMQRmc9Pd",
+  "STRIPE_PRICE_TOPUP_LARGE": "price_1UAYUhFU3rOWIrJsL2FqComq"
+}

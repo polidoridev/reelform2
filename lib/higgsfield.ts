@@ -1,15 +1,9 @@
-import { getChatGPTUser } from "@/app/chatgpt-auth";
+import { requireUser } from "@/lib/supabase/server";
+import { ApiError } from "@/lib/http";
+export { ApiError, readJson, errorResponse } from "@/lib/http";
 
 const API = "https://api.higgsfield.ai";
 export const MODEL = "bytedance/seedance-2.5/video-edit";
-export class ApiError extends Error {
-  constructor(
-    message: string,
-    public status = 400,
-  ) {
-    super(message);
-  }
-}
 function credentials() {
   const id = process.env.HF_API_KEY_ID;
   const secret = process.env.HF_API_KEY_SECRET;
@@ -27,9 +21,8 @@ export async function authorize(request: Request) {
   const origin = request.headers.get("origin");
   if (origin && origin !== new URL(request.url).origin)
     throw new ApiError("This request must come from Reelform.", 403);
-  const user = await getChatGPTUser();
-  if (!user) throw new ApiError("Sign in to continue creating.", 401);
-  return user.userId;
+  const user = await requireUser(request);
+  return user.id;
 }
 export async function provider<T>(
   path: string,
@@ -48,7 +41,7 @@ export async function provider<T>(
   } catch (error) {
     if (error instanceof ApiError) throw error;
     throw new ApiError(
-      "Higgsfield did not respond in time. A submitted generation may still be processing. Check your Higgsfield account before trying again.",
+      "The video service did not respond in time. A submitted generation may still be processing. Check your Reelform account before trying again.",
       504,
     );
   }
@@ -56,27 +49,32 @@ export async function provider<T>(
   if (!response.ok) {
     if (response.status === 401 || response.status === 403)
       throw new ApiError(
-        "Higgsfield could not authenticate this site. Check the configured API credentials.",
+        "Video generation is temporarily unavailable. Please contact Reelform support.",
         502,
+        true,
       );
     if (response.status === 402)
       throw new ApiError(
-        "The Higgsfield API account needs more credit before it can generate this video.",
+        "Video generation is temporarily unavailable. Please contact Reelform support.",
         402,
+        true,
       );
     if (response.status === 429)
       throw new ApiError(
         "Higgsfield is receiving too many requests. Please wait a moment and try again.",
         429,
+        true,
       );
     if (response.status === 404)
       throw new ApiError(
         "This generation could not be found in Higgsfield.",
         404,
+        true,
       );
     throw new ApiError(
       "Higgsfield could not process this request. Check your input files and try a shorter, simpler clip.",
       502,
+      response.status >= 400 && response.status < 500,
     );
   }
   if (!data || typeof data !== "object")
@@ -86,7 +84,7 @@ export async function provider<T>(
 async function signingKey() {
   return crypto.subtle.importKey(
     "raw",
-    new TextEncoder().encode(credentials()),
+    new TextEncoder().encode(process.env.APP_SIGNING_SECRET || credentials()),
     { name: "HMAC", hash: "SHA-256" },
     false,
     ["sign", "verify"],
@@ -136,27 +134,5 @@ export async function verify(token: string, user: string, kind: string) {
       "This upload or generation link has expired. Please start again.",
       400,
     );
-  }
-}
-export function errorResponse(error: unknown) {
-  if (error instanceof ApiError)
-    return Response.json({ error: error.message }, { status: error.status });
-  return Response.json(
-    {
-      error:
-        "Something went wrong. Your inputs are still here; please try again.",
-    },
-    { status: 500 },
-  );
-}
-export async function readJson(request: Request) {
-  if (!request.headers.get("content-type")?.includes("application/json"))
-    throw new ApiError("Expected a JSON request.", 415);
-  const text = await request.text();
-  if (text.length > 70000) throw new ApiError("The request is too large.", 413);
-  try {
-    return JSON.parse(text);
-  } catch {
-    throw new ApiError("Invalid request format.");
   }
 }
