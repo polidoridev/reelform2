@@ -1489,3 +1489,15 @@ img {
   font-size: 12px;
   line-height: 1.7;
 }
+
+.generation-progress { width: min(100%, 360px); margin: 20px auto 8px; text-align: left; }
+.generation-progress-meta { display: flex; justify-content: space-between; gap: 12px; font-size: 12px; }
+.generation-progress-meta span { white-space: nowrap; font-variant-numeric: tabular-nums; color: #526560; }
+.generation-stage-track { display: flex; gap: 5px; margin: 12px 0 8px; }
+.generation-stage-track > span { flex: 1; height: 7px; background: #e0eeeb; border-radius: 8px; overflow: hidden; position: relative; }
+.generation-stage-track > .is-done { background: #0baca6; }
+.generation-stage-track > .is-current::after { content: ""; position: absolute; inset: 0; background: #0baca6; width: 45%; animation: progress 1.8s ease-in-out infinite alternate; }
+.generation-stage-track.is-paused > .is-current::after { animation-play-state: paused; }
+.generation-stage-labels { display: flex; justify-content: space-between; color: #526560; font-size: 11px; }
+.generation-progress p { font-size: 12px; line-height: 1.6; margin: 16px 0 0; }
+@media (prefers-reduced-motion: reduce) { .generation-stage-track > .is-current::after, .progress-track:after { animation: none; } }

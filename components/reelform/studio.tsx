@@ -19,6 +19,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import Brand from "./brand";
+import GenerationProgress from "./generation-progress";
 import AppSelect from "./app-select";
 import { MIN_VIDEO_SECONDS, MAX_VIDEO_SECONDS, MAX_VIDEO_BYTES, MAX_VIDEO_SIZE_LABEL, VIDEO_ACCEPT, VIDEO_FORMAT_LABEL, videoContentType } from "@/lib/video-limits";
 import { scenes } from "@/lib/scenes";
@@ -185,6 +186,7 @@ export default function Studio() {
           setPhase("");
           return;
         }
+        setJob((prev) => prev ? { ...prev, status: data.status } : null);
         setPhase(
           data.status === "queued"
             ? "Your video is in the queue"
@@ -687,7 +689,11 @@ export default function Studio() {
                 <div className="output-empty">
                   <Sparkles size={38} />
                   <h3>{phase || "Your video is still processing"}</h3>
-                  <div className="progress-track" />
+                  {jobActive && job ? (
+                    <GenerationProgress started={job.started} status={job.status} paused={pollStopped} />
+                  ) : (
+                    <div className="progress-track" role="progressbar" aria-label={phase || "Preparing video"} />
+                  )}
                   <p>
                     {pollStopped
                       ? "Your generation continues at Higgsfield. Check again to retrieve its latest status."
