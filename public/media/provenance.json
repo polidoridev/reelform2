@@ -1,0 +1,20 @@
+{
+  "provider": "Higgsfield",
+  "model": "Seedance 2.5",
+  "created": "2026-09-20",
+  "type": "AI-generated concept scenes; not transformations of user footage",
+  "assets": [
+    {
+      "name": "arrival",
+      "job_id": "3467d655-cd6b-462f-a526-84cb75a37214"
+    },
+    {
+      "name": "escape",
+      "job_id": "dab0638a-cf0e-4865-8650-03bd010819da"
+    },
+    {
+      "name": "alpine",
+      "job_id": "395d6f55-6638-426e-a2d8-ad9356033261"
+    }
+  ]
+}
