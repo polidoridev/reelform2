@@ -1,3 +1,4 @@
+import { VIDEO_BUCKET } from "@/lib/commerce/video-library";
 import { z } from "zod";
 import {
   requireUser,
@@ -23,7 +24,7 @@ export async function GET(request: Request) {
         db
           .from("rf_jobs")
           .select(
-            "id,provider_id,status,credits,prompt,resolution,result_url,error,created_at",
+            "id,user_id,provider_id,status,credits,prompt,resolution,result_url,error,created_at",
           )
           .eq("user_id", user.id)
           .order("created_at", { ascending: false })
@@ -50,7 +51,7 @@ export async function GET(request: Request) {
     ]);
     const refreshed = await Promise.allSettled(
       (jobs.data || []).map(async (job) =>
-        ["queued", "in_progress"].includes(job.status) ? refreshJob(job) : job,
+        ["queued", "in_progress", "completed"].includes(job.status) ? refreshJob(job) : job,
       ),
     );
     const visibleJobs = refreshed.map((r, i) => {
@@ -229,6 +230,14 @@ export async function DELETE(request: Request) {
         })
         .eq("user_id", user.id),
     );
+    // Remove private creation files before deleting the owning account.
+    while (true) {
+      const { data: files, error: listError } = await admin().storage.from(VIDEO_BUCKET).list(user.id, { limit: 100 });
+      if (listError) throw new ApiError("Your saved videos could not be removed. Please try deleting your account again.", 503);
+      if (!files?.length) break;
+      const { error: removeError } = await admin().storage.from(VIDEO_BUCKET).remove(files.map(file => `${user.id}/${file.name}`));
+      if (removeError) throw new ApiError("Your saved videos could not be removed. Please try deleting your account again.", 503);
+    }
     await client.auth.signOut({ scope: "global" });
     const { error: deleted } = await admin().auth.admin.deleteUser(user.id);
     if (deleted)

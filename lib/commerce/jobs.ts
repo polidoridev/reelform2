@@ -1,8 +1,10 @@
+import { archiveVideo } from "./video-library";
 import type { JobRow } from "./types";
 import { provider } from "@/lib/higgsfield";
 import { admin, checked } from "@/lib/supabase/server";
 export async function refreshJob(job: JobRow) {
-  if (!job.provider_id || ["completed", "failed"].includes(job.status))
+  if (job.status === "completed") return archiveVideo(job);
+  if (!job.provider_id || job.status === "failed")
     return job;
   const r = await provider<{ status: string; video?: { url: string } }>(
     `requests/${encodeURIComponent(job.provider_id)}/status`,
@@ -28,7 +30,7 @@ export async function refreshJob(job: JobRow) {
           : null,
     }),
   );
-  return {
+  return archiveVideo({
     ...job,
     status,
     result_url: url,
@@ -36,5 +38,5 @@ export async function refreshJob(job: JobRow) {
       status === "failed"
         ? "The video could not complete. Your credits were returned."
         : null,
-  };
+  });
 }

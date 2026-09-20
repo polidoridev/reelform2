@@ -799,8 +799,7 @@ export default function Account({
                   {tab === "creations" && (
                     <>
                       <p className="account-muted">
-                        Your latest 50 generations. Download finished videos
-                        promptly; provider download links may expire.
+                        Your videos are saved to your account. Play or download them here. Showing your latest 50 generations.
                       </p>
                       {data.jobs.length ? (
                         <div className="creation-grid">
@@ -833,9 +832,10 @@ export default function Account({
                                 {j.error && (
                                   <p className="account-error">{j.error}</p>
                                 )}
+                                {j.status === "completed" && j.result_url && <p className="account-muted">{j.result_url.startsWith("/api/videos/") ? "Saved to your account" : "Private backup pending. Download a copy now."}</p>}
                                 {j.result_url && (
                                   <a
-                                    href={j.result_url}
+                                    href={j.result_url.startsWith("/api/videos/") ? `${j.result_url}?download=1` : j.result_url}
                                     target="_blank"
                                     rel="noreferrer"
                                     className="quiet-link"

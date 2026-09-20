@@ -18,6 +18,7 @@ export interface AccountRow {
   email_suppressed: boolean;
 }
 export interface JobRow {
+  user_id?: string;
   id: string;
   provider_id?: string | null;
   status: string;

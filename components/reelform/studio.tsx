@@ -418,9 +418,9 @@ export default function Studio() {
               ? "My account"
               : `${creditBalance.toLocaleString()} credits`}
           </Link>
-          <Link prefetch={false} className="text-link" href="/">
+          <a className="text-link" href="/#explore">
             <ArrowLeft size={15} /> Back to explore
-          </Link>
+          </a>
         </div>
       </header>
       <main id="studio-main" className="studio-shell">
@@ -778,6 +778,9 @@ export default function Studio() {
                 </div>
               )}
             </div>
+            {result && !busy && !example && (
+              <p className="clip-length-note"><a href="/account?tab=creations">View your saved videos in My creations</a></p>
+            )}
             {result && !busy && (
               <div className="download-row">
                 <a
