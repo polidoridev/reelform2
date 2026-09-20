@@ -1,3 +1,4 @@
+import { MAX_VIDEO_BYTES, MAX_VIDEO_SIZE_LABEL } from "@/lib/video-limits";
 import { z } from "zod";
 import {
   authorize,
@@ -11,8 +12,9 @@ const input = z.object({
   contentType: z.enum(["video/mp4", "image/jpeg", "image/png", "image/webp"]),
   size: z
     .number()
+    .int()
     .positive()
-    .max(100 * 1024 * 1024),
+    .max(MAX_VIDEO_BYTES),
 });
 export async function POST(request: Request) {
   try {
@@ -20,7 +22,7 @@ export async function POST(request: Request) {
     const parsed = input.safeParse(await readJson(request));
     if (!parsed.success)
       throw new ApiError(
-        "Use an MP4 video up to 100 MB or a JPG, PNG, or WebP reference up to 10 MB.",
+        `Use an MP4 video up to ${MAX_VIDEO_SIZE_LABEL} or a JPG, PNG, or WebP reference up to 10 MB.`,
       );
     const { contentType, size } = parsed.data;
     if (contentType.startsWith("image/") && size > 10 * 1024 * 1024)

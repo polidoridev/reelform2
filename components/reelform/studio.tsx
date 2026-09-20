@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import Brand from "./brand";
 import AppSelect from "./app-select";
-import { MIN_VIDEO_SECONDS, MAX_VIDEO_SECONDS } from "@/lib/video-limits";
+import { MIN_VIDEO_SECONDS, MAX_VIDEO_SECONDS, MAX_VIDEO_BYTES, MAX_VIDEO_SIZE_LABEL } from "@/lib/video-limits";
 import { scenes } from "@/lib/scenes";
 
 type Media = { file: File; url: string };
@@ -234,8 +234,8 @@ export default function Studio() {
       );
       return;
     }
-    if (file.size > 100 * 1024 * 1024) {
-      setError("Your video must be 100 MB or smaller.");
+    if (file.size > MAX_VIDEO_BYTES) {
+      setError(`Your video must be ${MAX_VIDEO_SIZE_LABEL} or smaller.`);
       return;
     }
     const item = media(file);
@@ -495,7 +495,7 @@ export default function Studio() {
                   <Upload size={24} />
                   <strong>Drop your video here, or browse</strong>
                   <small>
-                    Transform clips up to 30 seconds long. MP4 · up to 100 MB.
+                    Transform clips up to 30 seconds long. MP4 · up to {MAX_VIDEO_SIZE_LABEL}.
                   </small>
                 </label>
               </div>
@@ -606,7 +606,7 @@ export default function Studio() {
                 />
               </label>
             </div>
-            <p className="clip-length-note">Longer clips use more credits. Try a short clip first to check your look. You’ll see the full credit cost before you generate.</p>
+            <p className="clip-length-note">Upload high-resolution footage, including 4K MP4s. Output uses your selected 480p or 720p quality. Longer clips use more credits. Try a short clip first to check your look. You’ll see the full credit cost before you generate.</p>
             <label className="consent">
               <input
                 type="checkbox"

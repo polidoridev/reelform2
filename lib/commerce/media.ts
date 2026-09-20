@@ -1,7 +1,8 @@
+import { MAX_VIDEO_BYTES, MIN_VIDEO_SECONDS, MAX_VIDEO_SECONDS } from "../video-limits";
 import { ApiError } from "@/lib/http";
 import type { MediaInfo } from "./pricing";
 // Parse only MP4 headers from provider-owned upload URLs. Skip mdat rather than
-// loading an entire 100 MB upload into a serverless worker's memory.
+// loading an entire upload into a serverless worker's memory.
 export async function inspectMp4(
   url: string,
   declaredBytes: number,
@@ -9,7 +10,7 @@ export async function inspectMp4(
   if (
     !Number.isSafeInteger(declaredBytes) ||
     declaredBytes <= 0 ||
-    declaredBytes > 100 * 1024 * 1024
+    declaredBytes > MAX_VIDEO_BYTES
   )
     throw new ApiError("Invalid upload size.");
   let used = 0;
@@ -64,7 +65,7 @@ export async function inspectMp4(
     const s = d.getUint32(n);
     if (s === 1) {
       const big = d.getBigUint64(n + 8);
-      if (big > BigInt(100 * 1024 * 1024))
+      if (big > BigInt(MAX_VIDEO_BYTES))
         throw new ApiError("Video box too large.");
       return Number(big);
     }
@@ -138,8 +139,8 @@ export async function inspectMp4(
     !Number.isFinite(duration) ||
     !width ||
     !height ||
-    duration < 4 ||
-    duration > 30
+    duration < MIN_VIDEO_SECONDS ||
+    duration > MAX_VIDEO_SECONDS
   )
     throw new ApiError("Use a standard MP4 video between 4 and 30 seconds.");
   return { duration, width, height, bytes: declaredBytes };
