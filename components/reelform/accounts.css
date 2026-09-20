@@ -545,7 +545,7 @@
   margin: 20px 0;
 }
 .account-card input:not([type="checkbox"]),
-.account-card select,
+.account-card .reelform-select-trigger,
 .auth-panel input:not([type="checkbox"]) {
   font-family: inherit;
   width: 100%;
@@ -560,7 +560,7 @@
   min-width: 0;
 }
 .account-card input:focus,
-.account-card select:focus,
+.account-card .reelform-select-trigger:focus,
 .auth-panel input:focus {
   border-color: #64b99b;
   box-shadow: 0 0 0 3px #d4eee280;

@@ -21,6 +21,7 @@ import {
 import type { AccountData, ApiResult } from "@/lib/commerce/types";
 import { useReducedMotion } from "motion/react";
 import Brand from "./brand";
+import AppSelect from "./app-select";
 import { PlanCards } from "./pricing";
 import { PLANS, TOPUPS, money } from "@/lib/commerce/pricing";
 import "./accounts.css";
@@ -648,18 +649,13 @@ export default function Account({
                             </label>
                             <label>
                               Reload pack
-                              <select
+                              <AppSelect
+                                label="Reload pack"
                                 value={pack}
-                                onChange={(e) => setPack(e.target.value)}
+                                onValueChange={setPack}
                                 disabled={!reloadEnabled}
-                              >
-                                {TOPUPS.map((p) => (
-                                  <option key={p.id} value={p.id}>
-                                    {p.credits.toLocaleString()} credits ·{" "}
-                                    {money(p.price)}
-                                  </option>
-                                ))}
-                              </select>
+                                options={TOPUPS.map((p) => ({ value: p.id, label: `${p.credits.toLocaleString()} credits · ${money(p.price)}` }))}
+                              />
                             </label>
                             <label>
                               Maximum monthly spend (USD)

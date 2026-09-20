@@ -839,7 +839,7 @@ img {
   font-size: 11px;
   color: var(--muted);
 }
-.studio-options select {
+.studio-options .reelform-select-trigger {
   width: 100%;
   padding: 9px 11px;
   border: 1px solid #dfe9e5;
@@ -1442,4 +1442,50 @@ img {
     gap: 12px;
     font-size: 10px;
   }
+}
+
+/* In-app menus stay consistent on desktop and touch devices. */
+.reelform-select-trigger {
+  width: 100%;
+  min-width: 0;
+  height: auto;
+  min-height: 44px;
+  background: #fff;
+  border: 1px solid #b6ddd7;
+  border-radius: 9px;
+  padding: 11px 13px;
+  color: #194534;
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+}
+.reelform-select-trigger:focus-visible {
+  outline: 2px solid #0abab5;
+  outline-offset: 3px;
+}
+.reelform-select-menu {
+  z-index: 100;
+  min-width: var(--radix-select-trigger-width);
+  max-width: calc(100vw - 24px);
+  background: #fff;
+  color: #194534;
+  border: 1px solid #b6ddd7;
+  border-radius: 12px;
+  box-shadow: 0 12px 35px #165e5920;
+}
+.reelform-select-option {
+  min-height: 42px;
+  padding: 10px 34px 10px 12px;
+  border-radius: 7px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.reelform-select-option[data-highlighted] {
+  background: #def6f2;
+  color: #164a43;
+}
+.clip-length-note {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
 }

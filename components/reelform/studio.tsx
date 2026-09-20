@@ -19,6 +19,8 @@ import {
   RefreshCw,
 } from "lucide-react";
 import Brand from "./brand";
+import AppSelect from "./app-select";
+import { MIN_VIDEO_SECONDS, MAX_VIDEO_SECONDS } from "@/lib/video-limits";
 import { scenes } from "@/lib/scenes";
 
 type Media = { file: File; url: string };
@@ -63,10 +65,11 @@ export default function Studio() {
     videoToken: string;
     quoteToken: string;
     credits: number;
+    duration: number;
     requestId: string;
   } | null>(null);
   const [creditBalance, setCreditBalance] = useState<number | null>(null);
-  const [video, setVideo] = useState<Media | null>(null);
+  const [video, setVideo] = useState<(Media & { duration: number }) | null>(null);
   const [images, setImages] = useState<Media[]>([]);
   const [prompt, setPrompt] = useState("");
   const [resolution, setResolution] = useState("720p");
@@ -248,15 +251,15 @@ export default function Studio() {
     if (
       !metadata ||
       !Number.isFinite(metadata) ||
-      metadata < 4 ||
-      metadata > 30
+      metadata < MIN_VIDEO_SECONDS ||
+      metadata > MAX_VIDEO_SECONDS
     ) {
       release(item);
       setError("Please use a readable video between 4 and 30 seconds long.");
       return;
     }
     if (video) release(video);
-    setVideo(item);
+    setVideo({ ...item, duration: metadata });
     setQuote(null);
   }
   function chooseImages(files: FileList | null) {
@@ -317,6 +320,7 @@ export default function Studio() {
         const result = await jsonRequest<{
           quoteToken: string;
           credits: number;
+          duration: number;
         }>("/api/quote", { videoToken, resolution });
         setQuote({ ...result, videoToken, requestId: crypto.randomUUID() });
         setPhase("");
@@ -441,14 +445,14 @@ export default function Studio() {
           >
             <div className="field-header">
               <h2>Your original video</h2>
-              <span>4-30 sec · MP4</span>
+              <span>{MIN_VIDEO_SECONDS}–{MAX_VIDEO_SECONDS} sec · MP4</span>
             </div>
             {video ? (
               <div className="selected-video">
                 <video src={video.url} muted playsInline controls />
                 <div className="file-info">
                   <strong>{video.file.name}</strong>
-                  <small>{(video.file.size / 1024 / 1024).toFixed(1)} MB</small>
+                  <small>{video.duration.toFixed(1)} sec · {(video.file.size / 1024 / 1024).toFixed(1)} MB</small>
                 </div>
                 <button
                   disabled={busy}
@@ -489,7 +493,7 @@ export default function Studio() {
                   <Upload size={24} />
                   <strong>Drop your video here, or browse</strong>
                   <small>
-                    A little movement goes a long way. Up to 100 MB.
+                    Transform clips up to 30 seconds long. MP4 · up to 100 MB.
                   </small>
                 </label>
               </div>
@@ -578,30 +582,29 @@ export default function Studio() {
             <div className="studio-options">
               <label>
                 Output quality
-                <select
+                <AppSelect
+                  label="Output quality"
                   value={resolution}
                   disabled={busy}
-                  onChange={(e) => {
-                    setResolution(e.target.value);
+                  onValueChange={(value) => {
+                    setResolution(value);
                     setQuote(null);
                   }}
-                >
-                  <option value="720p">720p HD</option>
-                  <option value="480p">480p</option>
-                </select>
+                  options={[{ value: "720p", label: "720p HD" }, { value: "480p", label: "480p" }]}
+                />
               </label>
               <label>
                 Sound
-                <select
+                <AppSelect
+                  label="Sound"
                   value={audio ? "yes" : "no"}
                   disabled={busy}
-                  onChange={(e) => setAudio(e.target.value === "yes")}
-                >
-                  <option value="no">Silent video</option>
-                  <option value="yes">Generate audio</option>
-                </select>
+                  onValueChange={(value) => setAudio(value === "yes")}
+                  options={[{ value: "no", label: "Silent video" }, { value: "yes", label: "Generate audio" }]}
+                />
               </label>
             </div>
+            <p className="clip-length-note">Longer clips use more credits. Try a short clip first to check your look. You’ll see the full credit cost before you generate.</p>
             <label className="consent">
               <input
                 type="checkbox"
@@ -623,7 +626,7 @@ export default function Studio() {
                 <Sparkles size={17} />
                 <p>
                   <strong>{quote.credits.toLocaleString()} credits</strong> for
-                  this transformation. Failed generations return your credits.
+                  your {quote.duration}-second transformation. Failed generations return your credits.
                   {creditBalance !== null && creditBalance < quote.credits && (
                     <>
                       {" "}

@@ -1,3 +1,4 @@
+import { MIN_VIDEO_SECONDS, MAX_VIDEO_SECONDS } from "../video-limits";
 export const PLANS = [
   {
     id: "starter",
@@ -70,8 +71,8 @@ export const CREDITS_PER_PROVIDER_DOLLAR = 360;
 export function quoteVideo(media: MediaInfo, resolution: "480p" | "720p") {
   if (
     ![media.duration, media.width, media.height].every(Number.isFinite) ||
-    media.duration < 4 ||
-    media.duration > 30 ||
+    media.duration < MIN_VIDEO_SECONDS ||
+    media.duration > MAX_VIDEO_SECONDS ||
     Math.min(media.width, media.height) <= 0
   )
     throw new Error("Use a video between 4 and 30 seconds.");
