@@ -648,6 +648,23 @@
 .director-copy > .text-link {
   font-size: 13px;
 }
+.cinema-page .hero-prompt {
+  max-width: 580px;
+  margin: 24px auto 0;
+  text-align: left;
+  background: #ffffffed;
+  border-color: #b6ddd7;
+  box-shadow: 0 12px 35px #1e777112;
+}
+.cinema-page .hero-prompt p {
+  padding-right: 42px;
+  margin-bottom: 0;
+}
+.cinema-page .hero-prompt > a {
+  position: absolute;
+  right: 18px;
+  bottom: 22px;
+}
 .cinema-page .faq-section {
   max-width: 1190px;
   margin: auto;

@@ -138,6 +138,21 @@ export default function Landing() {
               <br />
               Give your everyday a main character moment.
             </motion.p>
+            <div className="director-prompt hero-prompt">
+              <span>
+                <Sparkles size={14} /> TRY THIS
+              </span>
+              <p>
+                “Put me in a tailored suit, swap my car for a Lamborghini SVJ,
+                and take me to Beverly Hills.”
+              </p>
+              <a
+                href="/studio?scene=arrival"
+                aria-label="Try the Lamborghini transformation"
+              >
+                <ArrowUpRight size={20} />
+              </a>
+            </div>
             <motion.div
               className="hero-buttons"
               initial={reduced ? false : { opacity: 0, y: 20 }}
@@ -255,21 +270,7 @@ export default function Landing() {
               That walk to your car? It could be your arrival in Beverly Hills.
               Keep the moment. Reimagine everything around it.
             </p>
-            <div className="director-prompt">
-              <span>
-                <Sparkles size={14} /> TRY THIS
-              </span>
-              <p>
-                “Put me in a tailored suit, swap my car for a Lamborghini SVJ,
-                and take me to Beverly Hills.”
-              </p>
-              <a
-                href="/studio?scene=arrival"
-                aria-label="Try the Lamborghini transformation"
-              >
-                <ArrowUpRight size={20} />
-              </a>
-            </div>
+
             <a className="text-link" href="/studio?scene=arrival">
               Make this your reality <ArrowRight size={18} />
             </a>
