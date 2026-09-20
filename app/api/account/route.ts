@@ -5,6 +5,7 @@ import {
   admin,
   authClient,
   checked,
+  isReelformAdmin,
 } from "@/lib/supabase/server";
 import { ApiError, errorResponse, readJson, noStore } from "@/lib/http";
 import { balances } from "@/lib/commerce/billing";
@@ -120,6 +121,7 @@ export async function GET(request: Request) {
       paymentMethod,
       pendingChange,
       billingError,
+      isAdmin: isReelformAdmin(user),
       billingReady: billingEnabled(),
       testMode: process.env.STRIPE_SECRET_KEY?.startsWith("sk_test_") || false,
     });

@@ -216,6 +216,9 @@ export default function Account({
                   {notice}
                 </div>
               )}
+              {data?.isAdmin && (
+                <div className="account-notice"><ShieldCheck size={18} />Admin access · Free Reelform generations, all video features, and up to 3 simultaneous jobs. Higgsfield API charges still apply. No subscription or credit purchase needed.</div>
+              )}
               {data?.testMode && (
                 <div className="account-notice">
                   Test payments are connected. This account cannot make live
@@ -262,7 +265,7 @@ export default function Account({
                           <span>
                             Available credits <Sparkles size={16} />
                           </span>
-                          <strong>{b.total.toLocaleString()}</strong>
+                          <strong>{data.isAdmin ? "Free testing" : b.total.toLocaleString()}</strong>
                           <small>
                             {b.subscription.toLocaleString()} plan +{" "}
                             {b.purchased.toLocaleString()} purchased
@@ -272,9 +275,9 @@ export default function Account({
                           <span>
                             Your plan <WalletCards size={16} />
                           </span>
-                          <strong>{plan?.name || "Free account"}</strong>
+                          <strong>{data.isAdmin ? "Admin access" : plan?.name || "Free account"}</strong>
                           <small>
-                            {a.cadence
+                            {data.isAdmin ? "All video features included" : a.cadence
                               ? `${a.cadence === "year" ? "Yearly" : "Monthly"} billing · ${a.subscription_status}`
                               : "Choose a plan to start creating"}
                           </small>
@@ -331,7 +334,7 @@ export default function Account({
                           <span className="account-eyebrow">
                             CURRENT SUBSCRIPTION
                           </span>
-                          <h2>{plan?.name || "Free account"}</h2>
+                          <h2>{data.isAdmin ? "Admin access" : plan?.name || "Free account"}</h2>
                           <p>
                             {plan
                               ? `${plan.credits.toLocaleString()} credits released each month`

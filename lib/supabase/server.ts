@@ -102,3 +102,9 @@ export async function checked<T extends { error: unknown }>(
     throw new ApiError("We could not save this change. Please try again.", 503);
   return result;
 }
+
+// Only Supabase's server-managed app metadata can grant owner testing access.
+// Never derive this from signup/profile data or a client-provided role.
+export function isReelformAdmin(user: { app_metadata?: Record<string, unknown> }) {
+  return user.app_metadata?.reelform_admin === true;
+}

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { requireUser, accountFor, admin, checked } from "@/lib/supabase/server";
+import { requireUser, accountFor, admin, checked, isReelformAdmin } from "@/lib/supabase/server";
 import { ApiError, readJson, errorResponse, noStore, appUrl } from "@/lib/http";
 import {
   stripe,
@@ -24,6 +24,8 @@ export async function POST(
     const account = await accountFor(user);
     const { action } = await params;
     const body = await readJson(request);
+    if (isReelformAdmin(user) && ["subscribe", "topup", "auto-reload", "change-plan"].includes(action))
+      throw new ApiError("Your admin account already includes free Reelform generation. No subscription or credit purchase is needed.", 409);
     requireBilling();
     const api = stripe();
     if (

@@ -42,6 +42,7 @@ export interface ApiResult {
   redirect?: string;
 }
 export interface AccountData {
+  isAdmin: boolean;
   account: AccountRow;
   balance: CreditBalance;
   jobs: JobRow[];

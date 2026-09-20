@@ -68,6 +68,7 @@ export default function Studio() {
     duration: number;
     requestId: string;
   } | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [creditBalance, setCreditBalance] = useState<number | null>(null);
   const [video, setVideo] = useState<(Media & { duration: number }) | null>(null);
   const [images, setImages] = useState<Media[]>([]);
@@ -99,8 +100,9 @@ export default function Studio() {
     fetch("/api/account")
       .then(async (r) => {
         if (r.ok) {
-          const d = (await r.json()) as { balance: { total: number } };
+          const d = (await r.json()) as { balance: { total: number }; isAdmin: boolean };
           setCreditBalance(d.balance.total);
+          setIsAdmin(d.isAdmin);
         }
       })
       .catch(() => {});
@@ -394,7 +396,7 @@ export default function Studio() {
         <div className="studio-header-right">
           <Link className="text-link" href="/account?tab=credits">
             <Sparkles size={14} />
-            {creditBalance === null
+            {isAdmin ? "Admin · free testing" : creditBalance === null
               ? "My account"
               : `${creditBalance.toLocaleString()} credits`}
           </Link>
@@ -621,12 +623,15 @@ export default function Studio() {
                 {error}
               </div>
             )}
+            {isAdmin && (
+              <div className="connection-note"><ShieldCheck size={17} /><p>Admin access: all video features are unlocked without Reelform credit charges. Higgsfield API usage still bills your provider account.</p></div>
+            )}
             {quote && (
               <div className="connection-note">
                 <Sparkles size={17} />
                 <p>
-                  <strong>{quote.credits.toLocaleString()} credits</strong> for
-                  your {quote.duration}-second transformation. Failed generations return your credits.
+                  <strong>{quote.credits === 0 ? "Free admin generation" : `${quote.credits.toLocaleString()} credits`}</strong> for
+                  your {quote.duration}-second transformation. {quote.credits > 0 && "Failed generations return your credits."}
                   {creditBalance !== null && creditBalance < quote.credits && (
                     <>
                       {" "}
@@ -648,7 +653,7 @@ export default function Studio() {
                   ? "Creating your new reality…"
                   : "Preparing your video…"
                 : quote
-                  ? `Generate · ${quote.credits.toLocaleString()} credits`
+                  ? quote.credits === 0 ? "Generate · free admin test" : `Generate · ${quote.credits.toLocaleString()} credits`
                   : "Get my credit quote"}
               {!busy && <ArrowUpRight size={17} />}
             </button>

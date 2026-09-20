@@ -35,7 +35,7 @@ export async function POST(
       return noStore({ ok: true });
     }
     if (action === "signup") {
-      const { error } = await client.auth.signUp({
+      const { data, error } = await client.auth.signUp({
         email: email.parse(body.email),
         password: password.parse(body.password),
         options: {
@@ -54,14 +54,23 @@ export async function POST(
         throw new ApiError(
           "We could not create your account. Try again shortly or sign in if you already have one.",
         );
+      if (data.session && data.user) {
+        await accountFor(data.user);
+        return noStore({ ok: true, redirect: "/account" });
+      }
       return noStore({
         message: "Check your inbox to confirm your email before signing in.",
       });
     }
     if (action === "forgot") {
-      await client.auth.resetPasswordForEmail(email.parse(body.email), {
+      const { error } = await client.auth.resetPasswordForEmail(email.parse(body.email), {
         redirectTo: `${appUrl()}/auth/confirm`,
       });
+      if (error)
+        throw new ApiError(
+          "We couldn’t send a password reset email right now. Please try again later or contact admin@polidori.dev.",
+          503,
+        );
       return noStore({
         message:
           "If an account exists for that address, a password reset link is on its way.",

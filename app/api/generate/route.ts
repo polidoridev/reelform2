@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { verify, provider, sign, MODEL, isConfigured } from "@/lib/higgsfield";
 import { ApiError, readJson, errorResponse, noStore } from "@/lib/http";
-import { requireUser, accountFor, admin, checked } from "@/lib/supabase/server";
+import { requireUser, accountFor, admin, checked, isReelformAdmin } from "@/lib/supabase/server";
 import { maybeReload, balances } from "@/lib/commerce/billing";
 const input = z.object({
   videoToken: z.string().max(12000),
@@ -30,7 +30,8 @@ export async function POST(request: Request) {
       images.some((i) => i.media !== "image") ||
       quote.url !== video.url ||
       quote.resolution !== p.resolution ||
-      !Number.isSafeInteger(quote.credits)
+      !Number.isSafeInteger(quote.credits) ||
+      (quote.credits === 0 && !isReelformAdmin(user))
     )
       throw new ApiError(
         "Your video quote changed. Get a fresh quote before generating.",
@@ -136,7 +137,7 @@ export async function POST(request: Request) {
       id: job.id,
       exp: Date.now() + 30 * 86400000,
     });
-    if (claimed && latest?.status === "queued" && account.auto_reload_enabled) {
+    if (claimed && latest?.status === "queued" && account.auto_reload_enabled && !isReelformAdmin(user)) {
       try {
         await maybeReload(account);
       } catch {

@@ -1,11 +1,13 @@
+import { requireUser, isReelformAdmin } from "@/lib/supabase/server";
 import { z } from "zod";
-import { authorize, verify, sign } from "@/lib/higgsfield";
+import { verify, sign } from "@/lib/higgsfield";
 import { ApiError, readJson, errorResponse, noStore } from "@/lib/http";
 import { inspectMp4 } from "@/lib/commerce/media";
 import { quoteVideo } from "@/lib/commerce/pricing";
 export async function POST(request: Request) {
   try {
-    const user = await authorize(request);
+    const authenticatedUser = await requireUser(request);
+    const user = authenticatedUser.id;
     const body = z
       .object({
         videoToken: z.string().max(12000),
@@ -23,6 +25,7 @@ export async function POST(request: Request) {
         error instanceof Error ? error.message : "This clip cannot be quoted.",
       );
     }
+    if (isReelformAdmin(authenticatedUser)) quote.credits = 0;
     const token = await sign({
       user,
       kind: "quote",
