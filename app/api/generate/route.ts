@@ -1,5 +1,6 @@
+import { DEFAULT_VIDEO_MODEL, getVideoModel, modelRequest } from "@/lib/video-models";
 import { z } from "zod";
-import { verify, provider, sign, MODEL, isConfigured } from "@/lib/higgsfield";
+import { verify, provider, sign, isConfigured } from "@/lib/higgsfield";
 import { ApiError, readJson, errorResponse, noStore } from "@/lib/http";
 import { requireUser, accountFor, admin, checked, isReelformAdmin } from "@/lib/supabase/server";
 import { maybeReload, balances } from "@/lib/commerce/billing";
@@ -9,7 +10,8 @@ const input = z.object({
   requestId: z.string().uuid(),
   imageTokens: z.array(z.string().max(12000)).max(4),
   prompt: z.string().trim().min(10).max(2000),
-  resolution: z.enum(["480p", "720p"]),
+  resolution: z.enum(["480p", "720p", "1080p"]),
+  model: z.string().max(80).default(DEFAULT_VIDEO_MODEL),
   generateAudio: z.boolean(),
   consent: z.literal(true),
 });
@@ -30,12 +32,16 @@ export async function POST(request: Request) {
       images.some((i) => i.media !== "image") ||
       quote.url !== video.url ||
       quote.resolution !== p.resolution ||
+      (quote.model || DEFAULT_VIDEO_MODEL) !== p.model ||
       !Number.isSafeInteger(quote.credits) ||
       (quote.credits === 0 && !isReelformAdmin(user))
     )
       throw new ApiError(
         "Your video quote changed. Get a fresh quote before generating.",
       );
+    try {
+      modelRequest(getVideoModel(p.model), {prompt:p.prompt,videoUrl:video.url,imageUrls:images.map(i=>i.url),resolution:p.resolution,generateAudio:p.generateAudio,media:quote.media});
+    } catch (error) { throw new ApiError(error instanceof Error ? error.message : "Invalid model settings."); }
     const db = admin();
     const reserve = await db.rpc("rf_reserve_job", {
       p_user: user.id,
@@ -44,6 +50,7 @@ export async function POST(request: Request) {
       p_prompt: p.prompt,
       p_resolution: p.resolution,
       p_input: {
+        model: p.model,
         videoUrl: video.url,
         imageUrls: images.map((i) => i.url),
         generateAudio: p.generateAudio,
@@ -81,21 +88,13 @@ export async function POST(request: Request) {
     if (claimed) {
       try {
         const result = await provider<{ request_id: string; status: string }>(
-          MODEL,
+          getVideoModel(job.input.model || DEFAULT_VIDEO_MODEL).endpoint,
           {
             method: "POST",
-            body: JSON.stringify({
-              // Retries must use the input whose credits were reserved, even
-              // if a client reuses its request ID with a different payload.
-              prompt: job.prompt,
-              video_url: job.input.videoUrl,
-              ...(job.input.imageUrls.length
-                ? { image_urls: job.input.imageUrls }
-                : {}),
-              resolution: job.resolution,
-              bitrate_mode: "standard",
-              generate_audio: job.input.generateAudio,
-            }),
+            body: JSON.stringify(modelRequest(getVideoModel(job.input.model || DEFAULT_VIDEO_MODEL), {
+              prompt: job.prompt, videoUrl: job.input.videoUrl, imageUrls: job.input.imageUrls,
+              resolution: job.resolution, generateAudio: job.input.generateAudio, media: job.input.media,
+            })),
           },
         );
         if (!z.string().uuid().safeParse(result.request_id).success)

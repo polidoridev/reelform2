@@ -19,6 +19,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import Brand from "./brand";
+import { VIDEO_MODELS, DEFAULT_VIDEO_MODEL, getVideoModel, validateModel } from "@/lib/video-models";
 import GenerationProgress from "./generation-progress";
 import AppSelect from "./app-select";
 import { MIN_VIDEO_SECONDS, MAX_VIDEO_SECONDS, MAX_VIDEO_BYTES, MAX_VIDEO_SIZE_LABEL, VIDEO_ACCEPT, VIDEO_FORMAT_LABEL, videoContentType } from "@/lib/video-limits";
@@ -74,6 +75,8 @@ export default function Studio() {
   const [video, setVideo] = useState<(Media & { duration: number | null }) | null>(null);
   const [images, setImages] = useState<Media[]>([]);
   const [prompt, setPrompt] = useState("");
+  const [model, setModel] = useState(DEFAULT_VIDEO_MODEL);
+  const selectedModel = getVideoModel(model);
   const [resolution, setResolution] = useState("720p");
   const [audio, setAudio] = useState(false);
   const [consent, setConsent] = useState(false);
@@ -271,8 +274,8 @@ export default function Studio() {
     if (!files) return;
     setError("");
     const list = Array.from(files);
-    if (images.length + list.length > 4) {
-      setError("You can add up to four reference photos.");
+    if (images.length + list.length > selectedModel.maxImages) {
+      setError(`${selectedModel.name} accepts up to ${selectedModel.maxImages} reference photos.`);
       return;
     }
     if (
@@ -314,6 +317,8 @@ export default function Studio() {
       window.location.assign("/login");
       return;
     }
+    try { validateModel(selectedModel, resolution, video.duration ?? 4, images.length, audio); }
+    catch (e) { setError(e instanceof Error ? e.message : "Check your model settings."); return; }
     submitLock.current = true;
     setResult("");
     setExample(false);
@@ -332,7 +337,7 @@ export default function Studio() {
           quoteToken: string;
           credits: number;
           duration: number;
-        }>("/api/quote", { videoToken, resolution });
+        }>("/api/quote", { videoToken, resolution, model, imageCount: images.length, generateAudio: audio });
         setQuote({ ...result, videoToken, requestId: crypto.randomUUID() });
         setPhase("");
         return;
@@ -358,9 +363,12 @@ export default function Studio() {
         imageTokens,
         prompt,
         resolution,
+        model,
         generateAudio: audio,
         consent,
       });
+      // Timestamp is captured only in this submit event, never during render.
+      // eslint-disable-next-line react-hooks/purity
       const active = { ...data, started: Date.now() };
       setJob(active);
       setQuote(null);
@@ -512,7 +520,7 @@ export default function Studio() {
             )}
             <div className="field-header">
               <h2>Reference photos</h2>
-              <span>{images.length}/4 · Optional</span>
+              <span>{images.length}/{selectedModel.maxImages} · {selectedModel.minImages ? "Required" : "Optional"}</span>
             </div>
             <div className="reference-grid">
               {images.map((item, i) => (
@@ -533,7 +541,7 @@ export default function Studio() {
                   </button>
                 </div>
               ))}
-              {images.length < 4 && (
+              {images.length < selectedModel.maxImages && (
                 <label className="reference-add">
                   <ImagePlus size={22} />
                   <span>Add photos</span>
@@ -591,6 +599,14 @@ export default function Studio() {
                 </button>
               ))}
             </div>
+            <div className="field-header"><h2>AI model</h2><span>Top 5 recommended</span></div>
+            <AppSelect label="AI model" value={model} disabled={busy} onValueChange={(value) => {
+              const next = getVideoModel(value);
+              setModel(value); setQuote(null); setError("");
+              if (!next.resolutions.includes(resolution as "480p" | "720p" | "1080p")) setResolution(next.resolutions[0]);
+              if (!next.audio) setAudio(false);
+            }} options={VIDEO_MODELS.map((m, i) => ({value:m.id,label:`${i < 5 ? `${i + 1}. ` : ""}${m.name}${i === 0 ? " · Recommended" : ""}`}))} />
+            <p className="clip-length-note">{selectedModel.description}</p>
             <div className="studio-options">
               <label>
                 Output quality
@@ -602,7 +618,7 @@ export default function Studio() {
                     setResolution(value);
                     setQuote(null);
                   }}
-                  options={[{ value: "720p", label: "720p HD" }, { value: "480p", label: "480p" }]}
+                  options={selectedModel.resolutions.map(value => ({value,label:value === "1080p" ? "1080p Full HD" : value === "720p" ? "720p HD" : "480p"}))}
                 />
               </label>
               <label>
@@ -612,11 +628,11 @@ export default function Studio() {
                   value={audio ? "yes" : "no"}
                   disabled={busy}
                   onValueChange={(value) => setAudio(value === "yes")}
-                  options={[{ value: "no", label: "Silent video" }, { value: "yes", label: "Generate audio" }]}
+                  options={selectedModel.audio ? [{ value: "no", label: "Silent video" }, { value: "yes", label: "Generate audio" }] : [{ value: "no", label: "Silent video" }]}
                 />
               </label>
             </div>
-            <p className="clip-length-note">Upload high-resolution footage, including 4K videos. Output uses your selected 480p or 720p quality. Longer clips use more credits. Try a short clip first to check your look. You’ll see the full credit cost before you generate.</p>
+            <p className="clip-length-note">Upload high-resolution footage, including 4K videos. Output uses the quality supported by your selected model, up to 1080p. Longer clips use more credits. Try a short clip first to check your look. You’ll see the full credit cost before you generate.</p>
             <label className="consent">
               <input
                 type="checkbox"

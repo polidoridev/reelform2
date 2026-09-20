@@ -1,3 +1,4 @@
+import { DEFAULT_VIDEO_MODEL, getVideoModel, validateModel } from "@/lib/video-models";
 import { requireUser, isReelformAdmin } from "@/lib/supabase/server";
 import { z } from "zod";
 import { verify, sign } from "@/lib/higgsfield";
@@ -11,7 +12,10 @@ export async function POST(request: Request) {
     const body = z
       .object({
         videoToken: z.string().max(12000),
-        resolution: z.enum(["480p", "720p"]),
+        resolution: z.enum(["480p", "720p", "1080p"]),
+        model: z.string().max(80).default(DEFAULT_VIDEO_MODEL),
+        imageCount: z.number().int().min(0).max(4).default(0),
+        generateAudio: z.boolean().default(false),
       })
       .parse(await readJson(request));
     const video = await verify(body.videoToken, user, "upload");
@@ -19,7 +23,8 @@ export async function POST(request: Request) {
     const media = await inspectVideo(video.url, video.bytes);
     let quote: ReturnType<typeof quoteVideo>;
     try {
-      quote = quoteVideo(media, body.resolution);
+      validateModel(getVideoModel(body.model), body.resolution, media.duration, body.imageCount, body.generateAudio);
+      quote = quoteVideo(media, body.resolution, body.model);
     } catch (error) {
       throw new ApiError(
         error instanceof Error ? error.message : "This clip cannot be quoted.",
@@ -32,6 +37,7 @@ export async function POST(request: Request) {
       url: video.url,
       credits: quote.credits,
       resolution: body.resolution,
+      model: body.model,
       media,
       exp: Date.now() + 15 * 60000,
     });

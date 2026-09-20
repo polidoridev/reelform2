@@ -1,3 +1,4 @@
+import { DEFAULT_VIDEO_MODEL, getVideoModel, validateModel, type VideoResolution } from "../video-models";
 import { MIN_VIDEO_SECONDS, MAX_VIDEO_SECONDS } from "../video-limits";
 export const PLANS = [
   {
@@ -68,7 +69,7 @@ export type MediaInfo = {
 // Both source and output seconds are billed; no account discount is assumed.
 export const VIDEO_TOKEN_USD = 0.01284 / 1000;
 export const CREDITS_PER_PROVIDER_DOLLAR = 360;
-export function quoteVideo(media: MediaInfo, resolution: "480p" | "720p") {
+export function quoteVideo(media: MediaInfo, resolution: VideoResolution, modelId = DEFAULT_VIDEO_MODEL) {
   if (
     ![media.duration, media.width, media.height].every(Number.isFinite) ||
     media.duration < MIN_VIDEO_SECONDS ||
@@ -76,20 +77,28 @@ export function quoteVideo(media: MediaInfo, resolution: "480p" | "720p") {
     Math.min(media.width, media.height) <= 0
   )
     throw new Error("Use a video between 4 and 30 seconds.");
+  const model = getVideoModel(modelId);
+  validateModel(model, resolution, media.duration);
   const ratio =
     Math.max(media.width, media.height) / Math.min(media.width, media.height);
   if (ratio > 1.8)
     throw new Error(
       "Use a portrait, landscape, or square clip no wider than 16:9.",
     );
-  const short = resolution === "720p" ? 720 : 480;
-  const long = Math.ceil((short * ratio) / 16) * 16;
+  const short = resolution === "1080p" ? 1080 : resolution === "720p" ? 720 : 480;
+  const outputRatio = model.kind.includes("reference") ? (ratio > 1.2 ? 16 / 9 : 1) : ratio;
+  const long = Math.ceil((short * outputRatio) / 16) * 16;
   const duration = Math.ceil(media.duration * 10) / 10;
-  const tokens = Math.ceil((duration * 2 * short * long * 24) / 1024);
-  const providerUsd = tokens * VIDEO_TOKEN_USD;
+  const outputDuration = model.kind.includes("reference") ? Math.ceil(duration) : duration;
+  const tokens = Math.ceil(((duration + outputDuration) * short * long * 24) / 1024);
+  const providerUsd = model.kind === "genjutsu"
+    ? Math.ceil(duration) * (resolution === "720p" ? 0.681 : 0.318)
+    : model.secondRate ? Math.ceil(duration) * model.secondRate
+    : tokens * (model.tokenRate! / 1000);
   return {
     credits: Math.ceil((providerUsd * CREDITS_PER_PROVIDER_DOLLAR) / 10) * 10,
-    duration,
+    duration: outputDuration,
+    model: model.id,
     resolution,
     estimatedProviderUsd: providerUsd,
   };
