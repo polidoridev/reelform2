@@ -9,7 +9,7 @@ import {
   ApiError,
 } from "@/lib/higgsfield";
 const input = z.object({
-  contentType: z.enum(["video/mp4", "image/jpeg", "image/png", "image/webp"]),
+  contentType: z.enum(["video/mp4", "video/quicktime", "video/webm", "image/jpeg", "image/png", "image/webp"]),
   size: z
     .number()
     .int()
@@ -22,7 +22,7 @@ export async function POST(request: Request) {
     const parsed = input.safeParse(await readJson(request));
     if (!parsed.success)
       throw new ApiError(
-        `Use an MP4 video up to ${MAX_VIDEO_SIZE_LABEL} or a JPG, PNG, or WebP reference up to 10 MB.`,
+        `Use an MP4, MOV, M4V, or WebM video up to ${MAX_VIDEO_SIZE_LABEL} or a JPG, PNG, or WebP reference up to 10 MB.`,
       );
     const { contentType, size } = parsed.data;
     if (contentType.startsWith("image/") && size > 10 * 1024 * 1024)

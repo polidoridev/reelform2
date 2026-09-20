@@ -1,22 +1,23 @@
+import { inspectWebm } from "./webm";
 import { MAX_VIDEO_BYTES, MIN_VIDEO_SECONDS, MAX_VIDEO_SECONDS } from "../video-limits";
 import { ApiError } from "@/lib/http";
 import type { MediaInfo } from "./pricing";
-// Parse only MP4 headers from provider-owned upload URLs. Skip mdat rather than
+// Inspect container metadata from provider-owned upload URLs. Skip media payloads rather than
 // loading an entire upload into a serverless worker's memory.
-export async function inspectMp4(
+export async function inspectVideo(
   url: string,
   declaredBytes: number,
 ): Promise<MediaInfo> {
   if (
     !Number.isSafeInteger(declaredBytes) ||
-    declaredBytes <= 0 ||
+    declaredBytes < 8 ||
     declaredBytes > MAX_VIDEO_BYTES
   )
     throw new ApiError("Invalid upload size.");
   let used = 0;
   async function range(start: number, end: number) {
     if (end >= declaredBytes || end < start || end - start > 4 * 1024 * 1024)
-      throw new ApiError("This video has an unsupported MP4 structure.");
+      throw new ApiError("This video has an unsupported video structure.");
     const r = await fetch(url, {
       headers: { Range: `bytes=${start}-${end}` },
       signal: AbortSignal.timeout(20000),
@@ -29,7 +30,7 @@ export async function inspectMp4(
     ) {
       await r.body?.cancel();
       throw new ApiError(
-        "Could not verify the uploaded MP4. Please export a standard MP4 and try again.",
+        "Could not verify the uploaded video. Please export a standard MP4 or MOV and try again.",
       );
     }
     const reader = r.body!.getReader();
@@ -58,6 +59,9 @@ export async function inspectMp4(
     }
     return out;
   }
+  const signature = await range(0, Math.min(15, declaredBytes - 1));
+  if (new DataView(signature.buffer).getUint32(0) === 0x1a45dfa3)
+    return inspectWebm(range, declaredBytes);
   const text = (a: Uint8Array, n: number) =>
     String.fromCharCode(...a.slice(n, n + 4));
   function size(a: Uint8Array, n: number) {
@@ -80,20 +84,20 @@ export async function inspectMp4(
     );
     const n = size(header, 0);
     if (n < 8 || offset + n > declaredBytes)
-      throw new ApiError("Invalid MP4 file.");
+      throw new ApiError("Invalid video file.");
     if (text(header, 4) === "moov") {
       moov = await range(offset, offset + n - 1);
       break;
     }
     offset += n;
   }
-  if (!moov) throw new ApiError("No MP4 video metadata found.");
+  if (!moov) throw new ApiError("No video metadata found.");
   type Box = { type: string; start: number; end: number; body: number };
   function boxes(start: number, end: number): Box[] {
     const result: Box[] = [];
     for (let at = start; at + 8 <= end;) {
       const n = size(moov!, at);
-      if (n < 8 || at + n > end) throw new ApiError("Invalid MP4 metadata.");
+      if (n < 8 || at + n > end) throw new ApiError("Invalid video metadata.");
       const extended = new DataView(moov!.buffer).getUint32(at) === 1;
       result.push({
         type: text(moov!, at + 4),
@@ -102,7 +106,7 @@ export async function inspectMp4(
         body: at + (extended ? 16 : 8),
       });
       at += n;
-      if (result.length > 10000) throw new ApiError("Too many MP4 boxes.");
+      if (result.length > 10000) throw new ApiError("Too many video boxes.");
     }
     return result;
   }
@@ -142,6 +146,9 @@ export async function inspectMp4(
     duration < MIN_VIDEO_SECONDS ||
     duration > MAX_VIDEO_SECONDS
   )
-    throw new ApiError("Use a standard MP4 video between 4 and 30 seconds.");
+    throw new ApiError("Use a standard MP4, MOV, M4V, or WebM video between 4 and 30 seconds.");
   return { duration, width, height, bytes: declaredBytes };
 }
+
+// Compatibility for existing callers; both ISO-BMFF and QuickTime use these boxes.
+export const inspectMp4 = inspectVideo;

@@ -39,7 +39,7 @@ test("1 GB 4K MP4 metadata is read with bounded ranges, including extended-size 
       };
       const result = await inspectMp4("https://uploads.example/large.mp4", MAX_VIDEO_BYTES);
       assert.deepEqual(result,{duration:30,width:3840,height:2160,bytes:MAX_VIDEO_BYTES});
-      assert.equal(calls,4); assert.ok(bytesRead < 1024);
+      assert.equal(calls,5); assert.ok(bytesRead < 1024);
       assert.equal(quoteVideo(result,"720p").credits,quoteVideo({...result,width:1280,height:720},"720p").credits);
     }
   } finally { globalThis.fetch=original; }

@@ -2,7 +2,7 @@ import { requireUser, isReelformAdmin } from "@/lib/supabase/server";
 import { z } from "zod";
 import { verify, sign } from "@/lib/higgsfield";
 import { ApiError, readJson, errorResponse, noStore } from "@/lib/http";
-import { inspectMp4 } from "@/lib/commerce/media";
+import { inspectVideo } from "@/lib/commerce/media";
 import { quoteVideo } from "@/lib/commerce/pricing";
 export async function POST(request: Request) {
   try {
@@ -16,7 +16,7 @@ export async function POST(request: Request) {
       .parse(await readJson(request));
     const video = await verify(body.videoToken, user, "upload");
     if (video.media !== "video") throw new ApiError("Upload a video first.");
-    const media = await inspectMp4(video.url, video.bytes);
+    const media = await inspectVideo(video.url, video.bytes);
     let quote: ReturnType<typeof quoteVideo>;
     try {
       quote = quoteVideo(media, body.resolution);

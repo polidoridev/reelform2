@@ -20,10 +20,10 @@ import {
 } from "lucide-react";
 import Brand from "./brand";
 import AppSelect from "./app-select";
-import { MIN_VIDEO_SECONDS, MAX_VIDEO_SECONDS, MAX_VIDEO_BYTES, MAX_VIDEO_SIZE_LABEL } from "@/lib/video-limits";
+import { MIN_VIDEO_SECONDS, MAX_VIDEO_SECONDS, MAX_VIDEO_BYTES, MAX_VIDEO_SIZE_LABEL, VIDEO_ACCEPT, VIDEO_FORMAT_LABEL, videoContentType } from "@/lib/video-limits";
 import { scenes } from "@/lib/scenes";
 
-type Media = { file: File; url: string };
+type Media = { file: File; url: string; contentType?: string };
 type Job = {
   token: string;
   requestId: string;
@@ -48,7 +48,7 @@ async function upload(media: Media) {
     uploadUrl: string;
     headers: Record<string, string>;
     token: string;
-  }>("/api/uploads", { contentType: media.file.type, size: media.file.size });
+  }>("/api/uploads", { contentType: media.contentType || media.file.type, size: media.file.size });
   const uploaded = await fetch(data.uploadUrl, {
     method: "PUT",
     headers: data.headers,
@@ -70,7 +70,7 @@ export default function Studio() {
   } | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [creditBalance, setCreditBalance] = useState<number | null>(null);
-  const [video, setVideo] = useState<(Media & { duration: number }) | null>(null);
+  const [video, setVideo] = useState<(Media & { duration: number | null }) | null>(null);
   const [images, setImages] = useState<Media[]>([]);
   const [prompt, setPrompt] = useState("");
   const [resolution, setResolution] = useState("720p");
@@ -228,9 +228,10 @@ export default function Studio() {
   async function chooseVideo(file?: File) {
     if (!file) return;
     setError("");
-    if (file.type !== "video/mp4") {
+    const contentType = videoContentType(file);
+    if (!contentType) {
       setError(
-        "Please choose an MP4 video. Convert MOV or WebM footage to MP4 first.",
+        `Please choose an ${VIDEO_FORMAT_LABEL} video.`,
       );
       return;
     }
@@ -239,29 +240,29 @@ export default function Studio() {
       return;
     }
     const item = media(file);
-    const metadata = await new Promise<number>((resolve) => {
+    const metadata = await new Promise<number | null>((resolve) => {
       const el = document.createElement("video");
-      el.preload = "metadata";
-      el.onloadedmetadata = () => {
-        resolve(el.duration);
+      const finish = (duration: number | null) => {
+        clearTimeout(timer);
+        el.onloadedmetadata = null;
+        el.onerror = null;
         el.removeAttribute("src");
         el.load();
+        resolve(duration);
       };
-      el.onerror = () => resolve(0);
+      const timer = setTimeout(() => finish(null), 10000);
+      el.preload = "metadata";
+      el.onloadedmetadata = () => finish(Number.isFinite(el.duration) ? el.duration : null);
+      el.onerror = () => finish(null);
       el.src = item.url;
     });
-    if (
-      !metadata ||
-      !Number.isFinite(metadata) ||
-      metadata < MIN_VIDEO_SECONDS ||
-      metadata > MAX_VIDEO_SECONDS
-    ) {
+    if (metadata !== null && (metadata < MIN_VIDEO_SECONDS || metadata > MAX_VIDEO_SECONDS)) {
       release(item);
       setError("Please use a readable video between 4 and 30 seconds long.");
       return;
     }
     if (video) release(video);
-    setVideo({ ...item, duration: metadata });
+    setVideo({ ...item, contentType, duration: metadata });
     setQuote(null);
   }
   function chooseImages(files: FileList | null) {
@@ -447,14 +448,15 @@ export default function Studio() {
           >
             <div className="field-header">
               <h2>Your original video</h2>
-              <span>{MIN_VIDEO_SECONDS}–{MAX_VIDEO_SECONDS} sec · MP4</span>
+              <span>{MIN_VIDEO_SECONDS}–{MAX_VIDEO_SECONDS} sec</span>
             </div>
             {video ? (
               <div className="selected-video">
                 <video src={video.url} muted playsInline controls />
+                {video.duration === null && <p>Preview unavailable in this browser. You can still upload this clip for verification.</p>}
                 <div className="file-info">
                   <strong>{video.file.name}</strong>
-                  <small>{video.duration.toFixed(1)} sec · {(video.file.size / 1024 / 1024).toFixed(1)} MB</small>
+                  <small>{video.duration === null ? "Duration checked on upload" : `${video.duration.toFixed(1)} sec`} · {(video.file.size / 1024 / 1024).toFixed(1)} MB</small>
                 </div>
                 <button
                   disabled={busy}
@@ -486,7 +488,7 @@ export default function Studio() {
                 <input
                   id="video-upload"
                   type="file"
-                  accept="video/mp4"
+                  accept={VIDEO_ACCEPT}
                   disabled={busy}
                   onChange={(e) => chooseVideo(e.target.files?.[0])}
                   aria-label="Upload your original video"
@@ -495,7 +497,7 @@ export default function Studio() {
                   <Upload size={24} />
                   <strong>Drop your video here, or browse</strong>
                   <small>
-                    Transform clips up to 30 seconds long. MP4 · up to {MAX_VIDEO_SIZE_LABEL}.
+                    Transform clips up to 30 seconds long. {VIDEO_FORMAT_LABEL} · up to {MAX_VIDEO_SIZE_LABEL}.
                   </small>
                 </label>
               </div>
@@ -606,7 +608,7 @@ export default function Studio() {
                 />
               </label>
             </div>
-            <p className="clip-length-note">Upload high-resolution footage, including 4K MP4s. Output uses your selected 480p or 720p quality. Longer clips use more credits. Try a short clip first to check your look. You’ll see the full credit cost before you generate.</p>
+            <p className="clip-length-note">Upload high-resolution footage, including 4K videos. Output uses your selected 480p or 720p quality. Longer clips use more credits. Try a short clip first to check your look. You’ll see the full credit cost before you generate.</p>
             <label className="consent">
               <input
                 type="checkbox"
