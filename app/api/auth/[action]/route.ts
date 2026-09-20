@@ -21,6 +21,19 @@ export async function POST(
     const { action } = await params;
     const body = await readJson(request);
     const client = await authClient();
+    if (action === "google") {
+      const { data, error } = await client.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${new URL(request.url).origin}/auth/callback`,
+          skipBrowserRedirect: true,
+          queryParams: { prompt: "select_account" },
+        },
+      });
+      if (error || !data.url)
+        throw new ApiError("Google sign-in is unavailable. Please try again shortly.", 503);
+      return noStore({ redirect: data.url });
+    }
     if (action === "login") {
       const { data, error } = await client.auth.signInWithPassword({
         email: email.parse(body.email),

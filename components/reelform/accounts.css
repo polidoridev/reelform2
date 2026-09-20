@@ -1381,3 +1381,23 @@
     transition: none !important;
   }
 }
+
+.auth-google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 48px;
+  border: 1px solid #d6e3e1;
+  border-radius: 12px;
+  background: white;
+  color: #173633;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.auth-google:hover { background: #f3fbfa; }
+.auth-google:focus-visible { outline: 3px solid #0abab5; outline-offset: 3px; }
+.auth-google:disabled { opacity: .6; cursor: wait; }
+.auth-divider { text-align: center; color: #687e7b; font-size: 12px; margin: 4px 0; }
