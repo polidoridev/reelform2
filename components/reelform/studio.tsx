@@ -418,6 +418,8 @@ export default function Studio() {
               ? "My account"
               : `${creditBalance.toLocaleString()} credits`}
           </Link>
+          {/* Full page navigation avoids the failing vinext RSC link path. */}
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
           <a className="text-link" href="/#explore">
             <ArrowLeft size={15} /> Back to explore
           </a>
