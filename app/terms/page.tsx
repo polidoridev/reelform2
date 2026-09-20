@@ -63,7 +63,7 @@ export default function Terms() {
         with notice for material changes.
       </p>
       <p>
-        <Link href="/privacy">Privacy policy</Link> · <Link href="/">Back to Reelform</Link>
+        <Link prefetch={false} href="/privacy">Privacy policy</Link> · <Link prefetch={false} href="/">Back to Reelform</Link>
       </p>
     </main>
   );

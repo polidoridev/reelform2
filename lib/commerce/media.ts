@@ -21,7 +21,9 @@ export async function inspectVideo(
     const r = await fetch(url, {
       headers: { Range: `bytes=${start}-${end}` },
       signal: AbortSignal.timeout(20000),
-      redirect: "error",
+      // Workers do not implement redirect: "error". Manual keeps redirects
+      // blocked by the strict 206 check below without following another host.
+      redirect: "manual",
     });
     if (
       r.status !== 206 ||

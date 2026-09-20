@@ -210,9 +210,9 @@ export default function Pricing() {
       <header className="account-header">
         <Brand />
         <nav>
-          <Link href="/">Home</Link>
-          <Link href="/studio">Studio</Link>
-          <Link href="/account" className="account-nav-button">
+          <Link prefetch={false} href="/">Home</Link>
+          <Link prefetch={false} href="/studio">Studio</Link>
+          <Link prefetch={false} href="/account" className="account-nav-button">
             My account <ArrowUpRight size={15} />
           </Link>
         </nav>
@@ -283,11 +283,11 @@ export default function Pricing() {
             maximum monthly spend. It starts off, and you can disable it
             anytime.
           </p>
-          <Link href="/account?tab=credits" className="account-secondary">
+          <Link prefetch={false} href="/account?tab=credits" className="account-secondary">
             Explore your account <ArrowUpRight size={16} />
           </Link>
         </section>
-        <Link href="/" className="quiet-link">
+        <Link prefetch={false} href="/" className="quiet-link">
           <ArrowLeft size={15} />
           Back to Reelform
         </Link>

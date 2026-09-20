@@ -51,3 +51,13 @@ test("oversized uploads are rejected before any download", async () => {
   try { await assert.rejects(inspectMp4("https://uploads.example/large.mp4",MAX_VIDEO_BYTES+1),/Invalid upload size/);assert.equal(requested,false); }
   finally {globalThis.fetch=original;}
 });
+
+test("metadata requests use Worker-compatible manual redirects and reject redirect responses", async () => {
+  const original=globalThis.fetch;
+  globalThis.fetch=async(_url,init)=>{
+    assert.equal(init?.redirect,"manual");
+    return new Response(null,{status:302,headers:{location:"https://other.example/video"}});
+  };
+  try {await assert.rejects(inspectMp4("https://uploads.example/video",100),/Could not verify/);}
+  finally {globalThis.fetch=original;}
+});

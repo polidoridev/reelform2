@@ -401,13 +401,13 @@ export default function Studio() {
       <header className="studio-header">
         <Brand />
         <div className="studio-header-right">
-          <Link className="text-link" href="/account?tab=credits">
+          <Link prefetch={false} className="text-link" href="/account?tab=credits">
             <Sparkles size={14} />
             {isAdmin ? "Admin · free testing" : creditBalance === null
               ? "My account"
               : `${creditBalance.toLocaleString()} credits`}
           </Link>
-          <Link className="text-link" href="/">
+          <Link prefetch={false} className="text-link" href="/">
             <ArrowLeft size={15} /> Back to explore
           </Link>
         </div>
@@ -426,7 +426,7 @@ export default function Studio() {
           <div className="connection-note">
             <Info size={17} />
             <p>
-              <Link href="/login">Sign in to Reelform</Link> to generate your
+              <Link prefetch={false} href="/login">Sign in to Reelform</Link> to generate your
               own transformations.
             </p>
           </div>
@@ -643,7 +643,7 @@ export default function Studio() {
                   {creditBalance !== null && creditBalance < quote.credits && (
                     <>
                       {" "}
-                      <Link href="/account?tab=credits">Add credits</Link> to
+                      <Link prefetch={false} href="/account?tab=credits">Add credits</Link> to
                       continue.
                     </>
                   )}

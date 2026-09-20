@@ -42,6 +42,13 @@ export async function POST(request: Request) {
       resolution: quote.resolution,
     });
   } catch (error) {
+    if (!(error instanceof ApiError) && !(error instanceof z.ZodError)) {
+      console.error("Quote verification failed", error instanceof Error ? {
+        name: error.name,
+        message: error.message.replace(/https?:\/\/[^\s]+/g, "[media URL]"),
+        stack: error.stack?.split("\n").slice(1, 4).join("\n"),
+      } : { name: "UnknownError" });
+    }
     return errorResponse(
       error instanceof z.ZodError
         ? new ApiError("Invalid quote request.")

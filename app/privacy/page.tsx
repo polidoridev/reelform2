@@ -55,7 +55,7 @@ export default function Privacy() {
         information.
       </p>
       <p>
-        <Link href="/terms">Terms of use</Link> · <Link href="/">Back to Reelform</Link>
+        <Link prefetch={false} href="/terms">Terms of use</Link> · <Link prefetch={false} href="/">Back to Reelform</Link>
       </p>
     </main>
   );

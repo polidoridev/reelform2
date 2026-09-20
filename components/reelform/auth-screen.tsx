@@ -65,7 +65,7 @@ export default function AuthScreen({
     <div className="auth-page">
       <header className="account-header">
         <Brand />
-        <Link href="/" className="quiet-link">
+        <Link prefetch={false} href="/" className="quiet-link">
           <ArrowLeft size={16} /> Back to Reelform
         </Link>
       </header>
@@ -179,8 +179,8 @@ export default function AuthScreen({
               {mode === "signup" && (
                 <p className="form-fine">
                   By creating an account, you accept our{" "}
-                  <Link href="/terms">Terms</Link> and{" "}
-                  <Link href="/privacy">Privacy Policy</Link>.
+                  <Link prefetch={false} href="/terms">Terms</Link> and{" "}
+                  <Link prefetch={false} href="/privacy">Privacy Policy</Link>.
                 </p>
               )}
             </form>

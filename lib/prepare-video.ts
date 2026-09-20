@@ -26,10 +26,11 @@ export async function prepareVideo(file: File, progress: (value: number) => void
     conversion = await Conversion.init({
       input, output, tracks: "primary",
       video: { codec: video.codec === "hevc" ? "hevc" : "avc" },
-      audio: { codec: "aac" },
+      // The model generates its own audio; camera spatial audio (apac) is unnecessary.
+      audio: { discard: true },
       showWarnings: false,
     });
-    if (!conversion.isValid || conversion.discardedTracks.length)
+    if (!conversion.isValid || conversion.discardedTracks.some(({ track }) => track.type === "video"))
       throw new Error("Your browser cannot convert this video's codec. Export it as H.264 MP4, or try the latest Chrome or Safari.");
     conversion.onProgress = progress;
     await conversion.execute();
