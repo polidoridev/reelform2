@@ -660,6 +660,19 @@
   padding-right: 42px;
   margin-bottom: 0;
 }
+.prompt-word {
+  display: inline-block;
+  white-space: nowrap;
+}
+.prompt-letter {
+  display: inline-block;
+  animation: prompt-letter-hop 1.4s ease-in-out infinite;
+}
+@keyframes prompt-letter-hop {
+  0%, 45%, 100% { transform: translateY(0); }
+  18% { transform: translateY(-5px); }
+  30% { transform: translateY(1px); }
+}
 .cinema-page .hero-prompt > a {
   position: absolute;
   right: 18px;
@@ -1326,6 +1339,9 @@
   }
 }
 @media (prefers-reduced-motion: reduce) {
+  .prompt-letter {
+    animation: none;
+  }
   .fan-card,
   .hero-copy,
   .worlds-track {

@@ -34,6 +34,9 @@ import {
 } from "./motion-scenes";
 import "./cinema.css";
 
+const examplePrompt =
+  "“Put me in a tailored suit, swap my car for a Lamborghini SVJ, and take me to Beverly Hills.”";
+
 const steps = [
   {
     icon: Upload,
@@ -144,8 +147,26 @@ export default function Landing() {
                 <Sparkles size={14} /> TRY THIS
               </span>
               <p>
-                “Put me in a tailored suit, swap my car for a Lamborghini SVJ,
-                and take me to Beverly Hills.”
+                <span className="sr-only">{examplePrompt}</span>
+                <span aria-hidden="true">
+                  {Array.from(examplePrompt.matchAll(/\S+/g), (match) => (
+                    <span key={match.index}>
+                      <span className="prompt-word">
+                        {Array.from(match[0], (letter, index) => (
+                          <span
+                            className="prompt-letter"
+                            key={index}
+                            style={{
+                              animationDelay: `${-(match.index + index) * 0.055}s`,
+                            }}
+                          >
+                            {letter}
+                          </span>
+                        ))}
+                      </span>{" "}
+                    </span>
+                  ))}
+                </span>
               </p>
               <a
                 href="/studio?scene=arrival"
