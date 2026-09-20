@@ -503,11 +503,7 @@ export default function Studio() {
                     if (example) setResult(scene.video);
                   }}
                 >
-                  {scene.id === "arrival"
-                    ? "The dream car"
-                    : scene.id === "escape"
-                      ? "Coastal escape"
-                      : "Alpine life"}{" "}
+                  {scene.shortLabel}{" "}
                   <ArrowUpRight
                     size={10}
                     style={{ display: "inline", marginLeft: 2 }}

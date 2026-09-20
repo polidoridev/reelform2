@@ -15,6 +15,26 @@
     {
       "name": "alpine",
       "job_id": "395d6f55-6638-426e-a2d8-ad9356033261"
+    },
+    {
+      "name": "yacht",
+      "job_id": "8863d9f6-8800-47b0-809b-886eab9b903b"
+    },
+    {
+      "name": "resort",
+      "job_id": "82e7f9f9-2f89-4a03-b3d1-8e107a771642"
+    },
+    {
+      "name": "mansion",
+      "job_id": "e1cf8511-150f-46e4-bf77-95c8d8ba6d32"
+    },
+    {
+      "name": "supercar",
+      "job_id": "1126077b-f588-4b9a-9afb-9f2695c16097"
+    },
+    {
+      "name": "villa",
+      "job_id": "d7cf0457-ce7f-471a-8f2c-2387457457ac"
     }
   ]
 }

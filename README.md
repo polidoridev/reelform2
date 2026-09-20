@@ -36,7 +36,9 @@ Supported input: MP4, 4–30 seconds, up to 100 MB; up to four JPG/PNG/WebP refe
 
 ## Demo assets
 
-Original examples in `public/media` were created through Higgsfield with Seedance 2.5. They are clearly labeled as concept scenes, not before-and-after transformations. See `public/media/provenance.json` for generation IDs. The studio can preview examples without API credentials; it never substitutes a demo for a user-generated result.
+The seven luxury lifestyle examples in the gallery were created through Higgsfield with Seedance 2.5: supercars, private yachts, a Beverly Hills mansion, a Maldives resort, and an Italian villa. They are clearly labeled as concept scenes, not before-and-after transformations. See `public/media/provenance.json` for generation IDs. The studio can preview examples without API credentials; it never substitutes a demo for a user-generated result.
+
+The landing page uses Motion for scroll-linked video fan movement, a pinned horizontal gallery, parallax frames, and section entrances. Mobile uses a native swipe gallery; reduced-motion mode disables scroll choreography and starts previews paused. Videos load near the viewport and play only while visible.
 
 ## Verify
 

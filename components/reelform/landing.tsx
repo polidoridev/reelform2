@@ -1,6 +1,12 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import {
+  motion,
+  useReducedMotion,
+  useScroll,
+  useTransform,
+} from "motion/react";
+import {
   ArrowUpRight,
   ArrowRight,
   Sparkles,
@@ -13,99 +19,61 @@ import {
   Minus,
   Menu,
   X,
-  Film,
   Check,
-  MoveUpRight,
+  Aperture,
 } from "lucide-react";
 import Brand from "./brand";
 import { scenes } from "@/lib/scenes";
+import { faqs } from "./faqs";
+import {
+  HeroCinema,
+  WorldGallery,
+  Reveal,
+  SceneVideo,
+  ParallaxFrame,
+} from "./motion-scenes";
+import "./cinema.css";
 
-const faqs = [
-  [
-    "What is Reelform?",
-    "Reelform is your studio for AI roleplay. Start with a real clip of yourself, add photos for the look you have in mind, and describe your alternate reality. AI reimagines your outfit, surroundings, and objects using your footage as the starting point.",
-  ],
-  [
-    "Can I use my own video and reference photos?",
-    "Yes. Upload an MP4 clip and up to four JPG, PNG, or WebP reference images. Short, well-lit clips with a clearly visible subject and simple movements are a good starting point. Use photos to guide the outfit, location, or object you want.",
-  ],
-  [
-    "Will it still look and move like me?",
-    "The original video guides the action, while your prompt and reference photos guide the changes. AI can vary faces, motion, and fine details, so results may need another iteration. Avoid fast cuts and heavily obscured faces for a clearer starting point.",
-  ],
-  [
-    "What powers the transformations?",
-    "Video generation is powered by Higgsfield. Reelform sends your footage, references, and prompt to the selected video editing model, then brings the completed result back to the studio.",
-  ],
-  [
-    "Are the examples real transformations?",
-    "The landing-page clips are original AI-generated concept scenes created with Higgsfield. They illustrate the kinds of worlds you can imagine; they are not before-and-after edits of user footage.",
-  ],
-  [
-    "What can I create?",
-    "Try a new outfit, a dream destination, a different ride, or an entirely fictional world. Use footage and references you have permission to use, and label realistic AI edits when you share them so viewers understand they are altered.",
-  ],
+const steps = [
+  {
+    icon: Upload,
+    title: "Start with the real you.",
+    description:
+      "A walk to your car. A pose in your bedroom. A perfectly ordinary moment. Upload a short clip and make it your starting point.",
+    detail: "Your video, your natural movement",
+  },
+  {
+    icon: ImagePlus,
+    title: "Give your imagination a reference.",
+    description:
+      "The suit. The supercar. The place you’ve always wanted to go. Add photos of the look you love, then tell us what to change.",
+    detail: "Reference photos + a little direction",
+  },
+  {
+    icon: WandSparkles,
+    title: "Step into something different.",
+    description:
+      "Let AI reimagine the scene around you. Preview your new reality, download it, and give your next story a plot twist.",
+    detail: "Generate, preview, make it yours",
+  },
 ];
-function Reel({
-  scene,
-  className = "",
-  paused,
-}: {
-  scene: (typeof scenes)[number];
-  className?: string;
-  paused: boolean;
-}) {
-  const video = useRef<HTMLVideoElement>(null);
-  useEffect(() => {
-    if (paused) video.current?.pause();
-    else video.current?.play().catch(() => {});
-  }, [paused]);
-  return (
-    <article className={`reel ${className}`}>
-      <div className="reel-media">
-        <video
-          ref={video}
-          muted
-          loop
-          playsInline
-          preload="metadata"
-          poster={scene.poster}
-          aria-label={scene.title}
-        >
-          <source src={scene.video} type="video/mp4" />
-        </video>
-        <a
-          href={`/studio?scene=${scene.id}`}
-          className="reel-action"
-          aria-label={`Try ${scene.title}`}
-        >
-          <ArrowUpRight size={21} />
-        </a>
-      </div>
-      <div className="reel-caption">
-        <div>
-          <p>{scene.category}</p>
-          <h3>{scene.title}</h3>
-        </div>
-        <span>{scene.location}</span>
-      </div>
-    </article>
-  );
-}
 export default function Landing() {
-  const ideaVideo = useRef<HTMLVideoElement>(null);
   const [menu, setMenu] = useState(false);
   const [paused, setPaused] = useState(true);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+  const reduced = useReducedMotion();
+  const hero = useRef<HTMLElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: hero,
+    offset: ["start start", "end start"],
+  });
+  const heroY = useTransform(scrollYProgress, [0, 0.65], [0, 100]);
+  const heroOpacity = useTransform(scrollYProgress, [0, 0.38], [1, 0]);
   useEffect(() => {
     setPaused(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
   }, []);
-  useEffect(() => {
-    if (paused) ideaVideo.current?.pause();
-    else ideaVideo.current?.play().catch(() => {});
-  }, [paused]);
   return (
-    <>
+    <div className="cinema-page">
       <a className="skip-link" href="#main">
         Skip to content
       </a>
@@ -140,191 +108,245 @@ export default function Landing() {
         </div>
       </header>
       <main id="main">
-        <section className="hero">
-          <div className="hero-copy">
-            <div className="eyebrow">
-              <Sparkles size={14} /> REAL FOOTAGE. UNLIMITED IMAGINATION.
-            </div>
-            <h1>
+        <section ref={hero} className="cinema-hero">
+          <div className="hero-gradient" aria-hidden="true" />
+          <motion.div
+            className="hero-copy"
+            style={reduced ? {} : { y: heroY, opacity: heroOpacity }}
+          >
+            <motion.div
+              className="eyebrow"
+              initial={false}
+              animate={{ opacity: 1 }}
+            >
+              <Sparkles size={14} /> YOUR REALITY IS JUST THE STARTING POINT
+            </motion.div>
+            <motion.h1
+              initial={reduced ? false : { opacity: 0, y: 25 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1] }}
+            >
               Same you.
               <br className="mobile-break" /> <span>New reality.</span>
-            </h1>
-            <p>
-              Your video. Any outfit, any place, any life.
+            </motion.h1>
+            <motion.p
+              initial={reduced ? false : { opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.12 }}
+            >
+              Your video. The yacht. The villa. The dream car.
               <br />
-              Turn the everyday into your next main character moment.
-            </p>
-            <div className="hero-buttons">
+              Give your everyday a main character moment.
+            </motion.p>
+            <motion.div
+              className="hero-buttons"
+              initial={reduced ? false : { opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+            >
               <a href="/studio" className="button">
                 Reform your reality <ArrowUpRight size={18} />
               </a>
-              <a href="#explore" className="button button-outline">
-                <Play size={15} fill="currentColor" /> See what’s possible
+              <a href="#explore" className="hero-secondary">
+                <Play size={14} fill="currentColor" /> See what’s possible
               </a>
-            </div>
-          </div>
-          <div className="showcase" id="explore">
-            <Reel scene={scenes[1]} className="reel-left" paused={paused} />
-            <Reel scene={scenes[0]} className="reel-center" paused={paused} />
-            <Reel scene={scenes[2]} className="reel-right" paused={paused} />
-          </div>
-          <div className="showcase-footer">
+            </motion.div>
+          </motion.div>
+          <HeroCinema paused={paused} />
+          <div className="cinema-credit">
             <span>
-              <span className="higgsfield-symbol">h</span> Original scenes made
-              with <strong>Higgsfield</strong>
+              <Aperture size={16} /> Imagined by you. Powered by{" "}
+              <strong>Higgsfield.</strong>
             </span>
-            <button onClick={() => setPaused(!paused)} className="play-control">
-              {paused ? <Play size={13} /> : <Pause size={13} />}{" "}
+            <button onClick={() => setPaused(!paused)}>
+              {paused ? <Play size={12} /> : <Pause size={12} />}{" "}
               {paused ? "Play previews" : "Pause previews"}
             </button>
           </div>
         </section>
-        <section className="how-section section-wrap" id="how-it-works">
-          <div className="section-heading">
+        <section className="possibility-section">
+          <Reveal>
             <span className="section-label">
               A LITTLE YOU. A LOT OF POSSIBILITY.
             </span>
             <h2>
-              Your imagination.
+              You don’t need a different life.
               <br />
-              Now in motion.
+              <span>Just a different take.</span>
             </h2>
-            <p>No studio. No costume changes. Just a clip and an idea.</p>
+            <p>
+              The same walk. The same look. An entirely different world.
+              <br />
+              Reelform turns the footage you already have into the life you’re
+              imagining.
+            </p>
+          </Reveal>
+        </section>
+        <WorldGallery paused={paused} onToggle={() => setPaused(!paused)} />
+        <section className="workflow-section" id="how-it-works">
+          <div className="workflow-intro">
+            <Reveal>
+              <span className="section-label">
+                YOU BRING THE MAIN CHARACTER
+              </span>
+              <h2>
+                From everyday
+                <br />
+                to <span>anything.</span>
+              </h2>
+              <p>
+                No film crew. No costume changes.
+                <br />
+                Just a clip and a little imagination.
+              </p>
+              <a className="text-link" href="/studio">
+                Meet your creative studio <ArrowUpRight size={18} />
+              </a>
+            </Reveal>
+            <ParallaxFrame className="workflow-photo">
+              <img
+                src={scenes[3].poster}
+                alt="AI concept of a private overwater villa in the Maldives"
+                loading="lazy"
+              />
+              <span className="photo-caption">
+                A new scene. Still your story.
+              </span>
+            </ParallaxFrame>
           </div>
-          <div className="steps">
-            <article>
-              <div className="step-icon">
-                <Upload size={23} />
-              </div>
-              <h3>Start with the real you.</h3>
-              <p>
-                Upload a video of yourself. A walk, a pose, a perfectly ordinary
-                moment.
-              </p>
-              <span className="step-detail">
-                <Film size={14} /> Your original footage
-              </span>
-            </article>
-            <article>
-              <div className="step-icon">
-                <ImagePlus size={23} />
-              </div>
-              <h3>Set the scene.</h3>
-              <p>
-                Add reference photos and describe the outfit, place, or life
-                you’re imagining.
-              </p>
-              <span className="step-detail">
-                <Plus size={14} /> Photos + your imagination
-              </span>
-            </article>
-            <article>
-              <div className="step-icon">
-                <WandSparkles size={23} />
-              </div>
-              <h3>Meet your alternate reality.</h3>
-              <p>
-                Generate your transformation, preview the result, and download
-                your new story.
-              </p>
-              <span className="step-detail">
-                <Check size={14} /> Ready for your next post
-              </span>
-            </article>
+          <div className="workflow-steps">
+            {steps.map((step, i) => (
+              <Reveal
+                key={step.title}
+                className="workflow-step"
+                delay={i * 0.04}
+              >
+                <div className="workflow-step-top">
+                  <span className="step-number">0{i + 1}</span>
+                  <step.icon size={25} strokeWidth={1.5} />
+                </div>
+                <h3>{step.title}</h3>
+                <p>{step.description}</p>
+                <span className="workflow-detail">
+                  <Check size={14} />
+                  {step.detail}
+                </span>
+              </Reveal>
+            ))}
           </div>
         </section>
-        <section className="idea-section section-wrap">
-          <div className="idea-image">
-            <video
-              ref={ideaVideo}
-              muted
-              loop
-              playsInline
-              preload="metadata"
-              poster={scenes[0].poster}
-              src={scenes[0].video}
-              aria-label="AI-generated man beside a Lamborghini"
-            />
-          </div>
-          <div className="idea-copy">
-            <div className="eyebrow">
-              <Sparkles size={14} /> YOU’RE THE DIRECTOR
-            </div>
+        <section className="director-section">
+          <div className="director-wash" aria-hidden="true" />
+          <ParallaxFrame className="director-film">
+            <SceneVideo scene={scenes[0]} paused={paused} />
+            <span className="director-play">
+              <Play size={14} fill="currentColor" /> A little main character
+              energy
+            </span>
+          </ParallaxFrame>
+          <Reveal className="director-copy">
+            <span className="section-label">YOU’RE THE DIRECTOR</span>
             <h2>
               Dream a little
               <br />
-              differently.
+              <span>differently.</span>
             </h2>
             <p>
               That walk to your car? It could be your arrival in Beverly Hills.
               Keep the moment. Reimagine everything around it.
             </p>
-            <div className="prompt-example">
+            <div className="director-prompt">
               <span>
-                <WandSparkles size={15} /> THE PROMPT
+                <Sparkles size={14} /> TRY THIS
               </span>
               <p>
                 “Put me in a tailored suit, swap my car for a Lamborghini SVJ,
                 and take me to Beverly Hills.”
               </p>
+              <a
+                href="/studio?scene=arrival"
+                aria-label="Try the Lamborghini transformation"
+              >
+                <ArrowUpRight size={20} />
+              </a>
             </div>
             <a className="text-link" href="/studio?scene=arrival">
               Make this your reality <ArrowRight size={18} />
             </a>
-          </div>
+          </Reveal>
         </section>
-        <section className="faq-section section-wrap" id="faq">
-          <div className="section-heading">
+        <section className="faq-section" id="faq">
+          <Reveal className="section-heading">
             <h2>
-              A few things
+              A little curious?
               <br />
-              you might be wondering.
+              <span>Good. So are we.</span>
             </h2>
-            <p>A new reality starts with a little curiosity.</p>
-          </div>
+            <p>A few things before your next reality.</p>
+          </Reveal>
           <div className="faq-list">
             {faqs.map(([q, a], i) => (
-              <article
-                className={`faq-item ${openFaq === i ? "expanded" : ""}`}
-                key={q}
-              >
-                <h3>
-                  <button
-                    aria-expanded={openFaq === i}
-                    aria-controls={`faq-${i}`}
-                    onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                  >
-                    {q}
-                    {openFaq === i ? <Minus size={18} /> : <Plus size={18} />}
-                  </button>
-                </h3>
-                <div id={`faq-${i}`} hidden={openFaq !== i}>
-                  <p>{a}</p>
-                </div>
-              </article>
+              <Reveal key={q} delay={i * 0.03}>
+                <article
+                  className={`faq-item ${openFaq === i ? "expanded" : ""}`}
+                >
+                  <h3>
+                    <button
+                      aria-expanded={openFaq === i}
+                      aria-controls={`faq-${i}`}
+                      onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                    >
+                      {q}
+                      {openFaq === i ? <Minus size={18} /> : <Plus size={18} />}
+                    </button>
+                  </h3>
+                  <div id={`faq-${i}`} hidden={openFaq !== i}>
+                    <p>{a}</p>
+                  </div>
+                </article>
+              </Reveal>
             ))}
           </div>
         </section>
-        <section className="last-call section-wrap">
-          <div>
-            <span className="section-label">
-              YOUR NEXT CHAPTER IS UP TO YOU
-            </span>
-            <h2>
-              Reality could use
-              <br />a little imagination.
-            </h2>
+        <section className="cinematic-cta">
+          <div className="cta-gradient" aria-hidden="true" />
+          <div className="cta-orbit cta-orbit-left">
+            <ParallaxFrame>
+              <SceneVideo scene={scenes[4]} paused={paused} />
+            </ParallaxFrame>
           </div>
-          <a href="/studio" className="button button-dark">
-            Let’s make it happen <MoveUpRight size={18} />
-          </a>
+          <div className="cta-orbit cta-orbit-right">
+            <ParallaxFrame>
+              <SceneVideo scene={scenes[2]} paused={paused} />
+            </ParallaxFrame>
+          </div>
+          <Reveal className="cta-copy">
+            <span className="section-label">THE NEXT SCENE IS YOURS</span>
+            <h2>
+              Go on.
+              <br />
+              Live a little <span>unreal.</span>
+            </h2>
+            <p>Your imagination looks good on you.</p>
+            <a className="button" href="/studio">
+              Let’s make it happen <ArrowUpRight size={19} />
+            </a>
+          </Reveal>
         </section>
       </main>
-      <footer className="footer section-wrap">
-        <Brand />
-        <span>Real you. Reimagined.</span>
-        <span>© {new Date().getFullYear()} Reelform</span>
+      <footer className="footer">
+        <div className="footer-top">
+          <Brand />
+          <span>Real you. Reimagined.</span>
+          <a href="/studio">
+            Create your next reality <ArrowUpRight size={16} />
+          </a>
+        </div>
+        <div className="footer-bottom">
+          <span>© {new Date().getFullYear()} Reelform</span>
+          <span>Made for your imagination.</span>
+        </div>
       </footer>
-    </>
+    </div>
   );
 }
