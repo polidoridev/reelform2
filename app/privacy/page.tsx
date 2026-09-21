@@ -7,7 +7,7 @@ export default function Privacy() {
       <Brand />
       <h1>Privacy policy</h1>
       <p>
-        Last updated September 20, 2026. Contact:{" "}
+        Last updated September 21, 2026. Contact:{" "}
         <a href="mailto:admin@polidori.dev">admin@polidori.dev</a>.
       </p>
       <h2>Information used by Reelform</h2>
@@ -29,6 +29,23 @@ export default function Privacy() {
         needed to run and protect the website. These providers may process data
         outside your country.
       </p>
+      <h2>Community videos</h2>
+      <p>
+        Publishing is optional. A published video, title, caption, selected
+        creator name, AI-assisted label, and publication date are public and may
+        be viewed without an account. Your account email, billing information,
+        and private generation prompts are not included in the post. We store
+        your publishing permission and its date. Supabase stores community media
+        separately from private creations; community uploads are not sent to
+        Higgsfield for generation or used by Reelform to train AI models.
+      </p>
+      <p>
+        You can remove posts from the community or delete your account to remove
+        all your posts. Public listing access ends on removal; previously issued
+        playback links can remain valid for up to five minutes. Unfinished uploads
+        are cleaned up after 24 hours by scheduled maintenance. Public content may
+        have been saved by viewers; removal cannot recall their copies.
+      </p>
       <h2>Email preferences</h2>
       <p>
         Marketing emails are optional. You can withdraw consent through the
@@ -40,7 +57,7 @@ export default function Privacy() {
       <h2>Cookies and security</h2>
       <p>
         Reelform uses essential session cookies to keep you signed in and
-        protect account actions. Account data is restricted to its owner, and
+        protect account actions. Private account data is restricted to its owner, and
         billing and credit updates are performed by authenticated server
         processes. No security measure can guarantee absolute protection.
       </p>

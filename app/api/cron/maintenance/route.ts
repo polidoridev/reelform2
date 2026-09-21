@@ -9,6 +9,7 @@ import {
 } from "@/lib/commerce/billing";
 import { refreshJob } from "@/lib/commerce/jobs";
 import { sendJourney, type Journey } from "@/lib/commerce/email";
+import { cleanCommunityUploads } from "@/lib/community";
 export async function POST(request: Request) {
   const actual = Buffer.from(request.headers.get("authorization") || ""),
     expected = Buffer.from(`Bearer ${process.env.CRON_SECRET || ""}`);
@@ -137,6 +138,7 @@ export async function POST(request: Request) {
       }
     }
   }
+  try { await cleanCommunityUploads(); } catch { counts.errors++; }
   return Response.json(counts, {
     status: counts.errors ? 207 : 200,
     headers: { "Cache-Control": "no-store" },

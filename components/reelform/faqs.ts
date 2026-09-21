@@ -1,5 +1,9 @@
 export const faqs = [
   [
+    "Do I keep the rights to my videos?",
+    "Yes. Reelform does not take ownership of videos you upload or create. Community sharing is optional: you choose what to publish, keep your rights, and can remove your posts anytime. Publishing only gives us permission to host and display the post. You must have permission for any third-party content in your video.",
+  ],
+  [
     "What is Reelform?",
     "Reelform is your studio for AI roleplay. Start with a real clip of yourself, add photos for the look you have in mind, and describe your alternate reality. AI reimagines your outfit, surroundings, and objects using your footage as the starting point.",
   ],

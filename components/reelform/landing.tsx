@@ -23,6 +23,7 @@ import {
   Aperture,
 } from "lucide-react";
 import Brand from "./brand";
+import Link from "next/link";
 import { scenes } from "@/lib/scenes";
 import { faqs } from "./faqs";
 import {
@@ -96,6 +97,7 @@ export default function Landing() {
               How it works
             </a>
             <a href="/pricing">Pricing</a>
+            <Link prefetch={false} href="/community">Community</Link>
             <a href="/account">My account</a>
           </nav>
           <a href="/studio" className="button button-small">

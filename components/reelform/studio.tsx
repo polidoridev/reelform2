@@ -1,845 +1,884 @@
 "use client";
+
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import {
-  ArrowLeft,
+  ArrowUp,
   ArrowUpRight,
-  Upload,
-  ImagePlus,
-  X,
-  Plus,
-  Sparkles,
-  Film,
-  Play,
-  Download,
-  ShieldCheck,
-  WandSparkles,
-  Info,
+  AudioLines,
   Check,
+  ChevronDown,
+  Download,
+  Film,
+  ImagePlus,
+  Info,
+  Menu,
+  Plus,
   RefreshCw,
+  ShieldCheck,
+  SlidersHorizontal,
+  Sparkles,
+  Upload,
+  Users,
+  X,
 } from "lucide-react";
 import Brand from "./brand";
-import { VIDEO_MODELS, DEFAULT_VIDEO_MODEL, getVideoModel, validateModel } from "@/lib/video-models";
-import GenerationProgress from "./generation-progress";
 import AppSelect from "./app-select";
-import { MIN_VIDEO_SECONDS, MAX_VIDEO_SECONDS, MAX_VIDEO_BYTES, MAX_VIDEO_SIZE_LABEL, VIDEO_ACCEPT, VIDEO_FORMAT_LABEL, videoContentType } from "@/lib/video-limits";
+import GenerationProgress from "./generation-progress";
+import { useStudioChat, type ChatMessage } from "./use-studio-chat";
+import { VIDEO_MODELS } from "@/lib/video-models";
+import { VIDEO_ACCEPT, MAX_VIDEO_SIZE_LABEL } from "@/lib/video-limits";
 import { scenes } from "@/lib/scenes";
+import "./studio-chat.css";
 
-type Media = { file: File; url: string; contentType?: string };
-type Job = {
-  token: string;
-  requestId: string;
-  status: string;
-  started: number;
-};
-async function jsonRequest<T>(path: string, body?: unknown): Promise<T> {
-  const response = await fetch(path, {
-    method: body ? "POST" : "GET",
-    headers: body ? { "Content-Type": "application/json" } : undefined,
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  const data = (await response.json()) as T & { error?: string };
-  if (!response.ok)
-    throw new Error(
-      data.error || "The request could not be completed. Please try again.",
-    );
-  return data;
-}
-async function upload(media: Media) {
-  const data = await jsonRequest<{
-    uploadUrl: string;
-    headers: Record<string, string>;
-    token: string;
-  }>("/api/uploads", { contentType: media.contentType || media.file.type, size: media.file.size });
-  const uploaded = await fetch(data.uploadUrl, {
-    method: "PUT",
-    headers: data.headers,
-    body: media.file,
-  });
-  if (!uploaded.ok)
-    throw new Error(
-      "Your file could not be uploaded. Please check your connection and try again.",
-    );
-  return data.token as string;
-}
-export default function Studio() {
-  const [quote, setQuote] = useState<{
-    videoToken: string;
-    quoteToken: string;
-    credits: number;
-    duration: number;
-    requestId: string;
-  } | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [creditBalance, setCreditBalance] = useState<number | null>(null);
-  const [video, setVideo] = useState<(Media & { duration: number | null }) | null>(null);
-  const [images, setImages] = useState<Media[]>([]);
-  const [prompt, setPrompt] = useState("");
-  const [showFullHdModels, setShowFullHdModels] = useState(false);
-  const [model, setModel] = useState(DEFAULT_VIDEO_MODEL);
-  const selectedModel = getVideoModel(model);
-  const [resolution, setResolution] = useState("720p");
-  const [audio, setAudio] = useState(false);
-  const [consent, setConsent] = useState(false);
-  const [authenticated, setAuthenticated] = useState(true);
-  const [ready, setReady] = useState<boolean | null>(null);
-  const [error, setError] = useState("");
-  const [phase, setPhase] = useState("");
-  const [job, setJob] = useState<Job | null>(null);
-  const [result, setResult] = useState("");
-  const [example, setExample] = useState(false);
-  const [dragging, setDragging] = useState(false);
-  const [pollStopped, setPollStopped] = useState(false);
-  const [pollAttempt, setPollAttempt] = useState(0);
-  const [activeScene, setActiveScene] = useState(scenes[0]);
-  const submitLock = useRef(false);
-  const assets = useRef<Set<string>>(new Set());
-  const configCheck = () =>
-    jsonRequest<{ ready: boolean; authenticated: boolean }>("/api/config")
-      .then((data) => {
-        setReady(data.ready);
-        setAuthenticated(data.authenticated);
-      })
-      .catch(() => setReady(false));
-  useEffect(() => {
-    fetch("/api/account")
-      .then(async (r) => {
-        if (r.ok) {
-          const d = (await r.json()) as { balance: { total: number }; isAdmin: boolean };
-          setCreditBalance(d.balance.total);
-          setIsAdmin(d.isAdmin);
-        }
-      })
-      .catch(() => {});
-    configCheck();
-    const scene = scenes.find(
-      (s) => s.id === new URLSearchParams(window.location.search).get("scene"),
-    );
-    if (scene) {
-      // Browser query state is read after hydration.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setPrompt(scene.prompt);
-      setActiveScene(scene);
-    }
-    try {
-      const saved = sessionStorage.getItem("reelform-active-job");
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed.token && parsed.started > Date.now() - 7 * 86400000)
-          setJob(parsed);
-        else sessionStorage.removeItem("reelform-active-job");
-      }
-    } catch {}
-    const urls = assets.current;
-    return () => urls.forEach((url) => URL.revokeObjectURL(url));
-  }, []);
-  const jobToken = job?.token;
-  const jobFinished =
-    !!job && ["completed", "failed", "nsfw", "canceled"].includes(job.status);
-  useEffect(() => {
-    if (!jobToken || jobFinished) return;
-    let disposed = false;
-    let timer: ReturnType<typeof setTimeout>;
-    let tries = 0;
-    let errors = 0;
-    // Reset the polling UI when subscribing to a new job.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setPollStopped(false);
-    async function poll() {
-      if (disposed) return;
-      try {
-        const data = await jsonRequest<{
-          status: string;
-          videoUrl: string;
-          error?: string;
-          balance?: number;
-        }>(`/api/jobs?token=${encodeURIComponent(jobToken!)}`);
-        if (disposed) return;
-        errors = 0;
-        if (typeof data.balance === "number") setCreditBalance(data.balance);
-        if (data.status === "completed") {
-          if (!data.videoUrl) {
-            setError(
-              "Your generation completed, but no video was returned. Contact Reelform support with your generation ID.",
-            );
-          } else {
-            setResult(data.videoUrl);
-            setExample(false);
-          }
-          setJob((prev) => (prev ? { ...prev, status: "completed" } : null));
-          setPhase("");
-          sessionStorage.removeItem("reelform-active-job");
-          return;
-        }
-        if (["failed", "nsfw", "canceled"].includes(data.status)) {
-          setError(
-            data.error ||
-              "The transformation could not complete. Try a different clip or a simpler prompt.",
-          );
-          setJob((prev) => (prev ? { ...prev, status: data.status } : null));
-          setPhase("");
-          sessionStorage.removeItem("reelform-active-job");
-          return;
-        }
-        if (data.status === "unknown") {
-          setError(
-            data.error ||
-              "This request needs review. Do not resubmit; contact support with your generation ID.",
-          );
-          setPollStopped(true);
-          setPhase("");
-          return;
-        }
-        setJob((prev) => prev ? { ...prev, status: data.status } : null);
-        setPhase(
-          data.status === "queued"
-            ? "Your video is in the queue"
-            : "Reimagining your reality",
-        );
-      } catch (e) {
-        if (disposed) return;
-        errors++;
-        if (errors >= 3) {
-          setError(
-            e instanceof Error ? e.message : "Unable to check your generation.",
-          );
-          setPollStopped(true);
-          setPhase("");
-          return;
-        }
-      }
-      tries++;
-      if (tries >= 150) {
-        setPollStopped(true);
-        setPhase("");
-        return;
-      }
-      timer = setTimeout(poll, Math.min(5000 + tries * 500, 15000));
-    }
-    poll();
-    return () => {
-      disposed = true;
-      clearTimeout(timer);
-    };
-  }, [jobToken, jobFinished, pollAttempt]);
-  function media(file: File) {
-    const url = URL.createObjectURL(file);
-    assets.current.add(url);
-    return { file, url };
-  }
-  function release(item: Media) {
-    URL.revokeObjectURL(item.url);
-    assets.current.delete(item.url);
-  }
-  async function chooseVideo(file?: File) {
-    if (!file) return;
-    setError("");
-    const contentType = videoContentType(file);
-    if (!contentType) {
-      setError(
-        `Please choose an ${VIDEO_FORMAT_LABEL} video.`,
-      );
-      return;
-    }
-    if (file.size > MAX_VIDEO_BYTES) {
-      setError(`Your video must be ${MAX_VIDEO_SIZE_LABEL} or smaller.`);
-      return;
-    }
-    const item = media(file);
-    const metadata = await new Promise<number | null>((resolve) => {
-      const el = document.createElement("video");
-      const finish = (duration: number | null) => {
-        clearTimeout(timer);
-        el.onloadedmetadata = null;
-        el.onerror = null;
-        el.removeAttribute("src");
-        el.load();
-        resolve(duration);
-      };
-      const timer = setTimeout(() => finish(null), 10000);
-      el.preload = "metadata";
-      el.onloadedmetadata = () => finish(Number.isFinite(el.duration) ? el.duration : null);
-      el.onerror = () => finish(null);
-      el.src = item.url;
-    });
-    if (metadata !== null && (metadata < MIN_VIDEO_SECONDS || metadata > MAX_VIDEO_SECONDS)) {
-      release(item);
-      setError("Please use a readable video between 4 and 30 seconds long.");
-      return;
-    }
-    if (video) release(video);
-    setVideo({ ...item, contentType, duration: metadata });
-    setQuote(null);
-  }
-  function chooseImages(files: FileList | null) {
-    if (!files) return;
-    setError("");
-    const list = Array.from(files);
-    if (images.length + list.length > selectedModel.maxImages) {
-      setError(`${selectedModel.name} accepts up to ${selectedModel.maxImages} reference photos.`);
-      return;
-    }
-    if (
-      list.some(
-        (file) =>
-          !["image/jpeg", "image/png", "image/webp"].includes(file.type) ||
-          file.size > 10 * 1024 * 1024,
-      )
-    ) {
-      setError("Use JPG, PNG, or WebP images, up to 10 MB each.");
-      return;
-    }
-    setImages((prev) => [...prev, ...list.map(media)]);
-  }
-  async function generate() {
-    if (submitLock.current) return;
-    setError("");
-    if (!video) {
-      setError("Upload your original video first.");
-      return;
-    }
-    if (prompt.trim().length < 10) {
-      setError("Describe your transformation in at least 10 characters.");
-      return;
-    }
-    if (!consent) {
-      setError(
-        "Please confirm that you have permission to use this footage and these photos.",
-      );
-      return;
-    }
-    if (!ready) {
-      setError(
-        "Generation is not connected yet. Add the Higgsfield API credentials to start creating.",
-      );
-      return;
-    }
-    if (!authenticated) {
-      window.location.assign("/login");
-      return;
-    }
-    try { validateModel(selectedModel, resolution, video.duration ?? 4, images.length, audio); }
-    catch (e) { setError(e instanceof Error ? e.message : "Check your model settings."); return; }
-    submitLock.current = true;
-    setResult("");
-    setExample(false);
-    setPhase("Uploading your original video");
-    try {
-      if (!quote) {
-        setPhase("Preparing your video for upload");
-        const { prepareVideo } = await import("@/lib/prepare-video");
-        const prepared = await prepareVideo(video.file, (progress) =>
-          setPhase(`Preparing your video · ${Math.round(progress * 100)}%`),
-        );
-        setPhase("Uploading your original video");
-        const videoToken = await upload({ ...video, file: prepared, contentType: "video/mp4" });
-        setPhase("Verifying your video and calculating credits");
-        const result = await jsonRequest<{
-          quoteToken: string;
-          credits: number;
-          duration: number;
-        }>("/api/quote", { videoToken, resolution, model, imageCount: images.length, generateAudio: audio });
-        setQuote({ ...result, videoToken, requestId: crypto.randomUUID() });
-        setPhase("");
-        return;
-      }
-      const videoToken = quote.videoToken;
-      setPhase(
-        images.length
-          ? "Uploading your reference photos"
-          : "Preparing your transformation",
-      );
-      const imageTokens = await Promise.all(images.map(upload));
-      setPhase("Sending your transformation to Higgsfield");
-      const data = await jsonRequest<{
-        token: string;
-        requestId: string;
-        status: string;
-        balance: number;
-        error?: string;
-      }>("/api/generate", {
-        videoToken,
-        quoteToken: quote.quoteToken,
-        requestId: quote.requestId,
-        imageTokens,
-        prompt,
-        resolution,
-        model,
-        generateAudio: audio,
-        consent,
-      });
-      // Timestamp is captured only in this submit event, never during render.
-      // eslint-disable-next-line react-hooks/purity
-      const active = { ...data, started: Date.now() };
-      setJob(active);
-      setQuote(null);
-      setCreditBalance(data.balance);
-      if (data.status === "failed") {
-        setError(
-          data.error ||
-            "The video could not start. Your credits were returned.",
-        );
-        setPhase("");
-        sessionStorage.removeItem("reelform-active-job");
-        return;
-      }
-      try {
-        sessionStorage.setItem("reelform-active-job", JSON.stringify(active));
-      } catch {}
-    } catch (e) {
-      setError(
-        e instanceof Error
-          ? e.message
-          : "The transformation could not be started.",
-      );
-      setPhase("");
-    } finally {
-      submitLock.current = false;
-    }
-  }
-  const jobActive =
-    !!job && !["completed", "failed", "nsfw", "canceled"].includes(job.status);
-  const busy = !!phase || jobActive;
-  function showExample() {
-    setExample(true);
-    setResult(activeScene.video);
-  }
+function SentMessage({ message }: { message: ChatMessage }) {
   return (
-    <div className="studio-page">
+    <div className="chat-user-message">
+      <span className="chat-speaker">You</span>
+      <div className="chat-user-bubble">
+        {(message.videoUrl || message.images.length > 0) && (
+          <div className="chat-sent-attachments">
+            {message.videoUrl && (
+              <div className="chat-sent-video">
+                <video
+                  src={message.videoUrl}
+                  muted
+                  playsInline
+                  preload="metadata"
+                  aria-label={`Original video: ${message.videoName}`}
+                />
+                <span>
+                  <Film size={12} /> Original video
+                </span>
+              </div>
+            )}
+            {message.images.map((image, index) => (
+              <div className="chat-sent-image" key={image.url}>
+                {/* Local blob previews cannot use the image optimization server. */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={image.url}
+                  alt={`Reference ${index + 1}: ${image.name}`}
+                />
+              </div>
+            ))}
+          </div>
+        )}
+        <p>{message.prompt}</p>
+        <div className="chat-message-meta">
+          <span>{message.modelName}</span>
+          <span>{message.resolution}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+function AssistantMessage({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="chat-assistant-message">
+      <div className="chat-assistant-heading">
+        <span className="chat-assistant-avatar">
+          <AudioLines size={17} />
+        </span>
+        <strong>Reelform</strong>
+      </div>
+      <div className="chat-assistant-body">{children}</div>
+    </div>
+  );
+}
+function VideoResult({ url }: { url: string }) {
+  return (
+    <div className="chat-result">
+      <p>Your new reality is ready.</p>
+      <video
+        src={url}
+        controls
+        playsInline
+        preload="metadata"
+        aria-label="Generated video"
+      />
+      <div className="chat-result-actions">
+        <a
+          href={url.startsWith("/api/videos/") ? `${url}?download=1` : url}
+          download="reelform-transformation.mp4"
+          target="_blank"
+          rel="noreferrer"
+        >
+          <Download size={15} /> Download video
+        </a>
+        <Link prefetch={false} href="/account?tab=creations">
+          My creations <ArrowUpRight size={14} />
+        </Link>
+        <Link prefetch={false} href="/community/share">
+          Share with the community <ArrowUpRight size={14} />
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+export default function Studio() {
+  const s = useStudioChat();
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [fullHdOpen, setFullHdOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [dragging, setDragging] = useState(false);
+  const dragDepth = useRef(0);
+  const promptRef = useRef<HTMLTextAreaElement>(null);
+  const videoInput = useRef<HTMLInputElement>(null);
+  const imageInput = useRef<HTMLInputElement>(null);
+  const latestTurn = useRef<HTMLDivElement>(null);
+  const hasConversation = !!s.currentMessage || s.history.length > 0;
+  const insufficient =
+    s.quote !== null &&
+    s.creditBalance !== null &&
+    s.creditBalance < s.quote.credits;
+  const canSend =
+    !!s.video &&
+    !!s.quote &&
+    !!s.ready &&
+    !!s.authenticated &&
+    !s.busy &&
+    !s.inspecting &&
+    !s.modelError &&
+    !insufficient &&
+    s.consent &&
+    s.prompt.trim().length >= 10;
+  useEffect(() => {
+    if (s.currentMessage)
+      latestTurn.current?.scrollIntoView({
+        behavior: matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "instant"
+          : "smooth",
+        block: "start",
+      });
+  }, [s.currentMessage]);
+  function chooseScene(prompt: string) {
+    s.setPrompt(prompt);
+    promptRef.current?.focus();
+  }
+  function reset() {
+    s.newChat();
+    setMenuOpen(false);
+    setSettingsOpen(false);
+    promptRef.current?.focus();
+  }
+  async function drop(files: FileList) {
+    if (s.busy) return;
+    const list = Array.from(files);
+    const videos = list.filter(
+      (file) =>
+        file.type.startsWith("video/") ||
+        /\.(mp4|mov|m4v|webm)$/i.test(file.name),
+    );
+    if (videos.length > 1) {
+      s.setError("Add one original video per message.");
+      return;
+    }
+    const references = list.filter((file) => !videos.includes(file));
+    if (references.length && !videos.length && !s.video) {
+      s.setError("Add your original video before reference images.");
+      return;
+    }
+    if (videos[0] && !(await s.chooseVideo(videos[0]))) return;
+    if (references.length) s.chooseImages(references);
+  }
+  const priceLabel = s.quote
+    ? s.quote.credits === 0
+      ? "Free admin generation"
+      : `${s.quote.credits.toLocaleString()} credits`
+    : s.inspecting
+      ? "Checking your clip…"
+      : s.video && s.quotePhase
+        ? s.quotePhase
+        : s.video
+          ? "Cost shown when your video is ready"
+          : "Credit cost appears after upload";
+  return (
+    <div className="studio-chat-layout">
       <a className="skip-link" href="#studio-main">
         Skip to studio
       </a>
-      <header className="studio-header">
-        <Brand />
-        <div className="studio-header-right">
-          <Link prefetch={false} className="text-link" href="/account?tab=credits">
-            <Sparkles size={14} />
-            {isAdmin ? "Admin · free testing" : creditBalance === null
-              ? "My account"
-              : `${creditBalance.toLocaleString()} credits`}
-          </Link>
-          {/* Full page navigation avoids the failing vinext RSC link path. */}
-          {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-          <a className="text-link" href="/#explore">
-            <ArrowLeft size={15} /> Back to explore
-          </a>
-        </div>
-      </header>
-      <main id="studio-main" className="studio-shell">
-        <div className="studio-title">
-          <div>
-            <h1>Let’s reimagine your reality.</h1>
-            <p>You bring the footage. Your imagination does the rest.</p>
-          </div>
-          <span className="studio-label">
-            <Sparkles size={13} /> Powered by Higgsfield
-          </span>
-        </div>
-        {!authenticated && (
-          <div className="connection-note">
-            <Info size={17} />
-            <p>
-              <Link prefetch={false} href="/login">Sign in to Reelform</Link> to generate your
-              own transformations.
-            </p>
-          </div>
-        )}
-        {ready === false && (
-          <div className="connection-note">
-            <Info size={17} />
-            <p>
-              Explore the studio and preview an example. Video generation is
-              being connected. Explore the examples while we finish setup.
-            </p>
-            <button
-              onClick={configCheck}
-              className="icon-button"
-              aria-label="Check connection again"
-            >
-              <RefreshCw size={14} />
-            </button>
-          </div>
-        )}
-        <div className="studio-grid">
-          <section
-            className="studio-panel"
-            aria-label="Transformation settings"
+      <aside
+        className={`studio-chat-sidebar ${menuOpen ? "is-open" : ""}`}
+        id="studio-navigation"
+      >
+        <div className="chat-sidebar-brand">
+          <Brand />
+          <button
+            className="chat-mobile-close"
+            aria-label="Close studio navigation"
+            onClick={() => setMenuOpen(false)}
           >
-            <div className="field-header">
-              <h2>Your original video</h2>
-              <span>{MIN_VIDEO_SECONDS}–{MAX_VIDEO_SECONDS} sec</span>
-            </div>
-            {video ? (
-              <div className="selected-video">
-                <video src={video.url} muted playsInline controls />
-                {video.duration === null && <p>Preview unavailable in this browser. You can still upload this clip for verification.</p>}
-                <div className="file-info">
-                  <strong>{video.file.name}</strong>
-                  <small>{video.duration === null ? "Duration checked on upload" : `${video.duration.toFixed(1)} sec`} · {(video.file.size / 1024 / 1024).toFixed(1)} MB</small>
-                </div>
+            <X size={20} />
+          </button>
+        </div>
+        <button className="chat-new-button" onClick={reset} disabled={s.busy}>
+          <Plus size={17} /> New video <span aria-hidden="true">↗</span>
+        </button>
+        <nav aria-label="Studio navigation">
+          <Link prefetch={false} href="/studio" aria-current="page">
+            <AudioLines size={17} /> Video studio
+          </Link>
+          <Link prefetch={false} href="/account?tab=creations">
+            <Film size={17} /> My creations
+          </Link>
+          <Link prefetch={false} href="/community">
+            <Users size={17} /> Community
+          </Link>
+        </nav>
+        <div className="chat-sidebar-ideas">
+          <span>START WITH AN IDEA</span>
+          {scenes.slice(0, 4).map((scene) => (
+            <button
+              key={scene.id}
+              disabled={s.busy}
+              onClick={() => {
+                chooseScene(scene.prompt);
+                setMenuOpen(false);
+              }}
+            >
+              <span>{scene.shortLabel}</span>
+              <ArrowUpRight size={13} />
+            </button>
+          ))}
+        </div>
+        <div className="chat-sidebar-bottom">
+          <div className="chat-creator-note">
+            <ShieldCheck size={19} />
+            <strong>
+              Your imagination.
+              <br />
+              Your creation.
+            </strong>
+            <p>
+              Your videos stay private.
+              <br />
+              You keep the rights.
+            </p>
+          </div>
+          <Link prefetch={false} href="/account" className="chat-account-link">
+            <span className="chat-account-avatar">
+              <Users size={17} />
+            </span>
+            <span>
+              My account<small>Plans, credits & settings</small>
+            </span>
+            <ArrowUpRight size={14} />
+          </Link>
+          <Link prefetch={false} href="/" className="chat-back-home">
+            Back to Reelform
+          </Link>
+        </div>
+      </aside>
+      {menuOpen && (
+        <button
+          className="chat-nav-backdrop"
+          onClick={() => setMenuOpen(false)}
+          aria-label="Close navigation"
+        />
+      )}
+      <main
+        id="studio-main"
+        className={`studio-chat-main ${hasConversation ? "has-conversation" : "is-empty"}`}
+      >
+        <header className="studio-chat-header">
+          <div>
+            <button
+              className="chat-mobile-menu"
+              aria-label="Open studio navigation"
+              aria-expanded={menuOpen}
+              aria-controls="studio-navigation"
+              onClick={() => setMenuOpen(true)}
+            >
+              <Menu size={21} />
+            </button>
+            <span>Video studio</span>
+            <span className="chat-header-separator">/</span>
+            <small>
+              {hasConversation ? "Your conversation" : "New creation"}
+            </small>
+          </div>
+          <Link
+            prefetch={false}
+            className="chat-credit-balance"
+            href="/account?tab=credits"
+          >
+            <Sparkles size={14} />
+            {s.isAdmin
+              ? "Admin access"
+              : s.creditBalance === null
+                ? "My credits"
+                : `${s.creditBalance.toLocaleString()} credits`}
+            <Plus size={13} />
+          </Link>
+        </header>
+        <div
+          className="studio-conversation"
+          aria-label="Video creation conversation"
+        >
+          {!hasConversation && (
+            <section className="chat-welcome">
+              <span className="chat-welcome-icon">
+                <AudioLines size={30} strokeWidth={1.7} />
+              </span>
+              <span className="chat-eyebrow">YOUR IMAGINATION, IN MOTION</span>
+              <h1>
+                What’s your next <span>reality?</span>
+              </h1>
+              <p>
+                Start with your video. Add a little inspiration.
+                <br />
+                Tell us what you want to change.
+              </p>
+            </section>
+          )}
+          {hasConversation && (
+            <h1 className="sr-only">Your video creation conversation</h1>
+          )}
+          {s.history.map((message) => (
+            <section className="chat-turn" key={message.id}>
+              <SentMessage message={message} />
+              <AssistantMessage>
+                {message.result ? (
+                  <VideoResult url={message.result} />
+                ) : (
+                  <p className="chat-generation-error">
+                    {message.error || "This generation did not complete."}
+                  </p>
+                )}
+              </AssistantMessage>
+            </section>
+          ))}
+          {s.currentMessage && (
+            <section className="chat-turn" ref={latestTurn}>
+              <SentMessage message={s.currentMessage} />
+              <AssistantMessage>
+                {s.result ? (
+                  <VideoResult url={s.result} />
+                ) : (
+                  <div className="chat-generation-state">
+                    <div className="chat-generation-title">
+                      {s.busy && !s.pollStopped && !s.pending && (
+                        <span className="chat-working-mark" aria-hidden="true">
+                          <Sparkles size={19} />
+                        </span>
+                      )}
+                      <p role="status">
+                        {s.phase ||
+                          (s.pending
+                            ? "Let’s check that last request."
+                            : s.pollStopped
+                              ? "Your video is still being checked."
+                              : s.generationError
+                                ? "This generation needs your attention."
+                                : "Preparing your video…")}
+                      </p>
+                    </div>
+                    {s.jobActive && s.job && (
+                      <GenerationProgress
+                        started={s.job.started}
+                        status={s.job.status}
+                        paused={s.pollStopped}
+                      />
+                    )}
+                    {s.phase && !s.jobActive && (
+                      <div
+                        className="chat-preparing-line"
+                        role="progressbar"
+                        aria-label={s.phase}
+                      />
+                    )}
+                    {s.generationError && (
+                      <p className="chat-generation-error" role="alert">
+                        {s.generationError}
+                      </p>
+                    )}
+                    {s.pending && !s.phase && (
+                      <div className="chat-recovery">
+                        <p>
+                          The connection was interrupted. Checking this request
+                          reuses the original send so it won’t create a second
+                          charge.
+                        </p>
+                        <button onClick={() => void s.recoverSend()}>
+                          <RefreshCw size={15} /> Check request
+                        </button>
+                        <Link prefetch={false} href="/account?tab=creations">
+                          Check My creations
+                        </Link>
+                      </div>
+                    )}
+                    {s.pollStopped && !s.pending && (
+                      <button
+                        className="chat-inline-button"
+                        onClick={s.checkGeneration}
+                      >
+                        <RefreshCw size={15} /> Check generation
+                      </button>
+                    )}
+                    {s.job && (
+                      <details className="chat-job-details">
+                        <summary>Generation details</summary>
+                        <p>
+                          Generation ID: <code>{s.job.requestId}</code>
+                        </p>
+                        <Link prefetch={false} href="/account?tab=creations">
+                          View in My creations
+                        </Link>
+                      </details>
+                    )}
+                  </div>
+                )}
+              </AssistantMessage>
+            </section>
+          )}
+        </div>
+        <div className="studio-composer-area">
+          <div className="studio-composer-wrap">
+            {s.authenticated === false && (
+              <div className="chat-notice">
+                <Info size={16} />
+                <p>
+                  <Link prefetch={false} href="/login?next=%2Fstudio">
+                    Sign in
+                  </Link>{" "}
+                  to upload your files and generate a video.
+                </p>
+              </div>
+            )}
+            {s.ready === false && (
+              <div className="chat-notice">
+                <Info size={16} />
+                <p>
+                  Video generation is currently unavailable. You can still put
+                  your idea together.
+                </p>
                 <button
-                  disabled={busy}
-                  onClick={() => {
-                    release(video);
-                    setVideo(null);
-                    setQuote(null);
-                  }}
-                  className="icon-button"
-                  aria-label="Remove original video"
+                  onClick={s.configCheck}
+                  aria-label="Check generation connection"
                 >
-                  <X size={16} />
+                  <RefreshCw size={15} />
                 </button>
               </div>
-            ) : (
-              <div
-                className={`upload-area ${dragging ? "dragging" : ""}`}
-                onDragOver={(e) => {
-                  e.preventDefault();
+            )}
+            <form
+              className={`studio-chat-composer ${dragging ? "is-dragging" : ""}`}
+              onSubmit={(e) => {
+                e.preventDefault();
+                void s.generate();
+              }}
+              onDragEnter={(e) => {
+                e.preventDefault();
+                if (!s.busy) {
+                  dragDepth.current++;
                   setDragging(true);
-                }}
-                onDragLeave={() => setDragging(false)}
-                onDrop={(e) => {
-                  e.preventDefault();
+                }
+              }}
+              onDragOver={(e) => e.preventDefault()}
+              onDragLeave={(e) => {
+                e.preventDefault();
+                if (--dragDepth.current <= 0) {
+                  dragDepth.current = 0;
                   setDragging(false);
-                  if (!busy) chooseVideo(e.dataTransfer.files[0]);
-                }}
-              >
+                }
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                dragDepth.current = 0;
+                setDragging(false);
+                void drop(e.dataTransfer.files);
+              }}
+            >
+              {dragging && (
+                <div className="chat-drop-overlay">
+                  <Upload size={25} />
+                  <strong>Drop your video or reference images</strong>
+                </div>
+              )}
+              <div className="chat-attachment-bar">
                 <input
-                  id="video-upload"
+                  ref={videoInput}
+                  id="studio-video-input"
                   type="file"
                   accept={VIDEO_ACCEPT}
-                  disabled={busy}
-                  onChange={(e) => chooseVideo(e.target.files?.[0])}
-                  aria-label="Upload your original video"
+                  className="sr-only"
+                  disabled={s.busy}
+                  aria-label="Upload original video"
+                  onChange={(e) => {
+                    void s.chooseVideo(e.target.files?.[0]);
+                    e.target.value = "";
+                  }}
                 />
-                <label htmlFor="video-upload">
-                  <Upload size={24} />
-                  <strong>Drop your video here, or browse</strong>
-                  <small>
-                    Transform clips up to 30 seconds long. {VIDEO_FORMAT_LABEL} · up to {MAX_VIDEO_SIZE_LABEL}.
-                  </small>
-                </label>
-              </div>
-            )}
-            <div className="field-header">
-              <h2>Reference photos</h2>
-              <span>{images.length}/{selectedModel.maxImages} · {selectedModel.minImages ? "Required" : "Optional"}</span>
-            </div>
-            <div className="reference-grid">
-              {images.map((item, i) => (
-                <div className="reference-image" key={item.url}>
-                  <img
-                    src={item.url}
-                    alt={`Reference ${i + 1}: ${item.file.name}`}
-                  />
-                  <button
-                    disabled={busy}
-                    onClick={() => {
-                      release(item);
-                      setImages((prev) => prev.filter((v) => v !== item));
-                    }}
-                    aria-label={`Remove reference ${i + 1}`}
-                  >
-                    <X size={13} />
-                  </button>
-                </div>
-              ))}
-              {images.length < selectedModel.maxImages && (
-                <label className="reference-add">
-                  <ImagePlus size={22} />
-                  <span>Add photos</span>
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    multiple
-                    disabled={busy}
-                    onChange={(e) => {
-                      chooseImages(e.target.files);
-                      e.target.value = "";
-                    }}
-                    aria-label="Add reference photos"
-                  />
-                </label>
-              )}
-              {Array.from(
-                { length: Math.max(0, 3 - images.length) },
-                (_, i) => (
-                  <div className="reference-empty" aria-hidden="true" key={i}>
-                    <Plus size={16} />
-                  </div>
-                ),
-              )}
-            </div>
-            <div className="field-header">
-              <label htmlFor="prompt">Describe your new reality</label>
-              <span>{prompt.length}/2000</span>
-            </div>
-            <textarea
-              id="prompt"
-              className="prompt-input"
-              maxLength={2000}
-              value={prompt}
-              disabled={busy}
-              onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Put me in a tailored suit, swap my car for a Lamborghini SVJ, and take me to Beverly Hills. Keep my face and natural movement."
-            />
-            <div className="preset-chips">
-              {scenes.map((scene) => (
+                <input
+                  ref={imageInput}
+                  id="studio-reference-input"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  multiple
+                  className="sr-only"
+                  disabled={s.busy || !s.video}
+                  aria-label="Upload reference images"
+                  onChange={(e) => {
+                    if (e.target.files) s.chooseImages(e.target.files);
+                    e.target.value = "";
+                  }}
+                />
                 <button
-                  key={scene.id}
-                  disabled={busy}
-                  onClick={() => {
-                    setPrompt(scene.prompt);
-                    setActiveScene(scene);
-                    if (example) setResult(scene.video);
-                  }}
+                  type="button"
+                  className={`chat-attach-button ${s.video ? "has-file" : ""}`}
+                  onClick={() => videoInput.current?.click()}
+                  disabled={s.busy || s.inspecting}
                 >
-                  {scene.shortLabel}{" "}
-                  <ArrowUpRight
-                    size={10}
-                    style={{ display: "inline", marginLeft: 2 }}
-                  />
+                  <span className="chat-step">
+                    {s.video ? <Check size={12} /> : "1"}
+                  </span>
+                  <Film size={16} />
+                  {s.inspecting
+                    ? "Checking video…"
+                    : s.video
+                      ? "Replace video"
+                      : "Upload video"}
                 </button>
-              ))}
-            </div>
-            <div className="field-header"><h2>AI model</h2><span>Top 5 recommended</span></div>
-            <AppSelect label="AI model" value={model} disabled={busy} onValueChange={(value) => {
-              const next = getVideoModel(value);
-              setModel(value); setQuote(null); setError(""); setShowFullHdModels(false);
-              if (!next.resolutions.includes(resolution as "480p" | "720p" | "1080p")) setResolution(next.resolutions[0]);
-              if (!next.audio) setAudio(false);
-            }} options={VIDEO_MODELS.map((m, i) => ({value:m.id,label:`${i < 5 ? `${i + 1}. ` : ""}${m.name}${i === 0 ? " · Recommended" : ""}`}))} />
-            <p className="clip-length-note">{selectedModel.description}</p>
-            <div className="studio-options">
-              <label>
-                Output quality
-                <AppSelect
-                  label="Output quality"
-                  value={resolution}
-                  disabled={busy}
-                  onValueChange={(value) => {
-                    if (value === "choose-1080p") {
-                      setShowFullHdModels(true);
-                      return;
-                    }
-                    setShowFullHdModels(false);
-                    setResolution(value);
-                    setQuote(null);
-                  }}
-                  options={[
-                    ...(!selectedModel.resolutions.includes("1080p") ? [{value:"choose-1080p",label:"1080p Full HD · Change model"}] : []),
-                    ...selectedModel.resolutions.map(value => ({value,label:value === "1080p" ? "1080p Full HD" : value === "720p" ? "720p HD" : "480p"})),
-                  ]}
-                />
-              </label>
-              <label>
-                Sound
-                <AppSelect
-                  label="Sound"
-                  value={audio ? "yes" : "no"}
-                  disabled={busy}
-                  onValueChange={(value) => setAudio(value === "yes")}
-                  options={selectedModel.audio ? [{ value: "no", label: "Silent video" }, { value: "yes", label: "Generate audio" }] : [{ value: "no", label: "Silent video" }]}
-                />
-              </label>
-            </div>
-            {showFullHdModels && (
-              <div className="full-hd-model-picker" role="region" aria-label="Choose a 1080p model">
-                <h3>Choose a model for 1080p</h3>
-                <p>{selectedModel.name} supports up to 720p. Choose an option below to switch the model and set Full HD quality. Your footage and prompt stay in place.</p>
-                {VIDEO_MODELS.filter(m => m.resolutions.includes("1080p")).map(m => {
-                  const tooLong = video?.duration != null && video.duration > m.maxSeconds;
-                  return <button type="button" key={m.id} disabled={busy || tooLong} onClick={() => {
-                    setModel(m.id); setResolution("1080p"); setQuote(null); setError("");
-                    if (!m.audio) setAudio(false);
-                    setShowFullHdModels(false);
-                  }}><strong>{m.name}</strong><span>{m.maxSeconds}s max · {m.minImages ? "1 reference photo required" : "Optional reference photos"}{tooLong ? " · Clip is too long" : ""}</span></button>;
-                })}
-                <button type="button" className="full-hd-cancel" onClick={() => setShowFullHdModels(false)}>Keep current model</button>
-              </div>
-            )}
-            <p className="clip-length-note">Upload high-resolution footage, including 4K videos. Output uses the quality supported by your selected model, up to 1080p. Longer clips use more credits. Try a short clip first to check your look. You’ll see the full credit cost before you generate.</p>
-            <label className="consent">
-              <input
-                type="checkbox"
-                checked={consent}
-                disabled={busy}
-                onChange={(e) => setConsent(e.target.checked)}
-              />
-              <span>
-                I have permission to use this footage and these photos.
-              </span>
-            </label>
-            {error && (
-              <div className="error-message" role="alert">
-                {error}
-              </div>
-            )}
-            {isAdmin && (
-              <div className="connection-note"><ShieldCheck size={17} /><p>Admin access: all video features are unlocked without Reelform credit charges. Higgsfield API usage still bills your provider account.</p></div>
-            )}
-            {quote && (
-              <div className="connection-note">
-                <Sparkles size={17} />
-                <p>
-                  <strong>{quote.credits === 0 ? "Free admin generation" : `${quote.credits.toLocaleString()} credits`}</strong> for
-                  your {quote.duration}-second transformation. {quote.credits > 0 && "Failed generations return your credits."}
-                  {creditBalance !== null && creditBalance < quote.credits && (
-                    <>
-                      {" "}
-                      <Link prefetch={false} href="/account?tab=credits">Add credits</Link> to
-                      continue.
-                    </>
-                  )}
-                </p>
-              </div>
-            )}
-            <button
-              onClick={generate}
-              disabled={busy || ready === null}
-              className="button generate-button"
-            >
-              <WandSparkles size={18} />
-              {busy
-                ? quote
-                  ? "Creating your new reality…"
-                  : "Preparing your video…"
-                : quote
-                  ? quote.credits === 0 ? "Generate · free admin test" : `Generate · ${quote.credits.toLocaleString()} credits`
-                  : "Get my credit quote"}
-              {!busy && <ArrowUpRight size={17} />}
-            </button>
-            <p className="generate-note">
-              The original clip guides the motion and length.
-              <br />
-              See your exact credit cost before you generate.
-            </p>
-          </section>
-          <section className="studio-panel" aria-label="Video preview">
-            <div className="preview-heading">
-              <h2>Your new reality</h2>
-              <span>
-                {example
-                  ? "Higgsfield concept demo"
-                  : result
-                    ? "Transformation complete"
-                    : "The possibility starts here"}
-              </span>
-            </div>
-            <div className="output-preview" aria-live="polite">
-              {busy ? (
-                <div className="output-empty">
-                  <Sparkles size={38} />
-                  <h3>{phase || "Your video is still processing"}</h3>
-                  {jobActive && job ? (
-                    <GenerationProgress started={job.started} status={job.status} paused={pollStopped} />
-                  ) : (
-                    <div className="progress-track" role="progressbar" aria-label={phase || "Preparing video"} />
-                  )}
-                  <p>
-                    {pollStopped
-                      ? "Your generation continues at Higgsfield. Check again to retrieve its latest status."
-                      : "Great scenes take a little time. Your footage is being transformed by Higgsfield."}
-                  </p>
-                  {pollStopped && (
-                    <button
-                      className="button button-outline"
-                      onClick={() => {
-                        setError("");
-                        setPollAttempt((n) => n + 1);
-                      }}
-                    >
-                      Check generation <RefreshCw size={14} />
-                    </button>
-                  )}
-                </div>
-              ) : result ? (
-                <video
-                  key={result}
-                  src={result}
-                  controls
-                  autoPlay
-                  muted
-                  playsInline
-                  loop={example}
-                />
-              ) : (
-                <div className="output-empty">
-                  <Film size={37} strokeWidth={1.2} />
-                  <h3>Same you. A whole new scene.</h3>
-                  <p>
-                    Your transformation will appear here. Curious about the
-                    possibilities?
-                  </p>
-                  <button
-                    className="button button-outline"
-                    onClick={showExample}
-                  >
-                    <Play size={13} fill="currentColor" /> Preview an example
-                  </button>
-                </div>
-              )}
-            </div>
-            {result && !busy && !example && (
-              <p className="clip-length-note"><a href="/account?tab=creations">View your saved videos in My creations</a></p>
-            )}
-            {result && !busy && (
-              <div className="download-row">
-                <a
-                  className="button"
-                  href={result}
-                  download={
-                    example
-                      ? "reelform-example.mp4"
-                      : "reelform-transformation.mp4"
+                <button
+                  type="button"
+                  className={`chat-attach-button ${s.images.length ? "has-file" : ""}`}
+                  onClick={() => imageInput.current?.click()}
+                  disabled={
+                    s.busy ||
+                    !s.video ||
+                    s.images.length >= s.selectedModel.maxImages
                   }
-                  target="_blank"
-                  rel="noreferrer"
                 >
-                  <Download size={16} />
-                  {example ? "Download example" : "Download video"}
-                </a>
-                <button
-                  className="button button-outline"
-                  onClick={() => {
-                    setResult("");
-                    setExample(false);
-                    setJob(null);
-                  }}
-                >
-                  Clear preview
+                  <span className="chat-step">
+                    {s.images.length ? <Check size={12} /> : "2"}
+                  </span>
+                  <ImagePlus size={16} />
+                  Reference images
+                  {s.images.length > 0 && (
+                    <span className="chat-attachment-count">
+                      {s.images.length}/{s.selectedModel.maxImages}
+                    </span>
+                  )}
                 </button>
+                <span className="chat-attachment-hint">
+                  {s.selectedModel.minImages
+                    ? `${s.selectedModel.minImages} reference required`
+                    : "References optional"}
+                </span>
+              </div>
+              {(s.video || s.images.length > 0) && (
+                <div className="chat-attachment-previews">
+                  {s.video && (
+                    <div className="chat-video-attachment">
+                      <video
+                        src={s.video.url}
+                        controls
+                        muted
+                        playsInline
+                        preload="metadata"
+                        aria-label="Original video preview"
+                      />
+                      <div>
+                        <strong>{s.video.file.name}</strong>
+                        <span>
+                          {s.video.duration === null
+                            ? "Duration checked on upload"
+                            : `${s.video.duration.toFixed(1)} sec`}{" "}
+                          · {(s.video.file.size / 1024 / 1024).toFixed(1)} MB
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        disabled={s.busy}
+                        onClick={s.removeVideo}
+                        aria-label="Remove original video"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  )}
+                  {s.images.map((image, i) => (
+                    <div className="chat-image-attachment" key={image.url}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={image.url}
+                        alt={`Reference ${i + 1}: ${image.file.name}`}
+                      />
+                      <span>Ref {i + 1}</span>
+                      <button
+                        type="button"
+                        disabled={s.busy}
+                        aria-label={`Remove reference ${i + 1}`}
+                        onClick={() => s.removeImage(image)}
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <label className="sr-only" htmlFor="studio-prompt">
+                Describe your video transformation
+              </label>
+              <textarea
+                id="studio-prompt"
+                ref={promptRef}
+                value={s.prompt}
+                disabled={s.busy}
+                maxLength={2000}
+                rows={3}
+                onChange={(e) => s.setPrompt(e.target.value)}
+                onKeyDown={(e) => {
+                  if (
+                    e.key === "Enter" &&
+                    (e.metaKey || e.ctrlKey) &&
+                    !e.nativeEvent.isComposing
+                  ) {
+                    e.preventDefault();
+                    if (canSend) void s.generate();
+                  }
+                }}
+                placeholder="Describe your new reality. A different outfit, a new place, a whole new scene…"
+                aria-describedby="studio-file-help"
+              />
+              <div className="chat-composer-toolbar">
+                <div className="chat-model-summary">
+                  <button
+                    type="button"
+                    className="chat-settings-toggle"
+                    aria-expanded={settingsOpen}
+                    aria-controls="studio-generation-settings"
+                    onClick={() => setSettingsOpen(!settingsOpen)}
+                    disabled={s.busy}
+                  >
+                    <SlidersHorizontal size={15} />
+                    <span>{s.selectedModel.name}</span>
+                    <ChevronDown size={13} />
+                  </button>
+                  <span className="chat-quality-label">
+                    {s.resolution}
+                    {s.audio ? " · Sound on" : ""}
+                  </span>
+                </div>
+                <div className="chat-send-controls">
+                  <span className="chat-prompt-count">
+                    {s.prompt.length}/2000
+                  </span>
+                  <button
+                    className="chat-send-button"
+                    type="submit"
+                    aria-label="Send and generate video"
+                    disabled={!canSend}
+                  >
+                    <span>{s.busy ? "Generating" : "Send"}</span>
+                    <ArrowUp size={19} />
+                  </button>
+                </div>
+              </div>
+              {settingsOpen && (
+                <div
+                  id="studio-generation-settings"
+                  className="chat-settings-panel"
+                >
+                  <div className="chat-settings-title">
+                    <strong>Generation settings</strong>
+                    <button
+                      type="button"
+                      onClick={() => setSettingsOpen(false)}
+                      aria-label="Close generation settings"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                  <div className="chat-settings-grid">
+                    <label>
+                      AI model
+                      <AppSelect
+                        label="AI model"
+                        value={s.model}
+                        disabled={s.busy}
+                        onValueChange={(value) => {
+                          s.changeModel(value);
+                          setFullHdOpen(false);
+                        }}
+                        options={VIDEO_MODELS.map((m, i) => ({
+                          value: m.id,
+                          label: `${m.name}${i === 0 ? " · Recommended" : ""}`,
+                        }))}
+                      />
+                    </label>
+                    <label>
+                      Quality
+                      <AppSelect
+                        label="Output quality"
+                        value={s.resolution}
+                        disabled={s.busy}
+                        onValueChange={(value) => {
+                          if (value === "choose-1080p") {
+                            setFullHdOpen(true);
+                            return;
+                          }
+                          setFullHdOpen(false);
+                          s.setResolution(value);
+                        }}
+                        options={[
+                          ...s.selectedModel.resolutions.map((value) => ({
+                            value,
+                            label:
+                              value === "1080p"
+                                ? "1080p Full HD"
+                                : value === "720p"
+                                  ? "720p HD"
+                                  : "480p",
+                          })),
+                          ...(!s.selectedModel.resolutions.includes("1080p")
+                            ? [
+                                {
+                                  value: "choose-1080p",
+                                  label: "1080p · Change model",
+                                },
+                              ]
+                            : []),
+                        ]}
+                      />
+                    </label>
+                    <label>
+                      Sound
+                      <AppSelect
+                        label="Sound"
+                        value={s.audio ? "yes" : "no"}
+                        disabled={s.busy}
+                        onValueChange={(value) => s.setAudio(value === "yes")}
+                        options={
+                          s.selectedModel.audio
+                            ? [
+                                { value: "no", label: "Silent video" },
+                                { value: "yes", label: "Generate audio" },
+                              ]
+                            : [{ value: "no", label: "Silent video" }]
+                        }
+                      />
+                    </label>
+                  </div>
+                  <p>{s.selectedModel.description}</p>
+                  {fullHdOpen && (
+                    <div className="chat-fullhd-models">
+                      <strong>Choose a model for Full HD</strong>
+                      {VIDEO_MODELS.filter((m) =>
+                        m.resolutions.includes("1080p"),
+                      ).map((m) => (
+                        <button
+                          type="button"
+                          key={m.id}
+                          disabled={
+                            s.busy ||
+                            (s.video?.duration != null &&
+                              s.video.duration > m.maxSeconds)
+                          }
+                          onClick={() => {
+                            s.changeModel(m.id, "1080p");
+                            setFullHdOpen(false);
+                          }}
+                        >
+                          <span>{m.name}</span>
+                          <small>
+                            Up to {m.maxSeconds}s ·{" "}
+                            {m.minImages
+                              ? `${m.minImages} reference required`
+                              : "References optional"}
+                          </small>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </form>
+            <div className="chat-composer-details">
+              <p id="studio-file-help">
+                {s.video
+                  ? `JPG, PNG or WebP references · up to 10 MB each`
+                  : `4–30 sec video · MP4, MOV, M4V or WebM · up to ${MAX_VIDEO_SIZE_LABEL}`}
+              </p>
+              <span>⌘ / Ctrl + Enter to send</span>
+            </div>
+            {s.video && (
+              <div className="chat-send-consent">
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={s.consent}
+                    disabled={s.busy}
+                    onChange={(e) => s.setConsent(e.target.checked)}
+                  />
+                  <span>
+                    I have permission to use this footage and these images.
+                  </span>
+                </label>
+                <div className="chat-credit-cost" role="status">
+                  <Sparkles size={13} />
+                  <span>{priceLabel}</span>
+                </div>
               </div>
             )}
-            {example && !busy && (
-              <p className="example-note">
-                An original AI-generated scene made with Higgsfield. This is a
-                concept demo, not a transformation of your uploaded footage.
+            {s.video && !s.busy && (
+              <p className="chat-credit-explanation">
+                {s.isAdmin
+                  ? "No Reelform credits charged. Provider usage is billed to your Higgsfield account."
+                  : "Credits are used when you press Send. Failed generations return your credits."}
               </p>
             )}
-            <div className="preview-notes">
-              <span>
-                <ShieldCheck size={13} /> Your footage, your choice
-              </span>
-              <span>
-                <Check size={13} /> MP4 download
-              </span>
-            </div>
-            {jobActive && (
-              <div className="status-box">
-                <p>
-                  Keep this tab open. If you refresh, this browser tab can
-                  resume checking your generation.
-                </p>
-                <small>Request: {job?.requestId}</small>
+            {s.modelError && (
+              <p className="chat-composer-error" role="alert">
+                {s.modelError}
+              </p>
+            )}
+            {s.quoteError && !s.busy && (
+              <div className="chat-composer-error" role="alert">
+                <p>{s.quoteError}</p>
+                <button onClick={s.retryQuote}>
+                  <RefreshCw size={14} /> Retry upload check
+                </button>
               </div>
             )}
-          </section>
+            {s.error && (
+              <p className="chat-composer-error" role="alert">
+                {s.error}
+              </p>
+            )}
+            {insufficient && (
+              <p className="chat-composer-error">
+                You need more credits for this video.{" "}
+                <Link prefetch={false} href="/account?tab=credits">
+                  Add credits
+                </Link>
+              </p>
+            )}
+            {!hasConversation && !s.video && (
+              <div className="chat-starter-prompts">
+                <span>A LITTLE INSPIRATION</span>
+                <div>
+                  {[scenes[0], scenes[1], scenes[4]].map((scene) => (
+                    <button
+                      key={scene.id}
+                      disabled={s.busy}
+                      onClick={() => chooseScene(scene.prompt)}
+                    >
+                      <span>{scene.shortLabel}</span>
+                      <ArrowUpRight size={13} />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            <p className="chat-footer-note">
+              <ShieldCheck size={12} /> Your videos stay private. Your creations
+              stay yours.
+            </p>
+          </div>
         </div>
       </main>
-      <footer className="studio-footer">
-        Made for your imagination. Powered by Higgsfield.
-      </footer>
     </div>
   );
 }

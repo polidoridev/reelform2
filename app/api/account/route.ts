@@ -1,4 +1,5 @@
 import { VIDEO_BUCKET } from "@/lib/commerce/video-library";
+import { removeUserCommunity } from "@/lib/community";
 import { z } from "zod";
 import {
   requireUser,
@@ -230,6 +231,7 @@ export async function DELETE(request: Request) {
         })
         .eq("user_id", user.id),
     );
+    await removeUserCommunity(user.id);
     // Remove private creation files before deleting the owning account.
     while (true) {
       const { data: files, error: listError } = await admin().storage.from(VIDEO_BUCKET).list(user.id, { limit: 100 });

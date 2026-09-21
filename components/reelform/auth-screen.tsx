@@ -11,11 +11,13 @@ export default function AuthScreen({
   tokenHash = "",
   tokenType = "email",
   initialError = "",
+  returnTo,
 }: {
   initialMode?: string;
   tokenHash?: string;
   tokenType?: string;
   initialError?: string;
+  returnTo?: string;
 }) {
   const reduceMotion = useReducedMotion();
   const [mode, setMode] = useState(initialMode),
@@ -51,7 +53,7 @@ export default function AuthScreen({
       const data = (await r.json()) as ApiResult;
       if (!r.ok) throw new Error(data.error);
       if (data.message) setMessage(data.message);
-      else window.location.assign(data.redirect || "/account");
+      else window.location.assign((mode === "login" || mode === "signup") && (returnTo === "/community/share" || returnTo === "/studio") ? returnTo : data.redirect || "/account");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Please try again.");
     } finally {

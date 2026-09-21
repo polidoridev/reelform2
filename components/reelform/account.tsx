@@ -21,6 +21,7 @@ import {
 import type { AccountData, ApiResult } from "@/lib/commerce/types";
 import { useReducedMotion } from "motion/react";
 import Brand from "./brand";
+import Link from "next/link";
 import AppSelect from "./app-select";
 import { PlanCards } from "./pricing";
 import { PLANS, TOPUPS, money } from "@/lib/commerce/pricing";
@@ -144,6 +145,7 @@ export default function Account({
       <header className="account-header">
         <Brand />
         <nav>
+          <Link prefetch={false} href="/community">Community</Link>
           <a href="/pricing">Plans</a>
           <a href="/studio" className="account-nav-button">
             Open studio <ArrowUpRight size={16} />
@@ -801,6 +803,8 @@ export default function Account({
                       <p className="account-muted">
                         Your videos are saved to your account. Play or download them here. Showing your latest 50 generations.
                       </p>
+                      <p className="account-muted">Your creations stay private until you choose to share them. You retain ownership of your videos.</p>
+                      <p><Link prefetch={false} className="account-primary" href="/community/share">Share a video with the community <ArrowUpRight size={16} /></Link></p>
                       {data.jobs.length ? (
                         <div className="creation-grid">
                           {data.jobs.map((j) => (

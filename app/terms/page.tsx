@@ -7,7 +7,7 @@ export default function Terms() {
       <Brand />
       <h1>Terms of use</h1>
       <p>
-        Last updated September 20, 2026. Questions:{" "}
+        Last updated September 21, 2026. Questions:{" "}
         <a href="mailto:admin@polidori.dev">admin@polidori.dev</a>.
       </p>
       <h2>Your account and content</h2>
@@ -18,6 +18,47 @@ export default function Terms() {
         harassment, or unlawful content. AI transformations are creative
         simulations; do not present them as evidence of events that did not
         happen.
+      </p>
+      <h2 id="creator-rights">Your videos, your rights</h2>
+      <p>
+        You retain all ownership and intellectual property rights you hold in
+        the videos you upload or create. Reelform does not claim ownership of
+        your videos. Using Reelform or publishing to the community does not
+        transfer those rights to us. You remain free to use, share, license,
+        or sell your work, subject to rights in material supplied by others
+        and applicable law. This does not create copyright or third-party
+        permissions where they do not otherwise exist.
+      </p>
+      <h2>Optional community publishing</h2>
+      <p>
+        Your private creations are not automatically published. When you
+        explicitly publish a community post, you grant Reelform a non-exclusive,
+        royalty-free permission to store, host, technically process for playback,
+        and display that video and its accompanying title, caption, and chosen
+        public creator name solely to operate the community. Our infrastructure
+        providers may process that content only as needed to provide this hosting
+        and display. This permission does not authorize Reelform to sell your
+        video, use it in advertising, or use community uploads to train AI models.
+        Those uses require your separate permission.
+      </p>
+      <p>
+        You may remove a post at any time. We stop displaying it in the community
+        and remove its hosted file; already-issued playback links can take up to
+        five minutes to expire, and limited backup, security, or legally required
+        copies may persist under provider retention policies. The display
+        permission ends when your post is removed. Removing a community post
+        does not remove your original private creation. We cannot recall copies
+        that viewers independently saved while it was public.
+      </p>
+      <p>
+        Publish only content you have permission to share, including music and
+        the likenesses of people featured. Identify AI-created or AI-edited
+        videos with the AI-assisted label. Viewers receive no permission to
+        reuse, remix, or commercially exploit a creator’s video merely because
+        it is publicly viewable. Contact the creator for permission. We may
+        remove posts that violate these terms. Use the Report link on a post
+        or contact admin@polidori.dev with its link to report misuse or a rights
+        concern.
       </p>
       <h2>Subscriptions and credits</h2>
       <p>

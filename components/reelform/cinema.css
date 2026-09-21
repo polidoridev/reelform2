@@ -1,12 +1,12 @@
-/* Viewmax-inspired luminous gradient, remapped to Reelform's Tiffany palette.
+/* Viewmax-inspired luminous gradient, remapped to Reelform's royal blue palette.
    Motion: fan expansion, scroll-linked gallery, reveal entrances and image parallax.
    Existing studio tokens and controls are preserved. */
 .cinema-page {
-  background: #fbfdfd;
+  background: #fbfbfd;
   overflow: clip;
-  color: #132d2c;
-  --accent: #81d8d0;
-  --accent-dark: #176e68;
+  color: #13192d;
+  --accent: #4169e1;
+  --accent-dark: #294fbd;
 }
 .cinema-page .header {
   position: fixed;
@@ -20,7 +20,7 @@
   background: #ffffffe0;
   backdrop-filter: blur(18px);
   border-radius: 18px;
-  box-shadow: 0 5px 30px #1c68660a;
+  box-shadow: 0 5px 30px #1c2f680a;
   z-index: 50;
 }
 .cinema-page .nav-wrap {
@@ -37,25 +37,25 @@
   gap: 30px;
   margin-left: 50px;
   font-size: 13px;
-  color: #3f615f;
+  color: #3f4861;
 }
 .cinema-page .button {
   border-radius: 100px;
-  background: #123e3b;
+  background: var(--accent);
   color: #fff;
   box-shadow:
-    0 3px 8px #183f3c18,
+    0 3px 8px #18223f18,
     inset 0 1px 1px #ffffff26;
-  border: 1px solid #1e514c;
+  border: 1px solid var(--accent);
   transition:
     transform 0.25s,
     background 0.25s,
     box-shadow 0.25s;
 }
 .cinema-page .button:hover {
-  background: #1d5953;
+  background: var(--accent-hover);
   transform: translateY(-3px);
-  box-shadow: 0 9px 25px #183f3c28;
+  box-shadow: 0 9px 25px #18223f28;
 }
 .cinema-page .button-small {
   font-size: 12px;
@@ -65,12 +65,12 @@
 .cinema-page .eyebrow {
   font-size: 10px;
   letter-spacing: 1.5px;
-  color: #266d68;
+  color: #26386d;
 }
 .cinema-page .section-label {
   font-size: 10px;
   letter-spacing: 1.8px;
-  color: #3f8179;
+  color: #3f4f81;
 }
 .cinema-hero {
   position: relative;
@@ -85,30 +85,30 @@
   background:
     radial-gradient(
       65% 58% at -13% 14%,
-      #fbfdfd 0%,
-      #fbfdfd 40%,
-      #fbfdfd80 67%,
+      #fbfbfd 0%,
+      #fbfbfd 40%,
+      #fbfbfd80 67%,
       transparent 94%
     ),
     radial-gradient(
       65% 58% at 113% 14%,
-      #fbfdfd 0%,
-      #fbfdfd 40%,
-      #fbfdfd80 67%,
+      #fbfbfd 0%,
+      #fbfbfd 40%,
+      #fbfbfd80 67%,
       transparent 94%
     ),
-    radial-gradient(80% 32% at 50% 53%, #16bcad70, transparent 85%),
+    radial-gradient(80% 32% at 50% 53%, #163fbc70, transparent 85%),
     linear-gradient(
       180deg,
-      #fbfdfd 0%,
-      #fbfdfd 17%,
-      #eafbf8 24%,
-      #b7f0e7 31%,
-      #81d8d0 41%,
-      #43cabc 49%,
-      #81d8d0cc 59%,
-      #b4eee77a 70%,
-      #e6f8f52b 84%,
+      #fbfbfd 0%,
+      #fbfbfd 17%,
+      #eaeefb 24%,
+      #b7c5f0 31%,
+      #4169e1 41%,
+      #5278e8 49%,
+      #4169e1cc 59%,
+      #b4c2ee7a 70%,
+      #e6eaf82b 84%,
       transparent 94%
     );
 }
@@ -127,12 +127,12 @@
   margin: 24px 0 22px;
 }
 .cinema-page .hero-copy h1 span {
-  color: #398f86;
+  color: #394e8f;
 }
 .cinema-page .hero-copy > p {
   font-size: 16px;
   line-height: 1.9;
-  color: #4a6c67;
+  color: #4a526c;
 }
 .cinema-page .hero-buttons {
   margin-top: 28px;
@@ -149,10 +149,14 @@
   gap: 9px;
   font-size: 13px;
   font-weight: 650;
-  color: #254f49;
+  color: #25304f;
+  background: #fff;
+  padding: 13px 18px;
+  border-radius: 100px;
 }
 .hero-secondary:hover {
-  color: #102e2a;
+  color: #10172e;
+  background: #eaf0ff;
 }
 .hero-cinema {
   position: relative;
@@ -179,8 +183,8 @@
   border-radius: 16px;
   overflow: hidden;
   border: 4px solid #ffffffde;
-  box-shadow: 0 16px 38px #1649401f;
-  background: #bdddd5;
+  box-shadow: 0 16px 38px #1623491f;
+  background: #bdc5dd;
 }
 .fan-clip video {
   width: 100%;
@@ -218,7 +222,7 @@
   padding: 13px 9px 0;
   font-size: 12px;
   font-weight: 650;
-  color: #284e46;
+  color: #28314e;
 }
 .cinema-credit {
   margin: 61px auto 0;
@@ -227,7 +231,7 @@
   align-items: center;
   gap: 27px;
   font-size: 11px;
-  color: #648279;
+  color: #646c82;
   position: relative;
   z-index: 5;
 }
@@ -240,7 +244,7 @@
   margin-right: 3px;
 }
 .cinema-credit strong {
-  color: #31564d;
+  color: #313a56;
 }
 .cinema-credit button {
   display: flex;
@@ -249,7 +253,7 @@
   background: none;
   border: none;
   font-size: 10px;
-  color: #426a60;
+  color: #424c6a;
 }
 .possibility-section {
   padding: 100px 25px 105px;
@@ -263,22 +267,22 @@
   letter-spacing: -2px;
 }
 .possibility-section h2 span {
-  color: #789c93;
+  color: #78819c;
 }
 .possibility-section p {
   font-size: 15px;
   line-height: 1.9;
-  color: #6b827b;
+  color: #6b7182;
   margin-top: 24px;
 }
 .worlds-section {
   position: relative;
   background: linear-gradient(
     180deg,
-    #fbfdfd,
-    #f0f8f5 28%,
-    #edf7f3 72%,
-    #fbfdfd
+    #fbfbfd,
+    #f0f2f8 28%,
+    #edf0f7 72%,
+    #fbfbfd
   );
 }
 .worlds-sticky {
@@ -313,7 +317,7 @@
 }
 .worlds-heading p {
   font-size: 14px;
-  color: #6a8178;
+  color: #6a7081;
   margin-top: 15px;
 }
 .gallery-controls {
@@ -325,20 +329,20 @@
 .gallery-controls button {
   width: 43px;
   height: 43px;
-  border: 1px solid #c8dfd5;
+  border: 1px solid #c8cedf;
   border-radius: 50%;
   background: #ffffff9e;
   display: grid;
   place-items: center;
 }
 .gallery-controls button:hover {
-  background: #d5eee4;
+  background: #d5dbee;
 }
 .gallery-controls .gallery-play {
   margin-right: 15px;
   width: 35px;
   height: 35px;
-  color: #618775;
+  color: #616a87;
 }
 .worlds-viewport {
   overflow: hidden;
@@ -360,7 +364,7 @@
   position: relative;
   overflow: hidden;
   border-radius: 14px;
-  background: #c2d8d0;
+  background: #c2c8d8;
 }
 .world-media > video {
   width: 100%;
@@ -402,7 +406,7 @@
   font-size: 9px;
   text-transform: uppercase;
   letter-spacing: 1.3px;
-  color: #5b8071;
+  color: #5b6480;
 }
 .world-caption h3 {
   font-size: 15px;
@@ -412,7 +416,7 @@
 }
 .world-location {
   font-size: 11px;
-  color: #758c82;
+  color: #757b8c;
   display: block;
   margin-top: 4px;
 }
@@ -423,17 +427,17 @@
   gap: 40px;
   padding: 18px 6.5vw 0;
   font-size: 10px;
-  color: #648777;
+  color: #646d87;
 }
 .gallery-progress {
   width: 160px;
   height: 2px;
-  background: #d4e6dd;
+  background: #d4d8e6;
   overflow: hidden;
 }
 .gallery-progress > div {
   height: 100%;
-  background: #408d79;
+  background: #40538d;
   transform-origin: left;
 }
 .is-native-gallery .worlds-viewport {
@@ -468,10 +472,10 @@
   font-weight: 800;
 }
 .workflow-intro h2 span {
-  color: #448e7e;
+  color: #44568e;
 }
 .workflow-intro p {
-  color: #718279;
+  color: #717582;
   font-size: 15px;
   line-height: 1.9;
   margin-top: 23px;
@@ -487,7 +491,7 @@
   position: relative;
   border-radius: 12px;
   border: 5px solid white;
-  box-shadow: 0 12px 45px #1d503f19;
+  box-shadow: 0 12px 45px #1d2a5019;
 }
 .workflow-photo img {
   width: 100%;
@@ -501,7 +505,7 @@
   top: 100%;
   width: 100%;
   font-size: 10px;
-  color: #708d7c;
+  color: #70778d;
   text-align: center;
   margin-top: 12px;
 }
@@ -510,7 +514,7 @@
 }
 .workflow-step {
   padding: 20px 0 45px;
-  border-bottom: 1px solid #e2eae5;
+  border-bottom: 1px solid #e2e4ea;
   margin-bottom: 32px;
 }
 .workflow-step:last-child {
@@ -521,13 +525,13 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  color: #538e7b;
+  color: #53628e;
   margin-bottom: 25px;
 }
 .step-number {
   font-size: 13px;
   letter-spacing: 1px;
-  color: #94aca0;
+  color: #949aac;
 }
 .workflow-step h3 {
   font-size: 26px;
@@ -538,7 +542,7 @@
 }
 .workflow-step > p {
   font-size: 15px;
-  color: #708479;
+  color: #707584;
   line-height: 1.95;
   max-width: 390px;
   margin-top: 16px;
@@ -548,7 +552,7 @@
   align-items: center;
   gap: 7px;
   font-size: 11px;
-  color: #4e8973;
+  color: #4e5d89;
   margin-top: 20px;
 }
 .director-section {
@@ -566,7 +570,7 @@
   position: absolute;
   z-index: -1;
   inset: -30px -15vw;
-  background: radial-gradient(ellipse at 32% 50%, #b9eadd9c, transparent 63%);
+  background: radial-gradient(ellipse at 32% 50%, #b9c5ea9c, transparent 63%);
 }
 .director-film {
   height: 540px;
@@ -574,7 +578,7 @@
   overflow: hidden;
   position: relative;
   border: 6px solid #fff;
-  box-shadow: 0 20px 65px #1a59461c;
+  box-shadow: 0 20px 65px #1a2a591c;
 }
 .director-film video {
   width: 100%;
@@ -593,7 +597,7 @@
   border: 1px solid #fff7;
   border-radius: 100px;
   font-size: 11px;
-  color: #325044;
+  color: #323950;
 }
 .director-copy h2 {
   font-size: 54px;
@@ -602,22 +606,22 @@
   letter-spacing: -2.6px;
 }
 .director-copy h2 span {
-  color: #549584;
+  color: #546495;
 }
 .director-copy > p {
   font-size: 15px;
   line-height: 1.9;
-  color: #6b8378;
+  color: #6b7183;
   margin-top: 25px;
 }
 .director-prompt {
   padding: 22px 23px;
-  background: linear-gradient(150deg, #ffffffe8, #f0f8f1cc);
-  border: 1px solid #d8e8dc;
+  background: linear-gradient(150deg, #ffffffe8, #f0f2f8cc);
+  border: 1px solid #d8dce8;
   border-radius: 14px;
   margin: 25px 0;
   position: relative;
-  box-shadow: 0 8px 24px #254f3b05;
+  box-shadow: 0 8px 24px #25304f05;
 }
 .director-prompt > span {
   display: flex;
@@ -625,13 +629,13 @@
   gap: 7px;
   font-size: 9px;
   letter-spacing: 1px;
-  color: #5d8c77;
+  color: #5d698c;
   font-weight: 700;
 }
 .director-prompt p {
   font-size: 14px;
   line-height: 1.85;
-  color: #3f6350;
+  color: #3f4863;
   margin-top: 12px;
   padding-right: 7px;
 }
@@ -642,7 +646,7 @@
   margin: 14px 0 0 auto;
   width: 32px;
   height: 32px;
-  background: #d5eee3;
+  background: #d5dbee;
   border-radius: 50%;
 }
 .director-copy > .text-link {
@@ -653,8 +657,8 @@
   margin: 24px auto 0;
   text-align: left;
   background: #ffffffed;
-  border-color: #b6ddd7;
-  box-shadow: 0 12px 35px #1e777112;
+  border-color: #b6c0dd;
+  box-shadow: 0 12px 35px #1e347712;
 }
 .cinema-page .hero-prompt p {
   padding-right: 42px;
@@ -691,13 +695,13 @@
   letter-spacing: -1.6px;
 }
 .cinema-page .faq-section h2 span {
-  color: #7b9a8a;
+  color: #7b839a;
 }
 .cinema-page .faq-section .section-heading p {
   font-size: 14px;
 }
 .cinema-page .faq-item {
-  border-color: #e0eae3;
+  border-color: #e0e2ea;
 }
 .cinema-page .faq-item button {
   font-size: 13px;
@@ -722,20 +726,12 @@
   position: absolute;
   inset: 0;
   z-index: -1;
-  background:
-    radial-gradient(50% 60% at 50% 20%, #ffffffc9, transparent 85%),
-    linear-gradient(
-      180deg,
-      #fbfdfd 0%,
-      #e3f7f0 18%,
-      #aee7db 42%,
-      #81d8d0 66%,
-      #54bcae 100%
-    );
+  background: linear-gradient(180deg, #4169e1, #3154bf);
 }
 .cta-copy {
   position: relative;
   z-index: 3;
+  color: #fff;
 }
 .cta-copy h2 {
   font-size: 70px;
@@ -744,19 +740,25 @@
   font-weight: 800;
 }
 .cta-copy h2 span {
-  color: #398c79;
+  color: #fff;
 }
 .cta-copy > p {
   font-size: 15px;
-  color: #3f7665;
+  color: #fff;
   margin: 22px 0;
 }
 .cta-copy .section-label {
-  color: #4c8570;
+  color: #e4ebff;
 }
 .cta-copy .button {
   margin-top: 10px;
   font-size: 13px;
+  background: #fff;
+  border-color: #fff;
+  color: var(--accent-dark);
+}
+.cta-copy .button:hover {
+  background: #eaf0ff;
 }
 .cta-orbit {
   position: absolute;
@@ -770,7 +772,7 @@
   height: 100%;
   border-radius: 15px;
   border: 5px solid #ffffffc9;
-  box-shadow: 0 15px 40px #1e70512b;
+  box-shadow: 0 15px 40px #1e32702b;
   overflow: hidden;
 }
 .cta-orbit video {
@@ -787,18 +789,18 @@
   transform: rotate(14deg);
 }
 .cinema-page .footer {
-  background: #54bcae;
+  background: #3154bf;
   display: block;
   max-width: none;
   margin: 0;
   padding: 25px max(6.5vw, 25px) 30px;
-  color: #215c4b;
+  color: #fff;
 }
 .footer-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid #2a8a7133;
+  border-bottom: 1px solid #ffffff33;
   padding-bottom: 28px;
   gap: 25px;
 }
@@ -817,10 +819,14 @@
   display: flex;
   justify-content: space-between;
   font-size: 10px;
-  color: #326d59;
+  color: #e4ebff;
 }
 .cinema-page .footer .brand-mark {
-  background: #c2f0e1;
+  background: #fff;
+  color: var(--accent);
+}
+.cinema-page .footer .brand-period {
+  color: #fff;
 }
 .cinema-page .footer .brand {
   font-size: 27px;
@@ -1034,7 +1040,7 @@
   }
   .cinema-page .nav-links {
     top: 66px;
-    border: 1px solid #e0ece7;
+    border: 1px solid #e0e3ec;
     border-radius: 14px;
     background: #fffffffa;
     margin-left: 0;
@@ -1072,17 +1078,18 @@
   .hero-secondary {
     font-size: 11px;
     gap: 6px;
+    padding: 12px;
   }
   .hero-gradient {
     inset: 0 0 -60px;
     background:
-      radial-gradient(100% 25% at 50% 18%, #fbfdfd, transparent 100%),
+      radial-gradient(100% 25% at 50% 18%, #fbfbfd, transparent 100%),
       linear-gradient(
-        #fbfdfd 9%,
-        #effbf8 25%,
-        #a8eee1 43%,
-        #58cabb 58%,
-        #b8ede073 79%,
+        #fbfbfd 9%,
+        #eff2fb 25%,
+        #a8baee 43%,
+        #5874ca 58%,
+        #b8c5ed73 79%,
         transparent 98%
       );
   }
