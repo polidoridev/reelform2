@@ -46,6 +46,7 @@ export default function AuthScreen({
           password: f.get("password"),
           name: f.get("name"),
           marketing: f.get("marketing") === "on",
+          next: returnTo,
           tokenHash,
           type: tokenType,
         }),
@@ -53,7 +54,7 @@ export default function AuthScreen({
       const data = (await r.json()) as ApiResult;
       if (!r.ok) throw new Error(data.error);
       if (data.message) setMessage(data.message);
-      else window.location.assign((mode === "login" || mode === "signup") && (returnTo === "/community/share" || returnTo === "/studio") ? returnTo : data.redirect || "/account");
+      else window.location.assign(data.redirect || "/account");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Please try again.");
     } finally {
@@ -72,7 +73,7 @@ export default function AuthScreen({
       const response = await fetch("/api/auth/google", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: "{}",
+        body: JSON.stringify({ next: returnTo }),
       });
       const data = (await response.json()) as ApiResult;
       if (!response.ok || !data.redirect)

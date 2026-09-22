@@ -15,6 +15,8 @@ export async function balances(userId: string) {
     purchased: number;
     nextReset: string | null;
     nextGrant: string | null;
+    nextExpiry: string | null;
+    nextExpiryCredits: number;
   };
 }
 export async function syncSubscription(

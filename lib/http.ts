@@ -1,3 +1,5 @@
+import { SITE_URL } from "./site-url";
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -61,7 +63,7 @@ export function sameOrigin(request: Request) {
     throw new ApiError("This request must come from Reelform.", 403);
 }
 export function appUrl() {
-  return (process.env.APP_URL || "http://localhost:3000").replace(/\/$/, "");
+  return SITE_URL;
 }
 export function noStore(data: unknown, status = 200) {
   return Response.json(data, {

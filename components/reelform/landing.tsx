@@ -100,7 +100,7 @@ export default function Landing() {
             <Link prefetch={false} href="/community">Community</Link>
             <a href="/account">My account</a>
           </nav>
-          <a href="/studio" className="button button-small">
+          <a href="/login?next=%2Fstudio" className="button button-small">
             Open studio <ArrowUpRight size={16} />
           </a>
           <button
@@ -183,7 +183,7 @@ export default function Landing() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
             >
-              <a href="/studio" className="button">
+              <a href="/login?next=%2Fstudio" className="button">
                 Reform your reality <ArrowUpRight size={18} />
               </a>
               <a href="#explore" className="hero-secondary">

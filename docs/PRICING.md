@@ -8,7 +8,7 @@ Prices are USD. Prepared September 20, 2026.
 | Pro | $49 | $490 | 5,500 | 5 |
 | Studio | $129 | $1,290 | 15,000 | 15 |
 
-Annual billing saves two monthly payments (16.67%). It does not unlock a year's credits immediately. Monthly allowances expire; purchased credits do not expire and remain usable after cancellation. Extra packs require an active paid subscription: 900/$10, 2,400/$25, 6,200/$60. Auto-reload is disabled by default, requires recorded charge consent and a saved card, and enforces a customer-selected cap per calendar month in UTC. Plan/cadence changes start at renewal, with no mid-cycle credit windfall or surprise proration.
+Annual billing saves two monthly payments (16.67%). It does not unlock a year's credits immediately. Each credit grant expires 90 days after it becomes available, including monthly allowances, purchases, auto-reloads, and replacement grants for refunds after expiry. Annual allowances still release monthly; each has its own 90-day window. Spend credits in order of earliest expiry. Refunds before expiry keep the original deadline. Purchased credits remain usable until expiry after cancellation. Existing perpetual credits receive 90 days from migration deployment (or their future release date); expired credits are not restored. Extra packs require an active paid subscription: 900/$10, 2,400/$25, 6,200/$60. Auto-reload is disabled by default, requires recorded charge consent and a saved card, and enforces a customer-selected cap per calendar month in UTC. Plan/cadence changes start at renewal, with no mid-cycle credit windfall or surprise proration.
 
 ## Cost model
 
@@ -33,3 +33,9 @@ The margin model depends on edits preserving clip duration and the documented mo
 The live Chrome account contains Starter/Pro/Studio at $19/$49/$129 monthly and the existing credit packs. Test mode is a separate Stripe account with separate IDs. Monthly and new annual prices are recorded in `stripe-live-prices.json`; all three live annual prices have been created. Test annual prices were also created on the existing test products. One old large-pack test price was CAD; a USD price was added rather than changing an existing price. The app validates price currency, amount, and interval before checkout.
 
 Only the server accepts allowed plan IDs and price IDs. Signed Stripe webhooks grant credits after payment, with unique invoice/payment references and database locks. Stripe checkout sessions are serialized per user. Refunded/disputed payments put the account on billing hold for review.
+
+## 90-day credit expiry rollout
+
+Apply `20260922152536_credit_expiry_90_days.sql` before deploying the account UI, which reads `nextExpiry` and `nextExpiryCredits` from `rf_balances`. The migration changes grant expiry and spend order; it does not charge customers or modify grant amounts. Existing non-expiring credits receive a full 90-day transition window. Previously expired credits remain expired. No expiry cron is needed: balances and reservations enforce expiry against the database clock.
+
+Run the isolated PostgreSQL regression checks with `PGLITE_MODULE=/path/to/@electric-sql/pglite/dist/index.js node scripts/test-credit-expiry.mjs`. They do not use the live database or Stripe.

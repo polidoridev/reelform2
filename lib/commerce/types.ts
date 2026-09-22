@@ -35,6 +35,8 @@ export interface CreditBalance {
   purchased: number;
   nextReset: string | null;
   nextGrant: string | null;
+  nextExpiry: string | null;
+  nextExpiryCredits: number;
 }
 export interface ApiResult {
   url?: string;

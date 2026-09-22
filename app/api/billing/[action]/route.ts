@@ -167,7 +167,7 @@ export async function POST(
           billing_address_collection: "auto",
           custom_text: {
             submit: {
-              message: `${plan.credits.toLocaleString()} credits released each month. Unused monthly credits expire. ${cadence === "year" ? "Billed yearly; renews automatically." : "Renews monthly."} Cancel anytime before renewal.`,
+              message: `${plan.credits.toLocaleString()} credits released each month. Each monthly allowance expires 90 days after release. ${cadence === "year" ? "Billed yearly; renews automatically." : "Renews monthly."} Cancel anytime before renewal.`,
             },
           },
         },
@@ -252,6 +252,7 @@ export async function POST(
             },
           },
           invoice_creation: { enabled: true },
+          custom_text: { submit: { message: "Credits expire 90 days after they become available. Credits expiring soonest are used first." } },
           success_url: `${appUrl()}/account?tab=credits&checkout=success`,
           cancel_url: `${appUrl()}/account?tab=credits`,
         },

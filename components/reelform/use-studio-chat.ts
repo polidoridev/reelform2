@@ -13,6 +13,7 @@ import {
   MAX_VIDEO_SIZE_LABEL,
   videoContentType,
 } from "@/lib/video-limits";
+import { videoEntitlements, validateVideoEntitlements, type PlanAccount } from "@/lib/commerce/entitlements";
 import { scenes } from "@/lib/scenes";
 
 export type Media = { file: File; url: string; contentType?: string };
@@ -125,6 +126,7 @@ export function useStudioChat() {
   const [consent, setConsent] = useState(false);
   const [ready, setReady] = useState<boolean | null>(null);
   const [authenticated, setAuthenticated] = useState<boolean | null>(null);
+  const [planAccount, setPlanAccount] = useState<PlanAccount | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [creditBalance, setCreditBalance] = useState<number | null>(null);
   const [error, setError] = useState("");
@@ -153,6 +155,7 @@ export function useStudioChat() {
     promise: Promise<string>;
     created: number;
   } | null>(null);
+  const entitlements = videoEntitlements(planAccount, isAdmin);
   const selectedModel = getVideoModel(model);
   const jobActive = !!job && !terminal(job.status);
   const busy = !!phase || jobActive || !!pending;
@@ -167,6 +170,7 @@ export function useStudioChat() {
   const modelError = (() => {
     if (!video) return "";
     try {
+      validateVideoEntitlements(entitlements, { resolution, duration: video.duration ?? 4, imageCount: images.length, generateAudio: audio });
       validateModel(
         selectedModel,
         resolution,
@@ -203,13 +207,14 @@ export function useStudioChat() {
       .catch(() => {
         if (mounted.current) setReady(false);
       });
-    void jsonRequest<{ balance: { total: number }; isAdmin: boolean }>(
+    void jsonRequest<{ balance: { total: number }; isAdmin: boolean; account: PlanAccount }>(
       "/api/account",
     )
       .then((data) => {
         if (mounted.current) {
           setCreditBalance(data.balance.total);
           setIsAdmin(data.isAdmin);
+          setPlanAccount(data.account);
         }
       })
       .catch(() => {});
@@ -730,6 +735,7 @@ export function useStudioChat() {
     ready,
     authenticated,
     isAdmin,
+    entitlements,
     creditBalance,
     error,
     setError,

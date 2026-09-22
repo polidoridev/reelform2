@@ -1,3 +1,4 @@
+import { authDestination } from "@/lib/auth-destination";
 import { cookies } from "next/headers";
 import { z } from "zod";
 import { authClient, requireUser, accountFor } from "@/lib/supabase/server";
@@ -25,13 +26,20 @@ export async function POST(
       const { data, error } = await client.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${new URL(request.url).origin}/auth/callback`,
+          redirectTo: `${appUrl()}/auth/callback`,
           skipBrowserRedirect: true,
           queryParams: { prompt: "select_account" },
         },
       });
       if (error || !data.url)
         throw new ApiError("Google sign-in is unavailable. Please try again shortly.", 503);
+      (await cookies()).set("rf-auth-next", authDestination(body.next), {
+        httpOnly: true,
+        secure: new URL(request.url).protocol === "https:",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 600,
+      });
       return noStore({ redirect: data.url });
     }
     if (action === "login") {
@@ -45,7 +53,7 @@ export async function POST(
           401,
         );
       await accountFor(data.user);
-      return noStore({ ok: true });
+      return noStore({ ok: true, redirect: authDestination(body.next) });
     }
     if (action === "signup") {
       const { data, error } = await client.auth.signUp({
@@ -60,6 +68,7 @@ export async function POST(
               .max(100)
               .parse(body.name || ""),
             marketing_opt_in: body.marketing === true,
+            onboarding_destination: authDestination(body.next, "/studio"),
           },
         },
       });
@@ -69,7 +78,7 @@ export async function POST(
         );
       if (data.session && data.user) {
         await accountFor(data.user);
-        return noStore({ ok: true, redirect: "/account" });
+        return noStore({ ok: true, redirect: authDestination(body.next, "/studio") });
       }
       return noStore({
         message: "Check your inbox to confirm your email before signing in.",
@@ -137,7 +146,9 @@ export async function POST(
         );
       }
       return noStore({
-        redirect: type === "recovery" ? "/login?mode=reset" : "/account",
+        redirect: type === "recovery" ? "/login?mode=reset" : type === "signup" || type === "email"
+          ? authDestination(data.user.user_metadata?.onboarding_destination, "/studio")
+          : authDestination(body.next),
       });
     }
     if (action === "reset") {

@@ -7,7 +7,7 @@ import { mkdir } from "node:fs/promises";
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || "playwright");
 const browser = process.env.TEST_CDP_URL
   ? await chromium.connectOverCDP(process.env.TEST_CDP_URL)
-  : await chromium.launch({ headless: true });
+  : await chromium.launch({ headless: true, channel: process.env.TEST_BROWSER_CHANNEL || undefined });
 const base = process.env.TEST_BASE_URL || "http://localhost:3000";
 await mkdir("outputs", { recursive: true });
 const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, reducedMotion: "reduce" });
@@ -21,7 +21,7 @@ await context.route(`${base}/api/**`, async route => {
   const path = new URL(route.request().url()).pathname;
   const json = (data, status = 200) => route.fulfill({ status, json: data });
   if (path === "/api/config") return json({ ready: true, authenticated: true });
-  if (path === "/api/account") return json({ balance: { total: balance }, isAdmin: false });
+  if (path === "/api/account") return json({ balance: { total: balance }, isAdmin: false, account: { plan: "studio", paid_until: "2099-01-01T00:00:00Z" } });
   if (path === "/api/uploads") {
     uploadCount++;
     if (failUpload) { failUpload = false; return json({ error: "Upload temporarily unavailable" }, 503); }
@@ -55,6 +55,7 @@ async function readyVideo() {
 }
 try {
   await page.goto(`${base}/studio`);
+  await page.getByText("10,000 credits", { exact: true }).waitFor();
   assert(await send.isDisabled());
   assert(await page.getByLabel("Upload reference images", { exact: true }).isDisabled());
   await readyVideo();
@@ -62,6 +63,13 @@ try {
   await waitFor(() => !document.querySelector('[aria-label="Send and generate video"]').disabled);
   const beforeSettings = uploadCount;
   await page.getByRole("button", { name: "Seedance 2.5 Edit", exact: true }).click();
+  await page.getByRole("button", { name: "Explore 1080p models" }).click();
+  await page.getByRole("button", { name: /Kling O3 Edit/ }).click();
+  assert.equal(await page.getByRole("combobox", { name: "Output quality" }).innerText(), "1080p Full HD");
+  await waitFor(() => !document.querySelector('[aria-label="Send and generate video"]').disabled);
+  assert.equal(uploadCount, beforeSettings, "switching to Full HD reuses uploaded video");
+  await page.getByRole("combobox", { name: "AI model" }).click();
+  await page.getByRole("option", { name: "Seedance 2.5 Edit · Recommended", exact: true }).click();
   quoteDelay = 800;
   await page.getByRole("combobox", { name: "Output quality" }).click();
   await page.getByRole("option", { name: "480p", exact: true }).click();
@@ -112,13 +120,17 @@ try {
   await page.getByRole("button", { name: "New video", exact: true }).click();
   balance = 10;
   await page.reload();
+  await page.getByText("10 credits", { exact: true }).waitFor();
   await page.getByLabel("Upload original video", { exact: true }).setInputFiles(resolve("public/media/alpine.mp4"));
   await page.getByText("240 credits", { exact: true }).waitFor();
   await page.getByLabel("Describe your video transformation").fill("Turn the mountains into a cinematic coastal landscape.");
   await page.getByRole("checkbox").check();
   assert(await send.isDisabled(), "insufficient balance must block Send");
   assert.equal(consoleErrors.length, 0, consoleErrors.join("\n"));
-  console.log("PASS: automatic quote, references, settings invalidation, single Send, result, mobile, upload retry, recovery across reload, idempotency, insufficient credits.");
+  console.log("PASS: automatic quote, references, Full HD model switching, settings invalidation, single Send, result, mobile, upload retry, recovery across reload, idempotency, insufficient credits.");
+} catch (error) {
+  console.error(await page.locator("body").innerText());
+  throw error;
 } finally {
   await context.close();
   await browser.close();

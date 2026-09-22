@@ -152,11 +152,11 @@ export function PlanCards({
             <ul>
               <li>
                 <Check />
-                Video + reference photo transformations
+                Clips up to {p.maxSeconds} seconds
               </li>
               <li>
                 <Check />
-                480p and 720p video
+                {p.fullHd ? "Up to 1080p Full HD" : "480p and 720p HD"}
               </li>
               <li>
                 <Check />
@@ -164,6 +164,8 @@ export function PlanCards({
                   ? "1 video at a time"
                   : `${p.concurrency} videos at a time`}
               </li>
+              <li><Check />Up to {p.maxImages} reference photo{p.maxImages === 1 ? "" : "s"} per video</li>
+              <li><Check />{p.generatedAudio ? "AI-generated audio on supported models" : "Silent video transformations"}</li>
               <li>
                 <Check />
                 Extra credit packs & optional auto-reload
@@ -188,9 +190,9 @@ export function PlanCards({
       </div>
       <p className="pricing-fine">
         Prices in USD, plus applicable taxes. Subscriptions renew automatically.
-        Monthly credits refresh each month and do not roll over, including on
-        annual plans. Purchased credits do not expire. Cancel renewal through
-        your account.
+        Subscription credits are released monthly, including on annual plans. All credits
+        expire 90 days after they become available. Credits expiring soonest are used first. Cancel renewal through
+        your account. Resolution, clip length, audio, and reference limits also depend on the selected AI model. After your paid term ends, remaining purchased credits use Starter features.
       </p>
     </>
   );
@@ -270,7 +272,7 @@ export default function Pricing() {
             ))}
             <p>
               Extra packs are available to active subscribers. Keep unused
-              purchased credits even if you cancel.
+              purchased credits until their 90-day expiry, even if you cancel.
             </p>
           </div>
         </section>

@@ -13,6 +13,7 @@ import {
   Check,
 } from "lucide-react";
 import Brand from "./brand";
+import { SITE_URL } from "@/lib/site-url";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -53,7 +54,7 @@ function CommunityShell({ children }: { children: React.ReactNode }) {
           <Link prefetch={false} href="/account">
             My account
           </Link>
-          <Link prefetch={false} className="community-button" href="/studio">
+          <Link prefetch={false} className="community-button" href="/login?next=%2Fstudio">
             Open studio <ArrowUpRight size={15} />
           </Link>
         </nav>
@@ -105,7 +106,7 @@ function PostCard({
   async function copy() {
     try {
       await navigator.clipboard.writeText(
-        `${location.origin}/community/${post.id}`,
+        `${SITE_URL}/community/${post.id}`,
       );
       setCopied(true);
     } catch {

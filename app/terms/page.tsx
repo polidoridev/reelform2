@@ -64,9 +64,9 @@ export default function Terms() {
       <p>
         Prices are shown in USD. Subscriptions renew automatically at the
         billing interval and price shown at checkout. Annual subscriptions are
-        billed upfront and release credits each month. Unused subscription
-        credits expire at the end of their monthly allocation period. Purchased
-        credits do not expire and remain usable after subscription cancellation,
+        billed upfront and release credits each month. All credits, including subscription allowances, purchased packs, and auto-reloads,
+        expire 90 days after they become available. Credits expiring soonest are used first.
+        Purchased credits remain usable until their expiry after subscription cancellation,
         while your account and the service remain available. Credits have no
         cash value and cannot be transferred.
       </p>

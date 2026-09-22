@@ -1,4 +1,5 @@
 import { mkdirSync, writeFileSync } from "node:fs";
+import { SITE_URL } from "../lib/site-url";
 import { emailFrame, journeys } from "../lib/commerce/email";
 mkdirSync("emails/supabase", { recursive: true });
 const templates = [
@@ -53,9 +54,8 @@ const templates = [
 ];
 const manifest: Record<string, { subject: string; file: string }> = {};
 for (const [id, subject, title, body, button, type] of templates) {
-  // SiteURL is configured to the new production origin at launch. Using a fixed
-  // application route avoids URL fragments being consumed by email scanners.
-  const url = `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=${type}`;
+  // Keep authentication links on the canonical domain and preserve token parameters.
+  const url = `${SITE_URL}/auth/confirm?token_hash={{ .TokenHash }}&type=${type}`;
   const footer =
     'If you didn’t request this, you can safely ignore this email. Never share your sign-in links or security codes.<br>Need help? <a href="mailto:admin@polidori.dev" style="color:#356b64">admin@polidori.dev</a><br>Reelform · Your reality, reimagined.';
   const file = `emails/supabase/${id}.html`;
@@ -79,7 +79,7 @@ for (const [id, description] of Object.entries({
       "Your account was updated.",
       `<p>${description}</p><p>If this was you, you’re all set. If you don’t recognize this change, reset your password and contact us right away.</p>`,
       "Review my account",
-      "{{ .SiteURL }}/account?tab=settings",
+      `${SITE_URL}/account?tab=settings`,
       'Reelform security notification<br><a href="mailto:admin@polidori.dev">admin@polidori.dev</a>',
     ),
   );
@@ -96,8 +96,8 @@ for (const [id, j] of Object.entries(journeys))
       j.title,
       j.body,
       j.button,
-      "http://localhost:3000/studio",
-      'Preview only · Business mailing address is required before sending.<br><a href="http://localhost:3000/account?tab=settings">Email preferences</a>',
+      `${SITE_URL}/studio`,
+      `Preview only · Business mailing address is required before sending.<br><a href="${SITE_URL}/account?tab=settings">Email preferences</a>`,
     ),
   );
 console.log("Rendered 13 auth/security templates and 3 marketing previews.");

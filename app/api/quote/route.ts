@@ -1,5 +1,6 @@
+import { videoEntitlements, validateVideoEntitlements } from "@/lib/commerce/entitlements";
 import { DEFAULT_VIDEO_MODEL, getVideoModel, validateModel } from "@/lib/video-models";
-import { requireUser, isReelformAdmin } from "@/lib/supabase/server";
+import { requireUser, accountFor, isReelformAdmin } from "@/lib/supabase/server";
 import { z } from "zod";
 import { verify, sign } from "@/lib/higgsfield";
 import { ApiError, readJson, errorResponse, noStore } from "@/lib/http";
@@ -18,11 +19,13 @@ export async function POST(request: Request) {
         generateAudio: z.boolean().default(false),
       })
       .parse(await readJson(request));
+    const account = await accountFor(authenticatedUser);
     const video = await verify(body.videoToken, user, "upload");
     if (video.media !== "video") throw new ApiError("Upload a video first.");
     const media = await inspectVideo(video.url, video.bytes);
     let quote: ReturnType<typeof quoteVideo>;
     try {
+      validateVideoEntitlements(videoEntitlements(account, isReelformAdmin(authenticatedUser)), { ...body, duration: media.duration });
       validateModel(getVideoModel(body.model), body.resolution, media.duration, body.imageCount, body.generateAudio);
       quote = quoteVideo(media, body.resolution, body.model);
     } catch (error) {

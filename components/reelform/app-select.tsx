@@ -12,7 +12,15 @@ type Props = {
 
 export default function AppSelect({ label, value, onValueChange, disabled, options }: Props) {
   return (
-    <Select value={value} onValueChange={onValueChange} disabled={disabled}>
+    <Select
+      value={value}
+      onValueChange={(next) => {
+        // Dynamic model options can reset the hidden native select to an empty
+        // value. Only forward an actual choice, preserving the selected quality.
+        if (next && options.some((option) => option.value === next)) onValueChange(next);
+      }}
+      disabled={disabled}
+    >
       <SelectTrigger aria-label={label} className="reelform-select-trigger">
         <SelectValue />
       </SelectTrigger>

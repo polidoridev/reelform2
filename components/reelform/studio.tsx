@@ -736,7 +736,7 @@ export default function Studio() {
                             ? [
                                 {
                                   value: "choose-1080p",
-                                  label: "1080p · Change model",
+                                  label: s.entitlements.fullHd ? "1080p · Change model" : "1080p · Pro or Studio",
                                 },
                               ]
                             : []),
@@ -762,9 +762,20 @@ export default function Studio() {
                     </label>
                   </div>
                   <p>{s.selectedModel.description}</p>
+                  <p>
+                    {s.isAdmin ? "Admin access" : `${s.entitlements.name} features`} · Up to {s.entitlements.maxSeconds}s · {s.entitlements.maxImages} reference photo{s.entitlements.maxImages === 1 ? "" : "s"} · {s.entitlements.fullHd ? "Full HD available" : "Up to 720p"}
+                    {!s.entitlements.fullHd && <> · <a href="/account?tab=billing">Upgrade for Full HD and generated audio</a></>}
+                  </p>
+                  {!s.selectedModel.resolutions.includes("1080p") && (
+                    <p>
+                      {s.selectedModel.name} tops out at 720p. For Full HD, choose a compatible model.
+                      {" "}<button type="button" className="account-secondary" disabled={s.busy} onClick={() => setFullHdOpen(!fullHdOpen)}>Explore 1080p models</button>
+                    </p>
+                  )}
                   {fullHdOpen && (
                     <div className="chat-fullhd-models">
                       <strong>Choose a model for Full HD</strong>
+                      <p>{s.entitlements.fullHd ? "Select a model below to switch to 1080p. Each model has its own clip and reference requirements." : "Full HD requires Pro or Studio. You can explore compatible models below."}</p>
                       {VIDEO_MODELS.filter((m) =>
                         m.resolutions.includes("1080p"),
                       ).map((m) => (
@@ -783,7 +794,7 @@ export default function Studio() {
                         >
                           <span>{m.name}</span>
                           <small>
-                            Up to {m.maxSeconds}s ·{" "}
+                            {s.video?.duration != null && s.video.duration > m.maxSeconds ? `Shorten your clip to ${m.maxSeconds}s` : `Up to ${m.maxSeconds}s`} ·{" "}
                             {m.minImages
                               ? `${m.minImages} reference required`
                               : "References optional"}

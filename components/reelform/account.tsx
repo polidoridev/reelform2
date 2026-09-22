@@ -147,7 +147,7 @@ export default function Account({
         <nav>
           <Link prefetch={false} href="/community">Community</Link>
           <a href="/pricing">Plans</a>
-          <a href="/studio" className="account-nav-button">
+          <a href="/login?next=%2Fstudio" className="account-nav-button">
             Open studio <ArrowUpRight size={16} />
           </a>
           <button
@@ -313,18 +313,18 @@ export default function Account({
                         </div>
                         <div className="meter-caption">
                           <span>
-                            {b.subscription.toLocaleString()} monthly credits
+                            {b.subscription.toLocaleString()} subscription credits
                             remaining
                           </span>
                           <span>
                             {b.nextReset
-                              ? `Refreshes ${date(b.nextReset)}`
+                              ? `Next allowance expiry ${date(b.nextReset)}`
                               : "No active monthly allowance"}
                           </span>
                         </div>
                         <p className="account-muted">
-                          Purchased credits stay in your account and are used
-                          after your monthly allowance.
+                          All credits expire 90 days after they become available.
+                          Credits expiring soonest are used first.
                         </p>
                       </section>
                     </>
@@ -538,7 +538,7 @@ export default function Account({
                         </h2>
                         <div>
                           <span>
-                            Monthly allowance{" "}
+                            Subscription credits{" "}
                             <strong>{b.subscription.toLocaleString()}</strong>
                           </span>
                           <span>
@@ -546,8 +546,9 @@ export default function Account({
                             <strong>{b.purchased.toLocaleString()}</strong>
                           </span>
                           <span>
-                            Next refresh{" "}
-                            <strong>{date(b.nextReset || b.nextGrant)}</strong>
+                            Next credit expiry{" "}
+                            <strong>{date(b.nextExpiry)}</strong>
+                            {b.nextExpiry && <small>{b.nextExpiryCredits.toLocaleString()} credits expire</small>}
                           </span>
                         </div>
                       </section>
@@ -584,9 +585,8 @@ export default function Account({
                         ))}
                       </div>
                       <p className="account-muted">
-                        Purchased credits never expire. Use them after your
-                        monthly allowance, even if you later cancel your
-                        subscription.
+                        Purchased and auto-reload credits expire 90 days after they become available.
+                        They remain usable until that date if you cancel your subscription.
                       </p>
                       <section className="account-card">
                         <div className="card-heading">
@@ -687,7 +687,7 @@ export default function Account({
                               {money(TOPUPS.find((p) => p.id === pack)!.price)}{" "}
                               for each refill when my balance drops below{" "}
                               {threshold} credits, up to {money(cap)} per
-                              calendar month (UTC). I can turn this off anytime.
+                              calendar month (UTC). Refilled credits expire after 90 days. I can turn this off anytime.
                             </label>
                           )}
                           <button className="account-primary" disabled={!!busy}>
@@ -1123,7 +1123,7 @@ function Empty({
       <Icon size={30} />
       <h3>{title}</h3>
       <p>{detail}</p>
-      <a href="/studio" className="quiet-link">
+      <a href="/login?next=%2Fstudio" className="quiet-link">
         Open studio <ArrowRight size={16} />
       </a>
     </div>

@@ -1,3 +1,4 @@
+import { videoEntitlements, validateVideoEntitlements } from "@/lib/commerce/entitlements";
 import { DEFAULT_VIDEO_MODEL, getVideoModel, modelRequest } from "@/lib/video-models";
 import { z } from "zod";
 import { verify, provider, sign, isConfigured } from "@/lib/higgsfield";
@@ -40,6 +41,7 @@ export async function POST(request: Request) {
         "Your video quote changed. Get a fresh quote before generating.",
       );
     try {
+      validateVideoEntitlements(videoEntitlements(account, isReelformAdmin(user)), { ...p, duration: quote.media.duration, imageCount: images.length });
       modelRequest(getVideoModel(p.model), {prompt:p.prompt,videoUrl:video.url,imageUrls:images.map(i=>i.url),resolution:p.resolution,generateAudio:p.generateAudio,media:quote.media});
     } catch (error) { throw new ApiError(error instanceof Error ? error.message : "Invalid model settings."); }
     const db = admin();
