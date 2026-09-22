@@ -56,6 +56,7 @@ export async function POST(request: Request) {
         videoUrl: video.url,
         imageUrls: images.map((i) => i.url),
         generateAudio: p.generateAudio,
+        preserveOriginalAudio: !p.generateAudio,
         media: quote.media,
       },
     });

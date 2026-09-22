@@ -25,7 +25,7 @@ export async function GET(request: Request) {
         db
           .from("rf_jobs")
           .select(
-            "id,user_id,provider_id,status,credits,prompt,resolution,result_url,error,created_at",
+            "id,user_id,provider_id,status,credits,prompt,resolution,result_url,error,created_at,input",
           )
           .eq("user_id", user.id)
           .order("created_at", { ascending: false })
@@ -57,7 +57,7 @@ export async function GET(request: Request) {
     );
     const visibleJobs = refreshed.map((r, i) => {
       const job = r.status === "fulfilled" ? r.value : jobs.data![i];
-      return { ...job, provider_id: undefined };
+      return { ...job, provider_id: undefined, input: undefined };
     });
     let invoices: unknown[] = [],
       paymentMethod: unknown = null,

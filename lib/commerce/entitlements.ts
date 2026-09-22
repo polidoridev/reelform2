@@ -21,5 +21,5 @@ export function validateVideoEntitlements(
   if (input.imageCount > plan.maxImages)
     throw new Error(`${plan.name} includes up to ${plan.maxImages} reference photo${plan.maxImages === 1 ? "" : "s"} per video. Remove photos or upgrade for more references.`);
   if (input.generateAudio && !plan.generatedAudio)
-    throw new Error("Generated audio unlocks with Pro or Studio. Choose Silent video or upgrade your plan.");
+    throw new Error("Generated audio unlocks with Pro or Studio. Choose Original audio or upgrade your plan.");
 }

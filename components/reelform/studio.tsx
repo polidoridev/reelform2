@@ -658,7 +658,7 @@ export default function Studio() {
                   </button>
                   <span className="chat-quality-label">
                     {s.resolution}
-                    {s.audio ? " · Sound on" : ""}
+                    {s.audio ? " · Generated audio" : " · Original audio"}
                   </span>
                 </div>
                 <div className="chat-send-controls">
@@ -753,10 +753,10 @@ export default function Studio() {
                         options={
                           s.selectedModel.audio
                             ? [
-                                { value: "no", label: "Silent video" },
+                                { value: "no", label: "Original audio" },
                                 { value: "yes", label: "Generate audio" },
                               ]
-                            : [{ value: "no", label: "Silent video" }]
+                            : [{ value: "no", label: "Original audio" }]
                         }
                       />
                     </label>

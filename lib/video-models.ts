@@ -32,7 +32,7 @@ export function validateModel(model: VideoModel, resolution: string, seconds: nu
   if (!model.resolutions.includes(resolution as VideoResolution)) throw new Error(`${model.name} does not support ${resolution}. Choose an available quality.`);
   if (seconds < 4 || seconds > model.maxSeconds) throw new Error(`${model.name} supports clips between 4 and ${model.maxSeconds} seconds in Reelform. Choose Seedance 2.5 Edit for longer edits.`);
   if (imageCount !== undefined && (imageCount < model.minImages || imageCount > model.maxImages)) throw new Error(`${model.name} needs ${model.minImages === model.maxImages ? `exactly ${model.minImages}` : `${model.minImages}–${model.maxImages}`} reference photos.`);
-  if (audio && !model.audio) throw new Error(`${model.name} does not support generated audio. Select Silent video.`);
+  if (audio && !model.audio) throw new Error(`${model.name} does not support generated audio. Select Original audio.`);
 }
 export function modelRequest(model: VideoModel, input: {prompt:string;videoUrl:string;imageUrls:string[];resolution:string;generateAudio:boolean;media:{duration:number;width:number;height:number}}): Record<string, unknown> {
   validateModel(model,input.resolution,input.media.duration,input.imageUrls.length,input.generateAudio);
