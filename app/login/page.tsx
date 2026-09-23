@@ -10,7 +10,7 @@ export default async function Login({
 }) {
   const q = await searchParams;
   if ((!q.mode || q.mode === "login" || q.mode === "signup") && !q.error) {
-    const user = await currentUser();
+    const user = await currentUser({ readOnly: true });
     if (user?.email_confirmed_at) redirect(authDestination(q.next));
   }
   return (

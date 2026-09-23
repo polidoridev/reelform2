@@ -7,7 +7,7 @@ export const authConfigured = () =>
     process.env.NEXT_PUBLIC_SUPABASE_URL &&
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   );
-export async function authClient() {
+export async function authClient({ readOnly = false } = {}) {
   if (!authConfigured())
     throw new ApiError("Account services are not connected yet.", 503);
   const jar = await cookies();
@@ -17,10 +17,14 @@ export async function authClient() {
     {
       cookies: {
         getAll: () => jar.getAll(),
-        setAll: (entries) =>
+        setAll: (entries) => {
+          // Server Components cannot write cookies. proxy.ts persists session
+          // refreshes before those pages render; route handlers remain writable.
+          if (readOnly) return;
           entries.forEach(({ name, value, options }) =>
             jar.set(name, value, options),
-          ),
+          );
+        },
       },
     },
   );
@@ -34,9 +38,9 @@ export function admin() {
     { auth: { persistSession: false, autoRefreshToken: false } },
   );
 }
-export async function currentUser() {
+export async function currentUser(options: { readOnly?: boolean } = {}) {
   if (!authConfigured()) return null;
-  const client = await authClient();
+  const client = await authClient(options);
   const { data, error } = await client.auth.getUser();
   return error ? null : data.user;
 }
