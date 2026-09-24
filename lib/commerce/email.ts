@@ -21,22 +21,22 @@ export function emailFrame(
 }
 export const journeys = {
   welcome: {
-    subject: "Your next reality starts here",
-    title: "Make yourself the main character.",
-    body: "<p>Welcome to Reelform. Bring a short clip of yourself, a few reference photos, and a scene you can’t stop imagining.</p><p>A driveway becomes a coastal villa. Your everyday outfit becomes a tailored suit. Your movements stay the starting point.</p><p>Start with a clear, well-lit 4–10 second clip. You’ll see the exact credit cost before you create.</p>",
+    subject: "Your next video starts here",
+    title: "Your footage. New possibilities.",
+    body: "<p>Welcome to Reelform. Bring a short video and a reference photo, then choose what you want to change.</p><p>Use Genjutsu Motion Transfer to guide a character with a performance, or Object Swap to try a different product, fixture, or prop in your footage.</p><p>Start with a clear, well-lit 4-10 second clip. You’ll see the exact credit cost before you create.</p>",
     button: "Explore the studio",
   },
   first_scene: {
-    subject: "One small trick for a more believable transformation",
-    title: "The details make it real.",
-    body: "<p>Choose reference photos with a similar camera angle and lighting to your source clip. Then describe the outfit, setting, and one key action.</p><p>Try: “Keep my walking motion. Put me in a cream linen suit, arriving at a quiet waterfront villa at golden hour.”</p><p>Start simple. Build your next reality one scene at a time.</p>",
-    button: "Create your first scene",
+    subject: "Start with one clear change",
+    title: "Give your edit a strong reference.",
+    body: "<p>Choose a reference photo with a clear subject. Similar angles and lighting can help you describe the result you want.</p><p>Try: “Replace the chair in this video with the chair in my reference photo. Match the lighting and keep the surrounding room consistent.”</p><p>Preview the result, then refine your prompt or reference for your next iteration.</p>",
+    button: "Create your first edit",
   },
   inspiration: {
-    subject: "Where will you go next?",
-    title: "A new scene is waiting.",
-    body: "<p>A morning on the Amalfi Coast. A slow walk through a modern mansion. Sunset on the deck of a yacht.</p><p>Give your everyday footage a different destination. Bring references that capture the place, the light, and the feeling you want.</p>",
-    button: "Find your next scene",
+    subject: "One clip. What else could it become?",
+    title: "Find your next use for Reelform.",
+    body: "<p>A dance performed by your character. A fixture concept in a site walkthrough. A new product in an existing shot.</p><p>Explore motion transfer and object swaps for your next post, client conversation, or creative experiment.</p>",
+    button: "Find your next idea",
   },
 } as const;
 export type Journey = keyof typeof journeys;

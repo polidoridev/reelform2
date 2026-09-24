@@ -28,7 +28,7 @@ import GenerationProgress from "./generation-progress";
 import { useStudioChat, type ChatMessage } from "./use-studio-chat";
 import { VIDEO_MODELS } from "@/lib/video-models";
 import { VIDEO_ACCEPT, MAX_VIDEO_SIZE_LABEL } from "@/lib/video-limits";
-import { scenes } from "@/lib/scenes";
+import { useCases } from "@/lib/use-cases";
 import "./studio-chat.css";
 
 function SentMessage({ message }: { message: ChatMessage }) {
@@ -89,7 +89,7 @@ function AssistantMessage({ children }: { children: React.ReactNode }) {
 function VideoResult({ url }: { url: string }) {
   return (
     <div className="chat-result">
-      <p>Your new reality is ready.</p>
+      <p>Your video is ready.</p>
       <video
         src={url}
         controls
@@ -153,7 +153,8 @@ export default function Studio() {
         block: "start",
       });
   }, [s.currentMessage]);
-  function chooseScene(prompt: string) {
+  function chooseScene(prompt: string, model: string) {
+    s.changeModel(model);
     s.setPrompt(prompt);
     promptRef.current?.focus();
   }
@@ -229,12 +230,12 @@ export default function Studio() {
         </nav>
         <div className="chat-sidebar-ideas">
           <span>START WITH AN IDEA</span>
-          {scenes.slice(0, 4).map((scene) => (
+          {useCases.map((scene) => (
             <button
               key={scene.id}
               disabled={s.busy}
               onClick={() => {
-                chooseScene(scene.prompt);
+                chooseScene(scene.prompt, scene.model);
                 setMenuOpen(false);
               }}
             >
@@ -324,7 +325,7 @@ export default function Studio() {
               </span>
               <span className="chat-eyebrow">YOUR IMAGINATION, IN MOTION</span>
               <h1>
-                What’s your next <span>reality?</span>
+                What will you <span>create?</span>
               </h1>
               <p>
                 Start with your video. Add a little inspiration.
@@ -639,7 +640,7 @@ export default function Studio() {
                     if (canSend) void s.generate();
                   }
                 }}
-                placeholder="Describe your new reality. A different outfit, a new place, a whole new scene…"
+                placeholder="Describe the motion to transfer or the object to replace. Use your reference photos to guide the result…"
                 aria-describedby="studio-file-help"
               />
               <div className="chat-composer-toolbar">
@@ -870,11 +871,11 @@ export default function Studio() {
               <div className="chat-starter-prompts">
                 <span>A LITTLE INSPIRATION</span>
                 <div>
-                  {[scenes[0], scenes[1], scenes[4]].map((scene) => (
+                  {useCases.slice(0, 3).map((scene) => (
                     <button
                       key={scene.id}
                       disabled={s.busy}
-                      onClick={() => chooseScene(scene.prompt)}
+                      onClick={() => chooseScene(scene.prompt, scene.model)}
                     >
                       <span>{scene.shortLabel}</span>
                       <ArrowUpRight size={13} />

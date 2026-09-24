@@ -222,10 +222,10 @@ export default function Pricing() {
       <main className="pricing-page">
         <div className="pricing-intro">
           <span className="account-eyebrow">
-            A LITTLE INVESTMENT IN YOUR IMAGINATION
+            ROOM FOR YOUR NEXT PROJECT
           </span>
           <h1>
-            Your next reality.
+            Your next video.
             <br />
             <em>Your kind of plan.</em>
           </h1>

@@ -217,13 +217,13 @@ export function WorldGallery({
       <div className="worlds-sticky">
         <div className="worlds-heading">
           <Reveal>
-            <span className="section-label">A TASTE OF THE GOOD LIFE</span>
+            <span className="section-label">CONCEPT GALLERY</span>
             <h2>
-              Which life are
+              A few looks
               <br />
-              we living today?
+              to explore.
             </h2>
-            <p>Yachts. Villas. Dream cars. Make the lifestyle yours.</p>
+            <p>AI-generated scenes for visual inspiration. These are not before-and-after Genjutsu demonstrations.</p>
           </Reveal>
           <div className="gallery-controls">
             <button

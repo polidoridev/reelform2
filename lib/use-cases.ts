@@ -1,0 +1,38 @@
+export const useCases = [
+  {
+    id: "character-remix",
+    audience: "Creators & entertainment",
+    title: "Give the performance a new cast.",
+    shortLabel: "Character remix",
+    model: "genjutsu-motion",
+    description: "Try the music-video remix format: use a performer’s movement to animate a character from a show, an original design, or a reference photo.",
+    prompt: "Transfer the main performer’s movement from the source video to the character in my reference image. Follow the rhythm and gestures, with a consistent character appearance throughout the shot.",
+  },
+  {
+    id: "construction-concept",
+    audience: "Construction & renovation",
+    title: "Show the idea on site.",
+    shortLabel: "Site concept",
+    model: "genjutsu-object",
+    description: "Explore a different fixture or piece of equipment in a site clip. Make visual concepts for client conversations and social content.",
+    prompt: "Replace the main fixture in this site video with the fixture in my reference photo. Match its position, perspective, and lighting. Keep the surrounding space and camera movement as consistent as possible. Create a visual design concept.",
+  },
+  {
+    id: "product-swap",
+    audience: "Brands & small businesses",
+    title: "Try a new product in the shot.",
+    shortLabel: "Product swap",
+    model: "genjutsu-object",
+    description: "Explore another product, prop, or furniture piece using footage you already have. Build creative variations for your next campaign.",
+    prompt: "Replace the main product in the source video with the product in my reference photo. Match the original placement, scale, lighting, and shadows. Keep the camera movement and surrounding scene as consistent as possible.",
+  },
+  {
+    id: "motion-experiment",
+    audience: "Anyone with an idea",
+    title: "Put your character in motion.",
+    shortLabel: "Animate a character",
+    model: "genjutsu-motion",
+    description: "Bring a mascot, an illustration, or a character concept to a dance or performance. Start with a short clip and see where it takes you.",
+    prompt: "Animate the character in my reference image using the movement in the source video. Follow the main subject’s poses and timing while keeping the reference character’s look consistent.",
+  },
+] as const;

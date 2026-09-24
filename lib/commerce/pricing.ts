@@ -27,7 +27,7 @@ export const PLANS = [
     maxImages: 2,
     fullHd: true,
     generatedAudio: true,
-    tagline: "For your next main character era.",
+    tagline: "For regular content and creative projects.",
     monthlyEnv: "STRIPE_PRICE_PRO",
     yearlyEnv: "STRIPE_PRICE_PRO_YEARLY",
   },

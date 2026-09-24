@@ -15,6 +15,7 @@ import {
 } from "@/lib/video-limits";
 import { videoEntitlements, validateVideoEntitlements, type PlanAccount } from "@/lib/commerce/entitlements";
 import { scenes } from "@/lib/scenes";
+import { useCases } from "@/lib/use-cases";
 
 export type Media = { file: File; url: string; contentType?: string };
 type Video = Media & { duration: number | null };
@@ -224,6 +225,15 @@ export function useStudioChat() {
     // Initial browser/session state is intentionally restored after hydration.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (scene) setPrompt(scene.prompt);
+    const preset = useCases.find(
+      (item) => item.id === new URLSearchParams(location.search).get("useCase"),
+    );
+    if (preset) {
+      setPrompt(preset.prompt);
+      setModel(preset.model);
+      setResolution("720p");
+      setAudio(false);
+    }
     try {
       const saved = JSON.parse(
         sessionStorage.getItem(ACTIVE_JOB) || "null",
@@ -421,7 +431,7 @@ export function useStudioChat() {
         setPhase(
           data.status === "queued"
             ? "Your video is in the queue"
-            : "Creating your new reality",
+            : "Creating your video",
         );
       } catch (e) {
         if (disposed) return;

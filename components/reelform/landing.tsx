@@ -25,9 +25,9 @@ import {
 import Brand from "./brand";
 import Link from "next/link";
 import { scenes } from "@/lib/scenes";
+import { useCases } from "@/lib/use-cases";
 import { faqs } from "./faqs";
 import {
-  HeroCinema,
   WorldGallery,
   Reveal,
   SceneVideo,
@@ -36,29 +36,29 @@ import {
 import "./cinema.css";
 
 const examplePrompt =
-  "“Put me in a tailored suit, swap my car for a Lamborghini SVJ, and take me to Beverly Hills.”";
+  "“Transfer this dancer’s movement to the character in my reference photo.”";
 
 const steps = [
   {
     icon: Upload,
-    title: "Start with the real you.",
+    title: "Start with your footage.",
     description:
-      "A walk to your car. A pose in your bedroom. A perfectly ordinary moment. Upload a short clip and make it your starting point.",
-    detail: "Your video, your natural movement",
+      "A dance clip, a site walkthrough, or a product shot. Upload a short video with a clear subject and steady motion.",
+    detail: "Your clip is the starting point",
   },
   {
     icon: ImagePlus,
-    title: "Give your imagination a reference.",
+    title: "Choose what to change.",
     description:
-      "The suit. The supercar. The place you’ve always wanted to go. Add photos of the look you love, then tell us what to change.",
-    detail: "Reference photos + a little direction",
+      "Choose Motion Transfer for a new character or Object Swap for a replacement object. Add reference photos and describe the edit.",
+    detail: "A reference image + your direction",
   },
   {
     icon: WandSparkles,
-    title: "Step into something different.",
+    title: "Generate your next edit.",
     description:
-      "Let AI reimagine the scene around you. Preview your new reality, download it, and give your next story a plot twist.",
-    detail: "Generate, preview, make it yours",
+      "Review the credit cost, generate your video, and check the result. Refine your references or prompt, then download the version you like.",
+    detail: "Preview, refine, download",
   },
 ];
 export default function Landing() {
@@ -125,24 +125,24 @@ export default function Landing() {
               initial={false}
               animate={{ opacity: 1 }}
             >
-              <Sparkles size={14} /> YOUR REALITY IS JUST THE STARTING POINT
+              <Sparkles size={14} /> AI MOTION TRANSFER & OBJECT SWAP
             </motion.div>
             <motion.h1
               initial={reduced ? false : { opacity: 0, y: 25 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1] }}
             >
-              Same you.
-              <br className="mobile-break" /> <span>New reality.</span>
+              Your footage.
+              <br className="mobile-break" /> <span>New possibilities.</span>
             </motion.h1>
             <motion.p
               initial={reduced ? false : { opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.12 }}
             >
-              Your video. The yacht. The villa. The dream car.
+              Transfer motion to a character. Swap objects in a scene.
               <br />
-              Give your everyday a main character moment.
+              Create something for your audience, your clients, or just for fun.
             </motion.p>
             <div className="director-prompt hero-prompt">
               <span>
@@ -171,8 +171,8 @@ export default function Landing() {
                 </span>
               </p>
               <a
-                href="/studio?scene=arrival"
-                aria-label="Try the Lamborghini transformation"
+                href="/studio?useCase=character-remix"
+                aria-label="Try character motion transfer"
               >
                 <ArrowUpRight size={20} />
               </a>
@@ -184,17 +184,30 @@ export default function Landing() {
               transition={{ duration: 0.8, delay: 0.2 }}
             >
               <a href="/login?next=%2Fstudio" className="button">
-                Reform your reality <ArrowUpRight size={18} />
+                Start creating <ArrowUpRight size={18} />
               </a>
               <a href="#explore" className="hero-secondary">
                 <Play size={14} fill="currentColor" /> See what’s possible
               </a>
             </motion.div>
           </motion.div>
-          <HeroCinema paused={paused} />
+          <div className="transfer-choices" aria-label="Choose your video tool">
+            <a href="/studio?useCase=character-remix">
+              <span className="section-label">GENJUTSU MOTION TRANSFER</span>
+              <h2>New character.<br />Same starting moves.</h2>
+              <p>Use a performance to guide a character from your reference photo. Try dance edits, music-video remixes, and animated personas.</p>
+              <span className="text-link">Transfer motion <ArrowUpRight size={18} /></span>
+            </a>
+            <a href="/studio?useCase=product-swap">
+              <span className="section-label">GENJUTSU OBJECT SWAP</span>
+              <h2>Same shot.<br />Something new in it.</h2>
+              <p>Use reference photos to replace an object in your footage. Explore product variations, equipment concepts, and fresh looks.</p>
+              <span className="text-link">Swap an object <ArrowUpRight size={18} /></span>
+            </a>
+          </div>
           <div className="cinema-credit">
             <span>
-              <Aperture size={16} /> Imagined by you. Powered by{" "}
+              <Aperture size={16} /> Directed by you. Powered by{" "}
               <strong>Higgsfield.</strong>
             </span>
             <button onClick={() => setPaused(!paused)}>
@@ -206,37 +219,49 @@ export default function Landing() {
         <section className="possibility-section">
           <Reveal>
             <span className="section-label">
-              A LITTLE YOU. A LOT OF POSSIBILITY.
+              ONE STUDIO. MANY WAYS TO CREATE.
             </span>
             <h2>
-              You don’t need a different life.
+              For the work you do.
               <br />
-              <span>Just a different take.</span>
+              <span>And the things you make.</span>
             </h2>
             <p>
-              The same walk. The same look. An entirely different world.
+              A character remix for your feed. A visual concept for your next project.
               <br />
-              Reelform turns the footage you already have into the life you’re
-              imagining.
+              Start with footage you already have and explore what it could become.
             </p>
           </Reveal>
+        </section>
+        <section className="use-case-section" aria-labelledby="use-case-title">
+          <h2 id="use-case-title">What will you make?</h2>
+          <div className="use-case-list">
+            {useCases.map((item) => (
+              <a key={item.id} href={`/studio?useCase=${item.id}`}>
+                <span className="section-label">{item.audience}</span>
+                <h3>{item.title}</h3>
+                <p>{item.description}</p>
+                <span className="text-link">Try this idea <ArrowUpRight size={16} /></span>
+              </a>
+            ))}
+          </div>
         </section>
         <WorldGallery paused={paused} onToggle={() => setPaused(!paused)} />
         <section className="workflow-section" id="how-it-works">
           <div className="workflow-intro">
             <Reveal>
               <span className="section-label">
-                YOU BRING THE MAIN CHARACTER
+                BRING A CLIP. GIVE IT DIRECTION.
               </span>
               <h2>
-                From everyday
+                From source clip
                 <br />
-                to <span>anything.</span>
+                to <span>your next edit.</span>
               </h2>
               <p>
-                No film crew. No costume changes.
+                Choose your tool, upload your references,
                 <br />
-                Just a clip and a little imagination.
+                and tell Reelform what you want to change.
               </p>
               <a className="text-link" href="/studio">
                 Meet your creative studio <ArrowUpRight size={18} />
@@ -249,7 +274,7 @@ export default function Landing() {
                 loading="lazy"
               />
               <span className="photo-caption">
-                A new scene. Still your story.
+                AI concept scene. Your footage comes next.
               </span>
             </ParallaxFrame>
           </div>
@@ -279,24 +304,22 @@ export default function Landing() {
           <ParallaxFrame className="director-film">
             <SceneVideo scene={scenes[0]} paused={paused} />
             <span className="director-play">
-              <Play size={14} fill="currentColor" /> A little main character
-              energy
+              <Play size={14} fill="currentColor" /> AI concept preview
             </span>
           </ParallaxFrame>
           <Reveal className="director-copy">
             <span className="section-label">YOU’RE THE DIRECTOR</span>
             <h2>
-              Dream a little
+              Give your footage
               <br />
-              <span>differently.</span>
+              <span>a new role.</span>
             </h2>
             <p>
-              That walk to your car? It could be your arrival in Beverly Hills.
-              Keep the moment. Reimagine everything around it.
+              Turn a performance into a character edit, or try a new object in an existing shot. Genjutsu Motion Transfer and Object Swap give you two ways to start.
             </p>
 
-            <a className="text-link" href="/studio?scene=arrival">
-              Make this your reality <ArrowRight size={18} />
+            <a className="text-link" href="/studio?useCase=character-remix">
+              Try motion transfer <ArrowRight size={18} />
             </a>
           </Reveal>
         </section>
@@ -307,7 +330,7 @@ export default function Landing() {
               <br />
               <span>Good. So are we.</span>
             </h2>
-            <p>A few things before your next reality.</p>
+            <p>A few things before your first edit.</p>
           </Reveal>
           <div className="faq-list">
             {faqs.map(([q, a], i) => (
@@ -348,11 +371,11 @@ export default function Landing() {
           <Reveal className="cta-copy">
             <span className="section-label">THE NEXT SCENE IS YOURS</span>
             <h2>
-              Go on.
+              Start with a clip.
               <br />
-              Live a little <span>unreal.</span>
+              See what <span>you can make.</span>
             </h2>
-            <p>Your imagination looks good on you.</p>
+            <p>For your next post, pitch, project, or experiment.</p>
             <a className="button" href="/studio">
               Let’s make it happen <ArrowUpRight size={19} />
             </a>
@@ -362,14 +385,14 @@ export default function Landing() {
       <footer className="footer">
         <div className="footer-top">
           <Brand />
-          <span>Real you. Reimagined.</span>
+          <span>Your footage. New possibilities.</span>
           <a href="/studio">
-            Create your next reality <ArrowUpRight size={16} />
+            Create your next video <ArrowUpRight size={16} />
           </a>
         </div>
         <div className="footer-bottom">
           <span>© {new Date().getFullYear()} Reelform</span>
-          <span>Made for your imagination.</span>
+          <span>Made for people who make things.</span>
         </div>
       </footer>
     </div>

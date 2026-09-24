@@ -272,7 +272,7 @@ export function CommunityGallery({ postId }: { postId?: string }) {
                 <span>A world of possibility.</span>
               </h1>
               <p>
-                See what happens when creators make reality their own.
+                Explore motion experiments, object swaps, and new takes on familiar footage.
                 <br className="community-desktop-break" /> Find your next idea.
                 Share what you made.
               </p>

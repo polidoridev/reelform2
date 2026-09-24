@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import "./globals.css";
 export const metadata: Metadata = {
-  title: "Reelform | Same you. New reality.",
+  title: "Reelform | AI Motion Transfer & Object Swap",
   description:
-    "Your video. Any outfit, any place, any life. Reimagine your footage with reference photos and AI video transformation powered by Higgsfield.",
+    "Transfer motion to characters and swap objects in your footage with Genjutsu. Create character remixes, construction concepts, and product videos in Reelform.",
   icons: { icon: "/favicon.svg" },
   openGraph: {
-    title: "Reelform | Same you. New reality.",
-    description: "Turn the everyday into your next main character moment.",
+    title: "Reelform | AI Motion Transfer & Object Swap",
+    description: "Your footage. New possibilities. Explore AI motion transfer and object swaps for content, client projects, and creative experiments.",
     type: "website",
   },
 };

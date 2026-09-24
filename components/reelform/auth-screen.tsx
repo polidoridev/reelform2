@@ -26,7 +26,7 @@ export default function AuthScreen({
     [message, setMessage] = useState("");
   const titles: Record<string, string> = {
     login: "Welcome back.",
-    signup: "Your next reality starts here.",
+    signup: "Your next video starts here.",
     forgot: "Let’s get you back in.",
     reset: "A fresh start.",
     verify: "One last step.",
@@ -103,13 +103,13 @@ export default function AuthScreen({
             autoPlay={reduceMotion === false}
           />
           <div>
-            <span>REAL YOU. REIMAGINED.</span>
+            <span>YOUR FOOTAGE. NEW POSSIBILITIES.</span>
             <h2>
-              A little more
+              Bring your next
               <br />
-              main character.
+              idea to life.
             </h2>
-            <p>Your ideas, your videos, your next chapter.</p>
+            <p>Transfer motion. Swap objects. Make something new.</p>
           </div>
         </div>
         <section className="auth-panel">
