@@ -16,9 +16,15 @@ import {
 import { videoEntitlements, validateVideoEntitlements, type PlanAccount } from "@/lib/commerce/entitlements";
 import { scenes } from "@/lib/scenes";
 import { useCases } from "@/lib/use-cases";
+import { editDuration, MAX_EDITABLE_SECONDS, type Edit } from "@/lib/video-edit";
+import type { EditorSource } from "./video-editor";
 
 export type Media = { file: File; url: string; contentType?: string };
-type Video = Media & { duration: number | null };
+// `source` keeps the original upload and edit list so the editor can reopen them.
+type Video = Media & {
+  duration: number | null;
+  source?: { file: File; duration: number; edit: Edit };
+};
 type Submission = {
   videoToken: string;
   quoteToken: string;
@@ -104,6 +110,28 @@ async function upload(media: Media) {
   return data.token;
 }
 
+function probeDuration(url: string) {
+  return new Promise<number | null>((resolve) => {
+    const el = document.createElement("video");
+    const finish = (value: number | null) => {
+      clearTimeout(timer);
+      el.onloadedmetadata = null;
+      el.onerror = null;
+      el.removeAttribute("src");
+      el.load();
+      resolve(value);
+    };
+    const timer = setTimeout(() => finish(null), 10000);
+    el.preload = "metadata";
+    el.onloadedmetadata = () =>
+      finish(Number.isFinite(el.duration) ? el.duration : null);
+    el.onerror = () => finish(null);
+    el.src = url;
+  });
+}
+const minutes = (seconds: number) =>
+  `${Math.floor(seconds / 60)}:${String(Math.round(seconds % 60)).padStart(2, "0")}`;
+
 const ACTIVE_JOB = "reelform-active-job";
 const PENDING_SEND = "reelform-pending-send";
 const terminal = (status: string) =>
@@ -147,6 +175,8 @@ export function useStudioChat() {
     null,
   );
   const [history, setHistory] = useState<ChatMessage[]>([]);
+  const [editor, setEditor] = useState<EditorSource | null>(null);
+  const [openingEditor, setOpeningEditor] = useState(false);
   const assets = useRef(new Set<string>());
   const selection = useRef(0);
   const submitLock = useRef(false);
@@ -225,6 +255,14 @@ export function useStudioChat() {
     // Initial browser/session state is intentionally restored after hydration.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (scene) setPrompt(scene.prompt);
+    // Opened from My creations: load that saved video into the editor.
+    const editId = new URLSearchParams(location.search).get("edit");
+    if (editId && /^[0-9a-f-]{36}$/i.test(editId)) {
+      const url = new URL(location.href);
+      url.searchParams.delete("edit");
+      window.history.replaceState(window.history.state, "", url);
+      void editResult(`/api/videos/${editId}`);
+    }
     const preset = useCases.find(
       (item) => item.id === new URLSearchParams(location.search).get("useCase"),
     );
@@ -278,6 +316,8 @@ export function useStudioChat() {
       mounted.current = false;
       urls.forEach((url) => URL.revokeObjectURL(url));
     };
+    // Mount-only: restores session state and URL intents once.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Upload once per file; model/settings changes only request a new signed quote.
@@ -480,23 +520,7 @@ export function useStudioChat() {
     const sequence = ++selection.current;
     setInspecting(true);
     const item = media(file);
-    const duration = await new Promise<number | null>((resolve) => {
-      const el = document.createElement("video");
-      const finish = (value: number | null) => {
-        clearTimeout(timer);
-        el.onloadedmetadata = null;
-        el.onerror = null;
-        el.removeAttribute("src");
-        el.load();
-        resolve(value);
-      };
-      const timer = setTimeout(() => finish(null), 10000);
-      el.preload = "metadata";
-      el.onloadedmetadata = () =>
-        finish(Number.isFinite(el.duration) ? el.duration : null);
-      el.onerror = () => finish(null);
-      el.src = item.url;
-    });
+    const duration = await probeDuration(item.url);
     if (!mounted.current || sequence !== selection.current) {
       release(item);
       return;
@@ -504,11 +528,26 @@ export function useStudioChat() {
     setInspecting(false);
     if (
       duration !== null &&
-      (duration < MIN_VIDEO_SECONDS || duration > MAX_VIDEO_SECONDS)
+      (duration < MIN_VIDEO_SECONDS || duration > MAX_EDITABLE_SECONDS)
     ) {
       release(item);
-      setError("Choose a video between 4 and 30 seconds.");
+      setError(
+        duration < MIN_VIDEO_SECONDS
+          ? `Choose a video at least ${MIN_VIDEO_SECONDS} seconds long.`
+          : `Choose a video up to ${MAX_EDITABLE_SECONDS / 60} minutes long. You can trim it to ${MAX_VIDEO_SECONDS} seconds in the editor.`,
+      );
       return;
+    }
+    // Longer footage goes straight to the editor to be trimmed before upload.
+    if (duration !== null && duration > MAX_VIDEO_SECONDS) {
+      release(item);
+      setEditor({
+        file,
+        duration,
+        origin: "upload",
+        notice: `This video is ${minutes(duration)} long. Trim it to ${Math.min(MAX_VIDEO_SECONDS, entitlements.maxSeconds)} seconds or less to use it in the studio.`,
+      });
+      return true;
     }
     // Use functional state so quick successive file choices release the actual old URL.
     setVideo((previous) => {
@@ -518,6 +557,58 @@ export function useStudioChat() {
     setQuote(null);
     setQuoteError("");
     return true;
+  }
+  function editVideo() {
+    if (!video || video.duration === null || busy || submitLock.current) return;
+    setError("");
+    setEditor(
+      video.source
+        ? { ...video.source, origin: "upload" }
+        : { file: video.file, duration: video.duration, origin: "upload" },
+    );
+  }
+  // Loads a finished video so it can be edited, downloaded, or sent back to the AI.
+  async function editResult(url: string) {
+    if (busy || submitLock.current || openingEditor) return;
+    setError("");
+    setOpeningEditor(true);
+    try {
+      const response = await fetch(url, { cache: "no-store" });
+      if (!response.ok) throw new Error();
+      const blob = await response.blob();
+      const file = new File([blob], "reelform-video.mp4", { type: "video/mp4" });
+      const probe = URL.createObjectURL(file);
+      const duration = await probeDuration(probe);
+      URL.revokeObjectURL(probe);
+      if (!duration) throw new Error();
+      if (mounted.current) setEditor({ file, duration, origin: "result" });
+    } catch {
+      if (mounted.current)
+        setError(
+          "This video couldn’t be opened in the editor. Download it, then upload it to edit.",
+        );
+    } finally {
+      if (mounted.current) setOpeningEditor(false);
+    }
+  }
+  function applyEdit(file: File, edit: Edit) {
+    if (!editor || busy || submitLock.current) return;
+    selection.current++;
+    const item = media(file);
+    const source = { file: editor.file, duration: editor.duration, edit };
+    setVideo((previous) => {
+      if (previous) release(previous);
+      return {
+        ...item,
+        contentType: videoContentType(file) ?? "video/mp4",
+        duration: editDuration(edit),
+        source,
+      };
+    });
+    setEditor(null);
+    setQuote(null);
+    setQuoteError("");
+    setError("");
   }
   function removeVideo() {
     selection.current++;
@@ -727,6 +818,7 @@ export function useStudioChat() {
     setResult("");
     setJob(null);
     setInspecting(false);
+    setEditor(null);
     uploadedVideo.current = null;
   }
   return {
@@ -767,6 +859,12 @@ export function useStudioChat() {
     configCheck,
     chooseVideo,
     removeVideo,
+    editor,
+    openingEditor,
+    editVideo,
+    editResult,
+    applyEdit,
+    closeEditor: () => setEditor(null),
     chooseImages,
     removeImage,
     changeModel,

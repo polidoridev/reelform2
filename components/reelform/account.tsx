@@ -17,6 +17,7 @@ import {
   LoaderCircle,
   RefreshCw,
   ChevronRight,
+  Scissors,
 } from "lucide-react";
 import type { AccountData, ApiResult } from "@/lib/commerce/types";
 import { useReducedMotion } from "motion/react";
@@ -846,6 +847,11 @@ export default function Account({
                                   >
                                     Download video <Download size={15} />
                                   </a>
+                                )}
+                                {j.status === "completed" && j.result_url?.startsWith("/api/videos/") && (
+                                  <Link prefetch={false} href={`/studio?edit=${j.id}`} className="quiet-link">
+                                    Edit in studio <Scissors size={15} />
+                                  </Link>
                                 )}
                                 <details>
                                   <summary>Generation ID</summary>

@@ -1,0 +1,433 @@
+.video-editor-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: #0d1224b8;
+  backdrop-filter: blur(4px);
+}
+.video-editor {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(1040px, 100%);
+  max-height: calc(100dvh - 48px);
+  overflow: hidden;
+  border-radius: 16px;
+  background: #fcfcfd;
+  color: #151d36;
+  box-shadow: 0 24px 70px #0a0f2240;
+}
+.video-editor:focus {
+  outline: none;
+}
+.video-editor button {
+  font: inherit;
+  cursor: pointer;
+}
+.video-editor button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+.video-editor :focus-visible {
+  outline: 2px solid #294fbd;
+  outline-offset: 2px;
+}
+.editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px 12px 20px;
+  border-bottom: 1px solid #e0e2e9;
+}
+.editor-header > div {
+  min-width: 0;
+}
+.editor-header h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 750;
+  letter-spacing: -0.2px;
+}
+.editor-header span {
+  display: block;
+  margin-top: 2px;
+  overflow: hidden;
+  color: #656d85;
+  font-size: 11px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.editor-icon-button {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border: 1px solid #e0e2e9;
+  border-radius: 9px;
+  background: #fff;
+  color: #151d36;
+}
+.editor-notice {
+  margin: 12px 20px 0;
+  padding: 10px 12px;
+  border: 1px solid #c9d5f5;
+  border-radius: 9px;
+  background: #eef2fd;
+  color: #243a82;
+  font-size: 12px;
+  line-height: 1.45;
+}
+.editor-stage {
+  display: grid;
+  place-items: center;
+  flex: 1 1 auto;
+  min-height: 160px;
+  margin: 12px 20px 0;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #0e1426;
+}
+.editor-stage video {
+  display: block;
+  width: 100%;
+  height: min(46dvh, 460px);
+  object-fit: contain;
+  cursor: pointer;
+}
+.editor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 14px;
+  padding: 12px 20px 10px;
+}
+.editor-tool-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.editor-tool-group button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 7px 10px;
+  border: 1px solid #d6dae7;
+  border-radius: 9px;
+  background: #fff;
+  color: #151d36;
+  font-size: 12px;
+  font-weight: 650;
+}
+.editor-tool-group button:hover:not(:disabled) {
+  border-color: #aeb6cc;
+  background: #f5f6fa;
+}
+.editor-tool-group button[aria-pressed="true"] {
+  border-color: #c9d5f5;
+  background: #eef2fd;
+  color: #243a82;
+}
+.video-editor .editor-play {
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--accent, #4169e1);
+  color: #fff;
+}
+.video-editor .editor-play:hover:not(:disabled) {
+  background: var(--accent-hover, #2f55c8);
+}
+.editor-time {
+  min-width: 108px;
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+  font-weight: 700;
+}
+.editor-time small {
+  color: #808490;
+  font-size: 12px;
+  font-weight: 500;
+}
+.editor-timeline {
+  margin: 0 20px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  border: 1px solid #e0e2e9;
+  border-radius: 12px;
+  background: #f0f1f5;
+  overscroll-behavior-x: contain;
+}
+.editor-track {
+  position: relative;
+  box-sizing: border-box;
+  min-width: 100%;
+  height: 84px;
+  padding: 0 12px;
+  touch-action: pan-x;
+  cursor: text;
+  user-select: none;
+}
+.editor-clip {
+  position: absolute;
+  top: 12px;
+  height: 60px;
+  margin-left: 12px;
+  box-sizing: border-box;
+  overflow: hidden;
+  border: 2px solid #c1c7d8;
+  border-radius: 8px;
+  background: #d8dce8;
+}
+.editor-clip.is-selected {
+  border-color: var(--accent, #4169e1);
+  box-shadow: 0 0 0 3px #4169e133;
+}
+.editor-clip-frames {
+  display: flex;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+}
+.editor-clip-frames img,
+.editor-clip-frames span {
+  flex: none;
+  height: 100%;
+  object-fit: cover;
+}
+.editor-clip-length {
+  position: absolute;
+  left: 14px;
+  bottom: 4px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: #0e1426b3;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+.editor-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 12px;
+  background: #c1c7d8;
+  cursor: ew-resize;
+  touch-action: none;
+}
+.editor-handle::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 2px;
+  height: 18px;
+  border-radius: 2px;
+  background: #fff;
+  transform: translate(-50%, -50%);
+}
+.editor-handle.is-start {
+  left: 0;
+}
+.editor-handle.is-end {
+  right: 0;
+}
+.is-selected .editor-handle {
+  background: var(--accent, #4169e1);
+}
+.editor-handle:focus-visible {
+  outline-offset: -2px;
+}
+.editor-playhead {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 11px;
+  width: 2px;
+  border-radius: 2px;
+  background: #e5484d;
+  pointer-events: none;
+}
+.editor-playhead::before {
+  content: "";
+  position: absolute;
+  top: -2px;
+  left: -4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #e5484d;
+}
+.editor-hint {
+  margin: 8px 20px 0;
+  color: #808490;
+  font-size: 11px;
+}
+.editor-hint kbd {
+  padding: 0 4px;
+  border: 1px solid #d6dae7;
+  border-radius: 4px;
+  background: #fff;
+  font: inherit;
+  font-size: 10px;
+}
+.editor-error {
+  margin: 8px 20px 0;
+  color: #b42318;
+  font-size: 12px;
+}
+.editor-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  margin-top: 12px;
+  padding: 14px 20px 16px;
+  border-top: 1px solid #e0e2e9;
+}
+.editor-footer p {
+  margin: 0;
+  color: #475069;
+  font-size: 12px;
+}
+.editor-footer p strong {
+  margin-right: 6px;
+  color: #151d36;
+  font-variant-numeric: tabular-nums;
+}
+.editor-footer p.is-warning {
+  color: #b54708;
+}
+.editor-footer > div {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+.editor-primary,
+.editor-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 39px;
+  padding: 9px 14px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.editor-primary {
+  border: 0;
+  background: var(--accent, #4169e1);
+  color: #fff;
+}
+.editor-primary:hover:not(:disabled) {
+  background: var(--accent-hover, #2f55c8);
+}
+.editor-secondary {
+  border: 1px solid #d6dae7;
+  background: #fff;
+  color: #151d36;
+}
+.editor-rendering {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+  background: #fcfcfdf2;
+  text-align: center;
+}
+.editor-rendering strong {
+  font-size: 15px;
+}
+.editor-rendering > span {
+  color: #656d85;
+  font-size: 12px;
+}
+.editor-progress {
+  width: min(360px, 100%);
+  height: 6px;
+  overflow: hidden;
+  border-radius: 6px;
+  background: #e3e5ec;
+}
+.editor-progress span {
+  display: block;
+  height: 100%;
+  background: var(--accent, #4169e1);
+  transition: width 0.2s;
+}
+.chat-video-attachment .chat-edit-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 6px;
+  padding: 4px 8px;
+  border: 1px solid #c9cedc;
+  border-radius: 7px;
+  background: #fff;
+  color: #151d36;
+  font-size: 10px;
+  font-weight: 700;
+}
+.chat-video-attachment .chat-edit-button:hover:not(:disabled) {
+  border-color: #aeb6cc;
+}
+@media (max-width: 640px) {
+  .video-editor-backdrop {
+    padding: 0;
+  }
+  .video-editor {
+    width: 100%;
+    height: 100dvh;
+    max-height: none;
+    border-radius: 0;
+  }
+  .editor-header,
+  .editor-toolbar,
+  .editor-footer {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  .editor-notice,
+  .editor-stage,
+  .editor-timeline,
+  .editor-hint,
+  .editor-error {
+    margin-left: 16px;
+    margin-right: 16px;
+  }
+  .editor-stage video {
+    height: 34dvh;
+  }
+  .editor-tool-group button span {
+    display: none;
+  }
+  .editor-footer > div {
+    width: 100%;
+  }
+  .editor-footer > div button {
+    flex: 1;
+    justify-content: center;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .editor-progress span {
+    transition: none;
+  }
+}

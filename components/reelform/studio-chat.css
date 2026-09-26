@@ -986,16 +986,25 @@
   gap: 10px 18px;
   margin-top: 15px;
 }
-.chat-result-actions a {
+.chat-result-actions a,
+.chat-result-actions button {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   font-size: 10px;
   padding: 5px 0;
 }
-.chat-result-actions a:first-child {
+.chat-result-actions a:first-of-type,
+.chat-result-actions button {
   color: #273359;
   font-weight: 700;
+}
+.chat-result-actions button {
+  border: 0;
+  background: none;
+}
+.chat-result-actions button:disabled {
+  opacity: 0.5;
 }
 .chat-mobile-close,
 .chat-mobile-menu,

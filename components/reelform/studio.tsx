@@ -15,6 +15,7 @@ import {
   Menu,
   Plus,
   RefreshCw,
+  Scissors,
   ShieldCheck,
   SlidersHorizontal,
   Sparkles,
@@ -25,9 +26,10 @@ import {
 import Brand from "./brand";
 import AppSelect from "./app-select";
 import GenerationProgress from "./generation-progress";
+import VideoEditor from "./video-editor";
 import { useStudioChat, type ChatMessage } from "./use-studio-chat";
 import { VIDEO_MODELS } from "@/lib/video-models";
-import { VIDEO_ACCEPT, MAX_VIDEO_SIZE_LABEL } from "@/lib/video-limits";
+import { VIDEO_ACCEPT, MAX_VIDEO_SIZE_LABEL, MAX_VIDEO_SECONDS } from "@/lib/video-limits";
 import { useCases } from "@/lib/use-cases";
 import "./studio-chat.css";
 
@@ -86,7 +88,15 @@ function AssistantMessage({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
-function VideoResult({ url }: { url: string }) {
+function VideoResult({
+  url,
+  onEdit,
+  editing,
+}: {
+  url: string;
+  onEdit: (url: string) => void;
+  editing: boolean;
+}) {
   return (
     <div className="chat-result">
       <p>Your video is ready.</p>
@@ -98,6 +108,9 @@ function VideoResult({ url }: { url: string }) {
         aria-label="Generated video"
       />
       <div className="chat-result-actions">
+        <button type="button" onClick={() => onEdit(url)} disabled={editing}>
+          <Scissors size={15} /> {editing ? "Opening editor…" : "Edit video"}
+        </button>
         <a
           href={url.startsWith("/api/videos/") ? `${url}?download=1` : url}
           download="reelform-transformation.mp4"
@@ -342,7 +355,11 @@ export default function Studio() {
               <SentMessage message={message} />
               <AssistantMessage>
                 {message.result ? (
-                  <VideoResult url={message.result} />
+                  <VideoResult
+                    url={message.result}
+                    onEdit={(url) => void s.editResult(url)}
+                    editing={s.openingEditor || s.busy}
+                  />
                 ) : (
                   <p className="chat-generation-error">
                     {message.error || "This generation did not complete."}
@@ -356,7 +373,11 @@ export default function Studio() {
               <SentMessage message={s.currentMessage} />
               <AssistantMessage>
                 {s.result ? (
-                  <VideoResult url={s.result} />
+                  <VideoResult
+                    url={s.result}
+                    onEdit={(url) => void s.editResult(url)}
+                    editing={s.openingEditor || s.busy}
+                  />
                 ) : (
                   <div className="chat-generation-state">
                     <div className="chat-generation-title">
@@ -587,7 +608,16 @@ export default function Studio() {
                             ? "Duration checked on upload"
                             : `${s.video.duration.toFixed(1)} sec`}{" "}
                           · {(s.video.file.size / 1024 / 1024).toFixed(1)} MB
+                          {s.video.source && " · Edited"}
                         </span>
+                        <button
+                          type="button"
+                          className="chat-edit-button"
+                          disabled={s.busy || s.video.duration === null}
+                          onClick={s.editVideo}
+                        >
+                          <Scissors size={12} /> Edit
+                        </button>
                       </div>
                       <button
                         type="button"
@@ -811,7 +841,7 @@ export default function Studio() {
               <p id="studio-file-help">
                 {s.video
                   ? `JPG, PNG or WebP references · up to 10 MB each`
-                  : `4–30 sec video · MP4, MOV, M4V or WebM · up to ${MAX_VIDEO_SIZE_LABEL}`}
+                  : `4–30 sec video (trim longer ones in the editor) · MP4, MOV, M4V or WebM · up to ${MAX_VIDEO_SIZE_LABEL}`}
               </p>
               <span>⌘ / Ctrl + Enter to send</span>
             </div>
@@ -891,6 +921,16 @@ export default function Studio() {
           </div>
         </div>
       </main>
+      {s.editor && (
+        <VideoEditor
+          key={`${s.editor.file.name}-${s.editor.file.size}-${s.editor.file.lastModified}`}
+          {...s.editor}
+          maxSeconds={Math.min(MAX_VIDEO_SECONDS, s.entitlements.maxSeconds)}
+          modelLimit={{ name: s.selectedModel.name, seconds: s.selectedModel.maxSeconds }}
+          onApply={s.applyEdit}
+          onClose={s.closeEditor}
+        />
+      )}
     </div>
   );
 }
