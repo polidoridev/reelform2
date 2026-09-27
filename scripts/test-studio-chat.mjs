@@ -46,6 +46,11 @@ await context.route(`${base}/api/**`, async route => {
 await context.route(`${base}/__studio-test/**`, route => route.fulfill({ status: 200, body: "" }));
 const send = page.getByRole("button", { name: "Send and generate video" });
 async function waitFor(predicate) { await page.waitForFunction(predicate, undefined, { timeout: 20000 }); }
+// The default model needs a reference photo; Seedance 2.5 Edit prices a video on its own.
+async function chooseSeedance() {
+  await page.locator(".chat-more-models").click();
+  await page.getByRole("button", { name: /^Seedance 2.5 Edit Up to/ }).click();
+}
 async function readyVideo() {
   await page.getByLabel("Upload original video", { exact: true }).setInputFiles(resolve("public/media/alpine.mp4"));
   await page.getByText("240 credits", { exact: true }).waitFor();
@@ -57,19 +62,22 @@ try {
   await page.goto(`${base}/studio`);
   await page.getByText("10,000 credits", { exact: true }).waitFor();
   assert(await send.isDisabled());
+  await chooseSeedance();
   assert(await page.getByLabel("Upload reference images", { exact: true }).isDisabled());
   await readyVideo();
   await page.getByLabel("Upload reference images", { exact: true }).setInputFiles(resolve("public/media/arrival.jpg"));
   await waitFor(() => !document.querySelector('[aria-label="Send and generate video"]').disabled);
   const beforeSettings = uploadCount;
-  await page.getByRole("button", { name: "Seedance 2.5 Edit", exact: true }).click();
-  await page.getByRole("button", { name: "Explore 1080p models" }).click();
-  await page.getByRole("button", { name: /Kling O3 Edit/ }).click();
+  await page.locator(".chat-more-models").click();
+  await page.getByRole("button", { name: /^Kling O3 Edit Up to/ }).click();
+  assert.equal(await page.locator(".chat-more-models").innerText(), "Kling O3 Edit");
+  await page.getByRole("button", { name: /Original audio/ }).click();
+  await page.getByRole("combobox", { name: "Output quality" }).click();
+  await page.getByRole("option", { name: "1080p Full HD", exact: true }).click();
   assert.equal(await page.getByRole("combobox", { name: "Output quality" }).innerText(), "1080p Full HD");
   await waitFor(() => !document.querySelector('[aria-label="Send and generate video"]').disabled);
   assert.equal(uploadCount, beforeSettings, "switching to Full HD reuses uploaded video");
-  await page.getByRole("combobox", { name: "AI model" }).click();
-  await page.getByRole("option", { name: "Seedance 2.5 Edit · Recommended", exact: true }).click();
+  await page.getByRole("radio", { name: "Object Swap" }).click();
   quoteDelay = 800;
   await page.getByRole("combobox", { name: "Output quality" }).click();
   await page.getByRole("option", { name: "480p", exact: true }).click();
@@ -80,7 +88,7 @@ try {
   await page.getByRole("button", { name: "Close generation settings" }).click();
   await page.screenshot({ path: "outputs/studio-chat-ready.png", fullPage: true });
   await send.click();
-  await page.getByText("Your new reality is ready.", { exact: true }).waitFor({ timeout: 20000 });
+  await page.getByText("Your video is ready.", { exact: true }).waitFor({ timeout: 20000 });
   assert.equal(submissions.length, 1);
   assert.equal(submissions[0].imageTokens.length, 1);
   assert.equal(submissions[0].resolution, "480p");
@@ -93,6 +101,7 @@ try {
   assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "mobile must not overflow horizontally");
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.getByRole("button", { name: "New video", exact: true }).click();
+  await chooseSeedance();
   failUpload = true;
   await page.getByLabel("Upload original video", { exact: true }).setInputFiles(resolve("public/media/alpine.mp4"));
   await page.getByText("Upload temporarily unavailable", { exact: true }).waitFor();
@@ -115,12 +124,13 @@ try {
   assert.equal(submissions.at(-1).requestId, originalId);
   alreadyCompleted = true;
   await page.getByRole("button", { name: "Check request", exact: true }).click();
-  await page.getByText("Your new reality is ready.", { exact: true }).waitFor({ timeout: 20000 });
+  await page.getByText("Your video is ready.", { exact: true }).waitFor({ timeout: 20000 });
   assert.equal(submissions.at(-1).requestId, originalId);
   await page.getByRole("button", { name: "New video", exact: true }).click();
   balance = 10;
   await page.reload();
   await page.getByText("10 credits", { exact: true }).waitFor();
+  await chooseSeedance();
   await page.getByLabel("Upload original video", { exact: true }).setInputFiles(resolve("public/media/alpine.mp4"));
   await page.getByText("240 credits", { exact: true }).waitFor();
   await page.getByLabel("Describe your video transformation").fill("Turn the mountains into a cinematic coastal landscape.");

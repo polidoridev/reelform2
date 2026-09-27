@@ -1,4 +1,4 @@
-import { DEFAULT_VIDEO_MODEL, getVideoModel, validateModel, type VideoResolution } from "../video-models";
+import { DEFAULT_VIDEO_MODEL, getVideoModel, modelRate, validateModel, type VideoResolution } from "../video-models";
 import { MIN_VIDEO_SECONDS, MAX_VIDEO_SECONDS } from "../video-limits";
 export const PLANS = [
   {
@@ -103,10 +103,10 @@ export function quoteVideo(media: MediaInfo, resolution: VideoResolution, modelI
   const duration = Math.ceil(media.duration * 10) / 10;
   const outputDuration = model.kind.includes("reference") ? Math.ceil(duration) : duration;
   const tokens = Math.ceil(((duration + outputDuration) * short * long * 24) / 1024);
-  const providerUsd = model.kind === "genjutsu"
-    ? Math.ceil(duration) * (resolution === "720p" ? 0.681 : 0.318)
-    : model.secondRate ? Math.ceil(duration) * model.secondRate
-    : tokens * (model.tokenRate! / 1000);
+  const rate = modelRate(model, resolution);
+  const providerUsd = model.secondRate !== undefined
+    ? Math.ceil(duration) * rate
+    : tokens * (rate / 1000);
   return {
     credits: Math.ceil((providerUsd * CREDITS_PER_PROVIDER_DOLLAR) / 10) * 10,
     duration: outputDuration,

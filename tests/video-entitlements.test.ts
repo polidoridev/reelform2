@@ -29,6 +29,6 @@ test("expired and unknown plans fall back; paid terms and trusted admin keep ben
 test("Full HD entitlement still respects provider capabilities and selects pro mode", () => {
   const request = {prompt:"A cinematic scene",videoUrl:"https://example.com/video.mp4",imageUrls:[],resolution:"1080p",generateAudio:false,media:{duration:10,width:1920,height:1080}};
   validateVideoEntitlements(plan("pro"), {...input, resolution:"1080p"});
-  assert.throws(() => modelRequest(getVideoModel("seedance-2.5-edit"), request), /does not support/);
+  assert.throws(() => modelRequest(getVideoModel("kling-3-motion-std"), request), /does not support/);
   assert.equal(modelRequest(getVideoModel("kling-o3-edit"), request).mode, "pro");
 });

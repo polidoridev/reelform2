@@ -17,6 +17,7 @@ import { videoEntitlements, validateVideoEntitlements, type PlanAccount } from "
 import { scenes } from "@/lib/scenes";
 import { useCases } from "@/lib/use-cases";
 import { editDuration, MAX_EDITABLE_SECONDS, type Edit } from "@/lib/video-edit";
+import { referenceProblem, renumberAfterRemoval } from "@/lib/prompt-references";
 import type { EditorSource } from "./video-editor";
 
 export type Media = { file: File; url: string; contentType?: string };
@@ -198,6 +199,8 @@ export function useStudioChat() {
     images.length,
   ]);
   const currentQuote = quote?.key === quoteKey ? quote : null;
+  // Only flag mentions once a video is attached, so presets can be picked first.
+  const promptError = video ? referenceProblem(prompt, images.length) ?? "" : "";
   const modelError = (() => {
     if (!video) return "";
     try {
@@ -643,8 +646,10 @@ export function useStudioChat() {
     setImages((previous) => [...previous, ...list.map(media)]);
   }
   function removeImage(item: Media) {
+    const index = images.indexOf(item);
     release(item);
     setImages((previous) => previous.filter((image) => image !== item));
+    if (index >= 0) setPrompt((text) => renumberAfterRemoval(text, index + 1));
   }
   function changeModel(value: string, quality?: string) {
     const next = getVideoModel(value);
@@ -725,8 +730,8 @@ export function useStudioChat() {
       setError("Sign in and check the generation connection before sending.");
       return;
     }
-    if (modelError) {
-      setError(modelError);
+    if (modelError || promptError) {
+      setError(modelError || promptError);
       return;
     }
     if (Date.now() - currentQuote.created > 14 * 60000) {
@@ -855,6 +860,7 @@ export function useStudioChat() {
     currentMessage,
     history,
     modelError,
+    promptError,
     pollStopped,
     configCheck,
     chooseVideo,

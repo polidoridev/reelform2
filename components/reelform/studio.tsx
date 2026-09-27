@@ -27,6 +27,8 @@ import Brand from "./brand";
 import AppSelect from "./app-select";
 import GenerationProgress from "./generation-progress";
 import VideoEditor from "./video-editor";
+import ModelPicker from "./model-picker";
+import PromptInput, { PromptWithReferences } from "./prompt-input";
 import { useStudioChat, type ChatMessage } from "./use-studio-chat";
 import { VIDEO_MODELS } from "@/lib/video-models";
 import { VIDEO_ACCEPT, MAX_VIDEO_SIZE_LABEL, MAX_VIDEO_SECONDS } from "@/lib/video-limits";
@@ -66,7 +68,9 @@ function SentMessage({ message }: { message: ChatMessage }) {
             ))}
           </div>
         )}
-        <p>{message.prompt}</p>
+        <p>
+          <PromptWithReferences text={message.prompt} />
+        </p>
         <div className="chat-message-meta">
           <span>{message.modelName}</span>
           <span>{message.resolution}</span>
@@ -154,6 +158,7 @@ export default function Studio() {
     !s.busy &&
     !s.inspecting &&
     !s.modelError &&
+    !s.promptError &&
     !insufficient &&
     s.consent &&
     s.prompt.trim().length >= 10;
@@ -166,6 +171,21 @@ export default function Studio() {
         block: "start",
       });
   }, [s.currentMessage]);
+  // Adds an @mention at the caret, e.g. from an attachment's label.
+  function insertToken(token: string) {
+    const el = promptRef.current;
+    const start = el?.selectionStart ?? s.prompt.length;
+    const end = el?.selectionEnd ?? start;
+    const before = s.prompt.slice(0, start);
+    const lead = before && !/\s$/.test(before) ? " " : "";
+    const next = `${before}${lead}${token} ${s.prompt.slice(end)}`.slice(0, 2000);
+    s.setPrompt(next);
+    const caret = Math.min(before.length + lead.length + token.length + 1, next.length);
+    requestAnimationFrame(() => {
+      el?.focus();
+      el?.setSelectionRange(caret, caret);
+    });
+  }
   function chooseScene(prompt: string, model: string) {
     s.changeModel(model);
     s.setPrompt(prompt);
@@ -518,6 +538,15 @@ export default function Studio() {
                   <strong>Drop your video or reference images</strong>
                 </div>
               )}
+              <ModelPicker
+                model={s.model}
+                onChange={(id) => {
+                  s.changeModel(id);
+                  setFullHdOpen(false);
+                }}
+                disabled={s.busy}
+                videoSeconds={s.video?.duration ?? null}
+              />
               <div className="chat-attachment-bar">
                 <input
                   ref={videoInput}
@@ -601,6 +630,15 @@ export default function Studio() {
                         preload="metadata"
                         aria-label="Original video preview"
                       />
+                      <button
+                        type="button"
+                        className="chat-ref-label"
+                        disabled={s.busy}
+                        onClick={() => insertToken("@video")}
+                        title="Mention this video in your prompt"
+                      >
+                        @video
+                      </button>
                       <div>
                         <strong>{s.video.file.name}</strong>
                         <span>
@@ -636,7 +674,15 @@ export default function Studio() {
                         src={image.url}
                         alt={`Reference ${i + 1}: ${image.file.name}`}
                       />
-                      <span>Ref {i + 1}</span>
+                      <button
+                        type="button"
+                        className="chat-ref-label"
+                        disabled={s.busy}
+                        onClick={() => insertToken(`@image${i + 1}`)}
+                        title={`Mention this photo in your prompt`}
+                      >
+                        @image{i + 1}
+                      </button>
                       <button
                         type="button"
                         disabled={s.busy}
@@ -652,26 +698,27 @@ export default function Studio() {
               <label className="sr-only" htmlFor="studio-prompt">
                 Describe your video transformation
               </label>
-              <textarea
-                id="studio-prompt"
-                ref={promptRef}
+              <PromptInput
                 value={s.prompt}
+                onChange={s.setPrompt}
+                inputRef={promptRef}
                 disabled={s.busy}
-                maxLength={2000}
-                rows={3}
-                onChange={(e) => s.setPrompt(e.target.value)}
-                onKeyDown={(e) => {
-                  if (
-                    e.key === "Enter" &&
-                    (e.metaKey || e.ctrlKey) &&
-                    !e.nativeEvent.isComposing
-                  ) {
-                    e.preventDefault();
-                    if (canSend) void s.generate();
-                  }
+                options={[
+                  ...(s.video
+                    ? [{ token: "@video", label: "Your video", preview: s.video.url, kind: "video" as const }]
+                    : []),
+                  ...s.images.map((image, i) => ({
+                    token: `@image${i + 1}`,
+                    label: image.file.name,
+                    preview: image.url,
+                    kind: "image" as const,
+                  })),
+                ]}
+                onSubmitShortcut={() => {
+                  if (canSend) void s.generate();
                 }}
-                placeholder="Describe the motion to transfer or the object to replace. Use your reference photos to guide the result…"
-                aria-describedby="studio-file-help"
+                placeholder="Describe what to change. Type @ to point at @video or a photo, like: replace the car in @video with the one in @image1…"
+                describedBy="studio-file-help"
               />
               <div className="chat-composer-toolbar">
                 <div className="chat-model-summary">
@@ -684,13 +731,12 @@ export default function Studio() {
                     disabled={s.busy}
                   >
                     <SlidersHorizontal size={15} />
-                    <span>{s.selectedModel.name}</span>
+                    <span>
+                      {s.resolution}
+                      {s.audio ? " · Generated audio" : " · Original audio"}
+                    </span>
                     <ChevronDown size={13} />
                   </button>
-                  <span className="chat-quality-label">
-                    {s.resolution}
-                    {s.audio ? " · Generated audio" : " · Original audio"}
-                  </span>
                 </div>
                 <div className="chat-send-controls">
                   <span className="chat-prompt-count">
@@ -722,23 +768,7 @@ export default function Studio() {
                       <X size={16} />
                     </button>
                   </div>
-                  <div className="chat-settings-grid">
-                    <label>
-                      AI model
-                      <AppSelect
-                        label="AI model"
-                        value={s.model}
-                        disabled={s.busy}
-                        onValueChange={(value) => {
-                          s.changeModel(value);
-                          setFullHdOpen(false);
-                        }}
-                        options={VIDEO_MODELS.map((m, i) => ({
-                          value: m.id,
-                          label: `${m.name}${i === 0 ? " · Recommended" : ""}`,
-                        }))}
-                      />
-                    </label>
+                  <div className="chat-settings-grid is-compact">
                     <label>
                       Quality
                       <AppSelect
@@ -754,7 +784,7 @@ export default function Studio() {
                           s.setResolution(value);
                         }}
                         options={[
-                          ...s.selectedModel.resolutions.map((value) => ({
+                          ...[...s.selectedModel.resolutions].sort((a, b) => parseInt(b) - parseInt(a)).map((value) => ({
                             value,
                             label:
                               value === "1080p"
@@ -792,7 +822,9 @@ export default function Studio() {
                       />
                     </label>
                   </div>
-                  <p>{s.selectedModel.description}</p>
+                  <p>
+                    <strong>{s.selectedModel.name}:</strong> {s.selectedModel.description}
+                  </p>
                   <p>
                     {s.isAdmin ? "Admin access" : `${s.entitlements.name} features`} · Up to {s.entitlements.maxSeconds}s · {s.entitlements.maxImages} reference photo{s.entitlements.maxImages === 1 ? "" : "s"} · {s.entitlements.fullHd ? "Full HD available" : "Up to 720p"}
                     {!s.entitlements.fullHd && <> · <a href="/account?tab=billing">Upgrade for Full HD and generated audio</a></>}
@@ -840,7 +872,7 @@ export default function Studio() {
             <div className="chat-composer-details">
               <p id="studio-file-help">
                 {s.video
-                  ? `JPG, PNG or WebP references · up to 10 MB each`
+                  ? `Type @ to mention @video or a photo · JPG, PNG or WebP references up to 10 MB each`
                   : `4–30 sec video (trim longer ones in the editor) · MP4, MOV, M4V or WebM · up to ${MAX_VIDEO_SIZE_LABEL}`}
               </p>
               <span>⌘ / Ctrl + Enter to send</span>
@@ -874,6 +906,11 @@ export default function Studio() {
             {s.modelError && (
               <p className="chat-composer-error" role="alert">
                 {s.modelError}
+              </p>
+            )}
+            {s.promptError && (
+              <p className="chat-composer-error" role="alert">
+                {s.promptError}
               </p>
             )}
             {s.quoteError && !s.busy && (
