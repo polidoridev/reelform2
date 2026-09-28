@@ -155,7 +155,7 @@
   font-weight: 700;
 }
 .editor-time small {
-  color: #808490;
+  color: #646770;
   font-size: 12px;
   font-weight: 500;
 }
@@ -272,7 +272,7 @@
 }
 .editor-hint {
   margin: 8px 20px 0;
-  color: #808490;
+  color: #646770;
   font-size: 11px;
 }
 .editor-hint kbd {

@@ -1,5 +1,6 @@
+import { pageMetadata } from "@/lib/seo";
 import Brand from "@/components/reelform/brand";
-export const metadata = { title: "Connect Higgsfield | Reelform" };
+export const metadata = pageMetadata({ title: "Connect Higgsfield", path: "/setup", index: false });
 export default function Setup() {
   return (
     <main className="setup-page">

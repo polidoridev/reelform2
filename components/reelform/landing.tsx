@@ -33,7 +33,19 @@ import {
   SceneVideo,
   ParallaxFrame,
 } from "./motion-scenes";
+import { CookieSettingsButton } from "./cookie-consent";
 import "./cinema.css";
+
+// FAQ rich results. Answers are static strings from faqs.ts.
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: faqs.map(([question, answer]) => ({
+    "@type": "Question",
+    name: question,
+    acceptedAnswer: { "@type": "Answer", text: answer },
+  })),
+};
 
 const examplePrompt =
   "“Transfer this dancer’s movement to the character in my reference photo.”";
@@ -96,12 +108,15 @@ export default function Landing() {
             <a href="#how-it-works" onClick={() => setMenu(false)}>
               How it works
             </a>
+            <a href="#faq" onClick={() => setMenu(false)}>
+              FAQ
+            </a>
             <a href="/pricing">Pricing</a>
             <Link prefetch={false} href="/community">Community</Link>
             <a href="/account">My account</a>
           </nav>
-          <a href="/login?next=%2Fstudio" className="button button-small">
-            Open studio <ArrowUpRight size={16} />
+          <a href="/studio" className="button button-small">
+            Start creating <ArrowUpRight size={16} />
           </a>
           <button
             className="menu-toggle icon-button"
@@ -114,6 +129,10 @@ export default function Landing() {
         </div>
       </header>
       <main id="main">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+        />
         <section ref={hero} className="cinema-hero">
           <div className="hero-gradient" aria-hidden="true" />
           <motion.div
@@ -127,23 +146,16 @@ export default function Landing() {
             >
               <Sparkles size={14} /> AI MOTION TRANSFER & OBJECT SWAP
             </motion.div>
-            <motion.h1
-              initial={reduced ? false : { opacity: 0, y: 25 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1] }}
-            >
+            {/* Visible in the server HTML so it paints before scripts load (it is the LCP element). */}
+            <h1 className="hero-rise">
               Your footage.
               <br className="mobile-break" /> <span>New possibilities.</span>
-            </motion.h1>
-            <motion.p
-              initial={reduced ? false : { opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.12 }}
-            >
+            </h1>
+            <p className="hero-rise hero-rise-late">
               Transfer motion to a character. Swap objects in a scene.
               <br />
               Create something for your audience, your clients, or just for fun.
-            </motion.p>
+            </p>
             <div className="director-prompt hero-prompt">
               <span>
                 <Sparkles size={14} /> TRY THIS
@@ -183,19 +195,20 @@ export default function Landing() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
             >
-              <a href="/login?next=%2Fstudio" className="button">
+              <a href="/studio" className="button">
                 Start creating <ArrowUpRight size={18} />
               </a>
               <a href="#explore" className="hero-secondary">
                 <Play size={14} fill="currentColor" /> See what’s possible
               </a>
             </motion.div>
+            <p className="hero-reassurance">Plans from $19/month · Cancel anytime · You keep the rights to your videos</p>
           </motion.div>
           <div className="transfer-choices" aria-label="Choose your video tool">
             <a href="/studio?useCase=character-remix">
               <span className="section-label">GENJUTSU MOTION TRANSFER</span>
               <h2>New character.<br />Same starting moves.</h2>
-              <p>Use a performance to guide a character from your reference photo. Try dance edits, music-video remixes, and animated personas.</p>
+              <p>Use a performance to guide a character from your reference photo. Film your own dance or performance, then recast it as an original character or a new look.</p>
               <span className="text-link">Transfer motion <ArrowUpRight size={18} /></span>
             </a>
             <a href="/studio?useCase=product-swap">
@@ -377,7 +390,7 @@ export default function Landing() {
             </h2>
             <p>For your next post, pitch, project, or experiment.</p>
             <a className="button" href="/studio">
-              Let’s make it happen <ArrowUpRight size={19} />
+              Start creating <ArrowUpRight size={19} />
             </a>
           </Reveal>
         </section>
@@ -387,9 +400,34 @@ export default function Landing() {
           <Brand />
           <span>Your footage. New possibilities.</span>
           <a href="/studio">
-            Create your next video <ArrowUpRight size={16} />
+            Start creating <ArrowUpRight size={16} />
           </a>
         </div>
+        <nav className="footer-links" aria-label="Footer">
+          <div>
+            <strong>Product</strong>
+            <a href="/studio">Video studio</a>
+            <a href="/pricing">Pricing</a>
+            <Link prefetch={false} href="/community">Community</Link>
+            <a href="#faq">FAQ</a>
+          </div>
+          <div>
+            <strong>Account</strong>
+            <a href="/login">Sign in</a>
+            <a href="/account">My account</a>
+            <a href="/account?tab=creations">My creations</a>
+          </div>
+          <div>
+            <strong>Legal</strong>
+            <a href="/privacy">Privacy policy</a>
+            <a href="/terms">Terms of use</a>
+            <CookieSettingsButton className="footer-link-button" />
+          </div>
+          <div>
+            <strong>Contact</strong>
+            <a href="mailto:admin@polidori.dev">admin@polidori.dev</a>
+          </div>
+        </nav>
         <div className="footer-bottom">
           <span>© {new Date().getFullYear()} Reelform</span>
           <span>Made for people who make things.</span>

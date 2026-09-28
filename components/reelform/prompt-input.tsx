@@ -84,8 +84,6 @@ export default function PromptInput({
         disabled={disabled}
         maxLength={2000}
         rows={3}
-        role="combobox"
-        aria-expanded={menuOpen}
         aria-controls={menuOpen ? listId : undefined}
         aria-autocomplete="list"
         aria-activedescendant={menuOpen ? `${listId}-${current}` : undefined}

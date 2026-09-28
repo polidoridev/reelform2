@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowRight, ArrowLeft, Check, Mail, LoaderCircle } from "lucide-react";
 import type { ApiResult } from "@/lib/commerce/types";
 import { useReducedMotion } from "motion/react";
@@ -20,6 +20,13 @@ export default function AuthScreen({
   returnTo?: string;
 }) {
   const reduceMotion = useReducedMotion();
+  const art = useRef<HTMLVideoElement>(null);
+  // The motion preference is only known in the browser, so playback starts here
+  // rather than through an autoPlay attribute that would differ from the server HTML.
+  useEffect(() => {
+    if (reduceMotion === false) art.current?.play().catch(() => {});
+    else art.current?.pause();
+  }, [reduceMotion]);
   const [mode, setMode] = useState(initialMode),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(initialError),
@@ -95,12 +102,13 @@ export default function AuthScreen({
       <main className="auth-layout">
         <div className="auth-art">
           <video
+            ref={art}
             src="/media/yacht.mp4"
             poster="/media/yacht.jpg"
             muted
             loop
             playsInline
-            autoPlay={reduceMotion === false}
+            aria-hidden="true"
           />
           <div>
             <span>YOUR FOOTAGE. NEW POSSIBILITIES.</span>

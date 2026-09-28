@@ -233,25 +233,26 @@ export function useStudioChat() {
     mounted.current = true;
     void jsonRequest<{ ready: boolean; authenticated: boolean }>("/api/config")
       .then((data) => {
-        if (mounted.current) {
-          setReady(data.ready);
-          setAuthenticated(data.authenticated);
-        }
+        if (!mounted.current) return;
+        setReady(data.ready);
+        setAuthenticated(data.authenticated);
+        // Signed-out visitors have no account to load (and would get a 401).
+        if (!data.authenticated) return;
+        return jsonRequest<{ balance: { total: number }; isAdmin: boolean; account: PlanAccount }>(
+          "/api/account",
+        )
+          .then((account) => {
+            if (mounted.current) {
+              setCreditBalance(account.balance.total);
+              setIsAdmin(account.isAdmin);
+              setPlanAccount(account.account);
+            }
+          })
+          .catch(() => {});
       })
       .catch(() => {
         if (mounted.current) setReady(false);
       });
-    void jsonRequest<{ balance: { total: number }; isAdmin: boolean; account: PlanAccount }>(
-      "/api/account",
-    )
-      .then((data) => {
-        if (mounted.current) {
-          setCreditBalance(data.balance.total);
-          setIsAdmin(data.isAdmin);
-          setPlanAccount(data.account);
-        }
-      })
-      .catch(() => {});
     const scene = scenes.find(
       (s) => s.id === new URLSearchParams(location.search).get("scene"),
     );

@@ -1,23 +1,56 @@
+import { pageMetadata } from "@/lib/seo";
 import Link from "next/link";
 import Brand from "@/components/reelform/brand";
-export const metadata = { title: "Terms | Reelform" };
+export const metadata = pageMetadata({
+  title: "Terms of use",
+  description: "The rules for using Reelform: your content and rights, acceptable use, subscriptions and credits, refunds, and community publishing.",
+  path: "/terms",
+});
 export default function Terms() {
   return (
     <main className="setup-page">
       <Brand />
       <h1>Terms of use</h1>
       <p>
-        Last updated September 21, 2026. Questions:{" "}
+        Last updated September 27, 2026. Questions:{" "}
         <a href="mailto:admin@polidori.dev">admin@polidori.dev</a>.
       </p>
-      <h2>Your account and content</h2>
+      <h2>Your account</h2>
       <p>
-        Use accurate account details and keep your credentials secure. Upload
-        only footage, likenesses, and reference images you have permission to
-        use. Do not use Reelform for fraud, impersonation without consent,
-        harassment, or unlawful content. AI transformations are creative
-        simulations; do not present them as evidence of events that did not
-        happen.
+        You must be at least 18 to use Reelform. Use accurate account details
+        and keep your credentials secure; you are responsible for activity on
+        your account.
+      </p>
+      <h2 id="acceptable-use">Acceptable use</h2>
+      <p>
+        Upload only footage, likenesses, music, and reference images you have
+        permission to use. You must not use Reelform to:
+      </p>
+      <ul>
+        <li>
+          depict a real, identifiable person, including a public figure,
+          without their consent, or make it appear they said or did something
+          they did not;
+        </li>
+        <li>
+          create sexual content involving real people, or any content that
+          sexualizes minors;
+        </li>
+        <li>
+          commit fraud, impersonate others, harass or threaten anyone, or
+          mislead people about news, elections, or public safety;
+        </li>
+        <li>
+          infringe copyright, trademarks, or other rights, or break the law.
+        </li>
+      </ul>
+      <p>
+        AI transformations are creative simulations; do not present them as
+        evidence of events that did not happen, and label realistic AI edits when
+        you share them. Requests may be screened automatically by our video
+        provider, and some are blocked without an explanation of which input was
+        responsible. We may refuse, remove, or report content, and suspend or
+        close accounts that break these rules.
       </p>
       <h2 id="creator-rights">Your videos, your rights</h2>
       <p>
@@ -89,11 +122,18 @@ export default function Terms() {
       <p>
         The studio displays the credit cost before submission. Generation
         quality varies and exact transformations are not guaranteed. Failed
-        generations return reserved credits automatically. If the provider’s
+        generations, including requests blocked by automated content screening,
+        return reserved credits automatically. If the provider’s
         response is interrupted, the request may need review before its final
         status is known; contact support with the generation ID. For billing
         errors or refund requests, email support. Any rights you have under
         applicable consumer law remain unaffected.
+      </p>
+      <h2>Editing tools</h2>
+      <p>
+        The studio editor processes clips in your browser. Edited files you
+        download or send for generation are your responsibility, like any other
+        upload.
       </p>
       <h2>Files and service availability</h2>
       <p>
@@ -104,7 +144,7 @@ export default function Terms() {
         with notice for material changes.
       </p>
       <p>
-        <Link prefetch={false} href="/privacy">Privacy policy</Link> · <Link prefetch={false} href="/">Back to Reelform</Link>
+        <Link prefetch={false} href="/privacy">Privacy policy</Link> · <Link prefetch={false} href="/privacy#cookies">Cookies</Link> · <Link prefetch={false} href="/">Back to Reelform</Link>
       </p>
     </main>
   );

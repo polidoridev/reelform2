@@ -125,6 +125,8 @@ export function PlanCards({
           </button>
         </div>
       )}
+      {/* Keeps the heading order h1 → h2 → h3 on the standalone pricing page. */}
+      {!compact && <h2 className="sr-only">Plans</h2>}
       <div className={`plan-grid ${compact ? "compact" : ""}`}>
         {PLANS.map((p) => (
           <article

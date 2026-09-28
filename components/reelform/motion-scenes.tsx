@@ -43,7 +43,9 @@ export function SceneVideo({
   className?: string;
 }) {
   const ref = useRef<HTMLVideoElement>(null);
-  const near = useInView(ref, { margin: "200px", once: true });
+  // Posters and clips load only as the gallery approaches the viewport, keeping
+  // the first page load light; the wide margin avoids a visible pop-in.
+  const near = useInView(ref, { margin: "600px", once: true });
   const visible = useInView(ref, { amount: 0.05 });
   useEffect(() => {
     const video = ref.current;
@@ -60,7 +62,7 @@ export function SceneVideo({
       loop
       playsInline
       preload="none"
-      poster={scene.poster}
+      poster={near ? scene.poster : undefined}
       aria-label={`AI concept: ${scene.title}`}
     />
   );

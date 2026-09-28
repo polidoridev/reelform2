@@ -1,8 +1,14 @@
+import { pageMetadata } from "@/lib/seo";
 import { redirect } from "next/navigation";
 import { currentUser } from "@/lib/supabase/server";
 import { authDestination } from "@/lib/auth-destination";
 import AuthScreen from "@/components/reelform/auth-screen";
-export const metadata = { title: "Your account | Reelform" };
+export const metadata = pageMetadata({
+  title: "Sign in",
+  description: "Sign in or create your Reelform account to start transforming your footage.",
+  path: "/login",
+  index: false,
+});
 export default async function Login({
   searchParams,
 }: {

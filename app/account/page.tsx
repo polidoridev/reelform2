@@ -1,5 +1,6 @@
+import { pageMetadata } from "@/lib/seo";
 import Account from "@/components/reelform/account";
-export const metadata = { title: "Your account | Reelform" };
+export const metadata = pageMetadata({ title: "Your account", path: "/account", index: false });
 export default async function AccountPage({
   searchParams,
 }: {

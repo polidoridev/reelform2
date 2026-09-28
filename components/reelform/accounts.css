@@ -114,7 +114,7 @@
   font-size: 12px;
 }
 .account-eyebrow {
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 1.8px;
   font-weight: 800;
   text-transform: uppercase;
@@ -285,8 +285,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  color: #71778a;
-  font-size: 11px;
+  color: #616677;
+  font-size: 12px;
 }
 .account-stat-grid strong {
   font-size: 28px;
@@ -294,7 +294,7 @@
   letter-spacing: -1px;
 }
 .account-stat-grid small {
-  font-size: 10px;
+  font-size: 12px;
   color: #707585;
   line-height: 1.5;
 }
@@ -323,8 +323,8 @@
   margin: 0;
 }
 .card-heading > span {
-  font-size: 10px;
-  color: #7b808f;
+  font-size: 12px;
+  color: #626672;
 }
 .card-heading button {
   display: flex;
@@ -333,12 +333,12 @@
   border: 0;
   background: none;
   color: #3c4c7c;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 650;
 }
 .account-muted {
   font-size: 12px;
-  color: #757a8b;
+  color: #626675;
   line-height: 1.8;
   margin-top: 15px;
 }
@@ -358,7 +358,7 @@
   display: flex;
   justify-content: space-between;
   gap: 16px;
-  font-size: 10px;
+  font-size: 12px;
   color: #545b71;
 }
 .current-plan {
@@ -386,7 +386,7 @@
 }
 .current-plan strong small {
   font-size: 12px;
-  color: #797f90;
+  color: #626775;
   letter-spacing: 0;
   font-weight: 500;
 }
@@ -396,7 +396,7 @@
   background: #eaecf4;
   border-radius: 5px;
   color: #4c5778;
-  font-size: 10px;
+  font-size: 12px;
   text-transform: capitalize;
   font-weight: 650;
   white-space: nowrap;
@@ -416,10 +416,10 @@
   font-size: 12px;
 }
 .account-card th {
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 0.5px;
   text-transform: uppercase;
-  color: #7e8393;
+  color: #646774;
   border-bottom: 1px solid #e0e3eb;
   padding: 12px 12px 12px 0;
   white-space: nowrap;
@@ -441,7 +441,7 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
-  color: #8f94a5;
+  color: #636672;
 }
 .account-empty h3 {
   font-size: 20px;
@@ -491,7 +491,7 @@
 .balance-banner > div > span {
   display: grid;
   gap: 8px;
-  font-size: 10px;
+  font-size: 12px;
   color: #566284;
 }
 .balance-banner strong {
@@ -511,8 +511,8 @@
   gap: 15px;
 }
 .pack-card > span {
-  font-size: 11px;
-  color: #787e92;
+  font-size: 12px;
+  color: #626778;
 }
 .pack-card strong {
   font-size: 28px;
@@ -525,7 +525,7 @@
 }
 .pack-card p {
   font-size: 12px;
-  color: #787e92;
+  color: #626778;
   margin: 0;
 }
 .account-packs {
@@ -581,8 +581,8 @@
   font-size: 14px;
 }
 .toggle-row small {
-  font-size: 11px;
-  color: #7c8191;
+  font-size: 12px;
+  color: #636774;
   font-weight: 400;
 }
 .toggle-row input {
@@ -625,7 +625,7 @@
   align-items: flex-start;
   gap: 10px;
   line-height: 1.75;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 450;
 }
 .check-row input {
@@ -670,7 +670,7 @@
   align-items: center;
   justify-content: center;
   gap: 15px;
-  color: #7280a8;
+  color: #5b6686;
 }
 .creation-card > div:last-child {
   padding: 18px;
@@ -681,15 +681,15 @@
   color: #535b72;
 }
 .creation-card small {
-  font-size: 10px;
-  color: #9195a3;
+  font-size: 12px;
+  color: #646770;
   display: block;
   margin-bottom: 18px;
 }
 .creation-card details {
-  font-size: 10px;
+  font-size: 12px;
   margin-top: 15px;
-  color: #9195a3;
+  color: #646770;
 }
 .creation-card code {
   word-break: break-all;
@@ -740,7 +740,7 @@
 .pricing-intro p {
   font-size: 15px;
   line-height: 1.85;
-  color: #767c8f;
+  color: #626777;
 }
 .billing-toggle {
   display: flex;
@@ -758,7 +758,7 @@
   border: 0;
   background: none;
   font-size: 12px;
-  color: #6a7185;
+  color: #555b6d;
   font-weight: 650;
   border-radius: 8px;
   white-space: nowrap;
@@ -769,7 +769,7 @@
   box-shadow: 0 2px 5px #21283b10;
 }
 .billing-toggle span {
-  font-size: 9px;
+  font-size: 11px;
   margin-left: 6px;
   color: #4d609a;
 }
@@ -801,7 +801,7 @@
   white-space: nowrap;
   background: #2d4079;
   color: #fff;
-  font-size: 8px;
+  font-size: 11px;
   letter-spacing: 1.2px;
   padding: 7px 15px;
   border-radius: 20px;
@@ -814,20 +814,20 @@
   font-weight: 750;
 }
 .plan-card h3 small {
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0;
-  color: #8a8f9d;
+  color: #636771;
   font-weight: 500;
   margin-left: 4px;
 }
 .plan-card p {
   font-size: 12px;
-  color: #73798c;
+  color: #626777;
   line-height: 1.8;
   margin: 14px 0 24px;
 }
 .plan-card .billing-caption {
-  font-size: 10px;
+  font-size: 12px;
   margin: 0 0 15px;
 }
 .plan-credit {
@@ -835,7 +835,7 @@
   align-items: center;
   gap: 8px;
   color: #5e6887;
-  font-size: 10px;
+  font-size: 12px;
   padding: 20px 0;
   border-top: 1px solid #e5e7ee;
   border-bottom: 1px solid #e5e7ee;
@@ -852,7 +852,7 @@
   gap: 15px;
   margin: 24px 0 32px;
   color: #717686;
-  font-size: 11px;
+  font-size: 12px;
 }
 .plan-card li {
   display: flex;
@@ -863,7 +863,7 @@
 .plan-card li svg {
   width: 13px;
   height: 13px;
-  color: #6979a8;
+  color: #58668d;
   flex-shrink: 0;
 }
 .plan-card > button {
@@ -871,8 +871,8 @@
   width: 100%;
 }
 .pricing-fine {
-  font-size: 11px;
-  color: #8b8f9c;
+  font-size: 12px;
+  color: #646770;
   line-height: 1.85;
   text-align: center;
   max-width: 830px;
@@ -896,7 +896,7 @@
 .reload-explainer p {
   font-size: 13px;
   line-height: 1.9;
-  color: #7b8091;
+  color: #626674;
 }
 .credit-explainer .pack-card {
   grid-template-columns: 1fr auto;
@@ -931,7 +931,7 @@
   font-size: 32px;
 }
 .compact .plan-card ul {
-  font-size: 10px;
+  font-size: 12px;
 }
 .auth-page {
   background: #fff;
@@ -972,7 +972,7 @@
   color: #fff;
 }
 .auth-art span {
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 2px;
   font-weight: 700;
   color: #c3cce9;
@@ -1003,7 +1003,7 @@
 }
 .auth-panel > p {
   font-size: 13px;
-  color: #8b8f9d;
+  color: #646771;
   line-height: 1.8;
   margin-bottom: 30px;
 }
@@ -1015,7 +1015,7 @@
   text-align: center;
   margin-top: 25px;
   font-size: 12px;
-  color: #8b90a1;
+  color: #636672;
   line-height: 2;
 }
 .auth-switch button {
@@ -1026,8 +1026,8 @@
   font-weight: 650;
 }
 .form-fine {
-  font-size: 10px;
-  color: #8f93a1;
+  font-size: 12px;
+  color: #646771;
   text-align: center;
   line-height: 1.8;
   margin-top: 20px;
@@ -1067,7 +1067,7 @@
     font-size: 32px;
   }
   .plan-card li {
-    font-size: 10px;
+    font-size: 12px;
   }
   .account-packs {
     gap: 10px;
@@ -1119,10 +1119,10 @@
   }
   .account-header nav {
     gap: 16px;
-    font-size: 11px;
+    font-size: 12px;
   }
   .account-header .account-nav-button {
-    font-size: 10px;
+    font-size: 12px;
     padding: 10px 12px;
   }
   .account-layout {
@@ -1147,7 +1147,7 @@
   }
   .account-sidebar nav button {
     white-space: nowrap;
-    font-size: 10px;
+    font-size: 12px;
     padding: 10px;
     gap: 6px;
   }
@@ -1165,7 +1165,7 @@
     font-size: 25px;
   }
   .account-title .account-eyebrow {
-    font-size: 8px;
+    font-size: 11px;
   }
   .account-welcome {
     padding: 25px;
@@ -1182,10 +1182,10 @@
   }
   .account-welcome p {
     max-width: 190px;
-    font-size: 11px;
+    font-size: 12px;
   }
   .account-welcome .account-eyebrow {
-    font-size: 8px;
+    font-size: 11px;
   }
   .account-stat-grid {
     gap: 10px;
@@ -1207,7 +1207,7 @@
     gap: 9px;
   }
   .account-stat-grid small {
-    font-size: 10px;
+    font-size: 12px;
   }
   .account-card {
     padding: 21px;
@@ -1221,7 +1221,7 @@
     font-size: 17px;
   }
   .card-heading > span {
-    font-size: 9px;
+    font-size: 11px;
     white-space: nowrap;
   }
   .meter-caption {
@@ -1246,7 +1246,7 @@
     flex-wrap: wrap;
   }
   .balance-banner > div > span {
-    font-size: 9px;
+    font-size: 11px;
   }
   .balance-banner strong {
     font-size: 13px;
@@ -1267,11 +1267,11 @@
   .account-packs .pack-card > button {
     grid-column: 2;
     grid-row: 2/4;
-    font-size: 11px;
+    font-size: 12px;
   }
   .account-card td,
   .account-card th {
-    font-size: 10px;
+    font-size: 12px;
   }
   .account-card td {
     min-width: 75px;
@@ -1288,10 +1288,10 @@
     padding: 13px;
   }
   .creation-card p {
-    font-size: 10px;
+    font-size: 12px;
   }
   .creation-card small {
-    font-size: 9px;
+    font-size: 11px;
   }
   .pricing-page {
     padding: 40px 22px 60px;
@@ -1350,24 +1350,24 @@
     font-size: 35px;
   }
   .account-header > .quiet-link {
-    font-size: 10px;
+    font-size: 12px;
   }
   .account-header > .quiet-link svg {
     width: 12px;
   }
   .account-notice,
   .account-error {
-    font-size: 11px;
+    font-size: 12px;
   }
   .account-content .billing-toggle {
     max-width: 100%;
   }
   .account-content .billing-toggle button {
-    font-size: 11px;
+    font-size: 12px;
     padding: 10px;
   }
   .account-content .billing-toggle span {
-    font-size: 8px;
+    font-size: 11px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -1400,3 +1400,16 @@
 .auth-google:focus-visible { outline: 3px solid #4169e1; outline-offset: 3px; }
 .auth-google:disabled { opacity: .6; cursor: wait; }
 .auth-divider { text-align: center; color: #686e7e; font-size: 12px; margin: 4px 0; }
+/* Narrow phones: keep the header on one line after the larger text sizes. */
+@media (max-width: 420px) {
+  .account-header {
+    gap: 12px;
+    padding: 0 16px;
+  }
+  .account-header nav {
+    gap: 12px;
+  }
+  .account-header .account-nav-button {
+    padding: 9px 10px;
+  }
+}
