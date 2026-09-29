@@ -12,6 +12,10 @@ export const faqs = [
     "Yes. Reelform does not take ownership of videos you upload or create. Community sharing is optional: you choose what to publish, keep your rights, and can remove your posts anytime. Publishing only gives us permission to host and display the post. You must have permission for any third-party content in your video.",
   ],
   [
+    "Can I make a video without uploading one?",
+    "Yes. Choose Seedance 2.5 Create or Seedance 2.0 Create under More models and describe the video you want. You can add photos to guide it, or a clip for inspiration, but neither is required. Pick the length and shape (landscape, vertical, square, and more) in the settings. Genjutsu Motion Transfer and Object Swap always need your video and at least one photo, and editing models need a video to edit.",
+  ],
+  [
     "What video can I upload?",
     "MP4, MOV, M4V, or WebM files up to 1 GB. Clips longer than your plan allows, up to 10 minutes, open in the built-in editor so you can trim them down: 10 seconds on Starter, 20 on Pro, and 30 on Studio. Add JPG, PNG, or WebP reference photos to guide the change. Short, well-lit clips with a clearly visible subject and simple movement work best.",
   ],

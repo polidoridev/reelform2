@@ -15,8 +15,11 @@ export function findReferences(prompt: string): PromptReference[] {
   }));
 }
 
-export function referenceProblem(prompt: string, imageCount: number): string | null {
-  const missing = findReferences(prompt).find((ref) => ref.kind === "image" && (ref.index < 1 || ref.index > imageCount));
+export function referenceProblem(prompt: string, imageCount: number, hasVideo = true): string | null {
+  const refs = findReferences(prompt);
+  if (!hasVideo && refs.some((ref) => ref.kind === "video"))
+    return "@video doesn’t match a video. Add a video or remove the mention.";
+  const missing = refs.find((ref) => ref.kind === "image" && (ref.index < 1 || ref.index > imageCount));
   if (!missing) return null;
   if (missing.index < 1) return "Photos are numbered from @image1.";
   return imageCount
@@ -26,8 +29,8 @@ export function referenceProblem(prompt: string, imageCount: number): string | n
 
 // Plain wording works with every model's text encoder; the provider receives the
 // files in the same order, so "reference image 2" is the second image URL.
-export function resolvePromptReferences(prompt: string, imageCount: number) {
-  const problem = referenceProblem(prompt, imageCount);
+export function resolvePromptReferences(prompt: string, imageCount: number, hasVideo = true) {
+  const problem = referenceProblem(prompt, imageCount, hasVideo);
   if (problem) throw new Error(problem);
   return prompt.replace(PATTERN, (_, _name: string, index?: string) =>
     !index ? "the input video" : imageCount === 1 ? "the reference image" : `reference image ${Number(index)}`,

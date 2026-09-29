@@ -18,3 +18,9 @@ test("reports mentions that don't match an attached photo", () => {
 test("removing a photo shifts later mentions up and leaves the removed one", () => {
   assert.equal(renumberAfterRemoval("@image1 then @image2 then @image3 in @video", 2), "@image1 then @image2 then @image2 in @video");
 });
+
+test("@video is only valid when a video is attached", () => {
+  assert.equal(referenceProblem("Restyle @video", 0, true), null);
+  assert.match(referenceProblem("Restyle @video", 0, false)!, /@video doesn’t match a video/);
+  assert.equal(resolvePromptReferences("A dog like @image1 on a beach", 1, false), "A dog like the reference image on a beach");
+});

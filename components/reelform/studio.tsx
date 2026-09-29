@@ -30,7 +30,7 @@ import VideoEditor from "./video-editor";
 import ModelPicker from "./model-picker";
 import PromptInput, { PromptWithReferences } from "./prompt-input";
 import { useStudioChat, type ChatMessage } from "./use-studio-chat";
-import { VIDEO_MODELS } from "@/lib/video-models";
+import { ASPECT_RATIOS, VIDEO_MODELS, type AspectRatio } from "@/lib/video-models";
 import { VIDEO_ACCEPT, MAX_VIDEO_SIZE_LABEL, MAX_VIDEO_SECONDS } from "@/lib/video-limits";
 import { useCases } from "@/lib/use-cases";
 import "./studio-chat.css";
@@ -151,7 +151,7 @@ export default function Studio() {
     s.creditBalance !== null &&
     s.creditBalance < s.quote.credits;
   const canSend =
-    !!s.video &&
+    (!!s.video || s.creating) &&
     !!s.quote &&
     !!s.ready &&
     !!s.authenticated &&
@@ -160,8 +160,9 @@ export default function Studio() {
     !s.modelError &&
     !s.promptError &&
     !insufficient &&
-    s.consent &&
+    (s.consent || !s.needsConsent) &&
     s.prompt.trim().length >= 10;
+  const videoOptional = s.selectedModel.video === "optional";
   useEffect(() => {
     if (s.currentMessage)
       latestTurn.current?.scrollIntoView({
@@ -210,7 +211,7 @@ export default function Studio() {
       return;
     }
     const references = list.filter((file) => !videos.includes(file));
-    if (references.length && !videos.length && !s.video) {
+    if (references.length && !videos.length && !s.video && s.selectedModel.video === "required") {
       s.setError("Add your original video before reference images.");
       return;
     }
@@ -223,11 +224,13 @@ export default function Studio() {
       : `${s.quote.credits.toLocaleString()} credits`
     : s.inspecting
       ? "Checking your clip…"
-      : s.video && s.quotePhase
+      : (s.video || s.creating) && s.quotePhase
         ? s.quotePhase
         : s.video
           ? "Cost shown when your video is ready"
-          : "Credit cost appears after upload";
+          : s.creating
+            ? "Cost shown in a moment"
+            : "Credit cost appears after upload";
   return (
     <div className="studio-chat-layout">
       <a className="skip-link" href="#studio-main">
@@ -589,7 +592,9 @@ export default function Studio() {
                     ? "Checking video…"
                     : s.video
                       ? "Replace video"
-                      : "Upload video"}
+                      : videoOptional
+                        ? "Add video (optional)"
+                        : "Upload video"}
                 </button>
                 <button
                   type="button"
@@ -597,7 +602,7 @@ export default function Studio() {
                   onClick={() => imageInput.current?.click()}
                   disabled={
                     s.busy ||
-                    !s.video ||
+                    (!s.video && !videoOptional) ||
                     s.images.length >= s.selectedModel.maxImages
                   }
                 >
@@ -613,9 +618,11 @@ export default function Studio() {
                   )}
                 </button>
                 <span className="chat-attachment-hint">
-                  {s.selectedModel.minImages
-                    ? `${s.selectedModel.minImages} reference required`
-                    : "References optional"}
+                  {videoOptional
+                    ? "Video and photos optional"
+                    : s.selectedModel.minImages
+                      ? `Video and ${s.selectedModel.minImages} reference required`
+                      : "Video required · photos optional"}
                 </span>
               </div>
               {(s.video || s.images.length > 0) && (
@@ -717,7 +724,11 @@ export default function Studio() {
                 onSubmitShortcut={() => {
                   if (canSend) void s.generate();
                 }}
-                placeholder="Describe what to change. Type @ to point at @video or a photo, like: replace the car in @video with the one in @image1…"
+                placeholder={
+                  s.creating
+                    ? "Describe the video you want to create. Add photos and type @ to point at one, like: the woman in @image1 walks through a neon-lit market at night…"
+                    : "Describe what to change. Type @ to point at @video or a photo, like: replace the car in @video with the one in @image1…"
+                }
                 describedBy="studio-file-help"
               />
               <div className="chat-composer-toolbar">
@@ -733,7 +744,8 @@ export default function Studio() {
                     <SlidersHorizontal size={15} />
                     <span>
                       {s.resolution}
-                      {s.audio ? " · Generated audio" : " · Original audio"}
+                      {s.creating && ` · ${s.createSeconds}s · ${s.aspectRatio}`}
+                      {s.audio ? " · Generated audio" : s.video ? " · Original audio" : " · No sound"}
                     </span>
                     <ChevronDown size={13} />
                   </button>
@@ -811,16 +823,48 @@ export default function Studio() {
                         value={s.audio ? "yes" : "no"}
                         disabled={s.busy}
                         onValueChange={(value) => s.setAudio(value === "yes")}
-                        options={
-                          s.selectedModel.audio
-                            ? [
-                                { value: "no", label: "Original audio" },
-                                { value: "yes", label: "Generate audio" },
-                              ]
-                            : [{ value: "no", label: "Original audio" }]
-                        }
+                        options={[
+                          { value: "no", label: s.video ? "Original audio" : "No sound" },
+                          ...(s.selectedModel.audio ? [{ value: "yes", label: "Generate audio" }] : []),
+                        ]}
                       />
                     </label>
+                    {s.creating && (
+                      <>
+                        <label>
+                          Length
+                          <AppSelect
+                            label="Video length"
+                            value={String(s.createSeconds)}
+                            disabled={s.busy}
+                            onValueChange={(value) => s.setCreateSeconds(Number(value))}
+                            options={[4, 5, 6, 8, 10, 12, 15, 20, 25, 30]
+                              .filter((n) => n <= s.maxCreateSeconds)
+                              .map((n) => ({ value: String(n), label: `${n} seconds` }))}
+                          />
+                        </label>
+                        <label>
+                          Shape
+                          <AppSelect
+                            label="Video shape"
+                            value={s.aspectRatio}
+                            disabled={s.busy}
+                            onValueChange={(value) => s.setAspectRatio(value as AspectRatio)}
+                            options={ASPECT_RATIOS.map((ratio) => ({
+                              value: ratio,
+                              label: {
+                                "16:9": "16:9 · Landscape",
+                                "9:16": "9:16 · Vertical",
+                                "1:1": "1:1 · Square",
+                                "4:3": "4:3 · Classic",
+                                "3:4": "3:4 · Portrait",
+                                "21:9": "21:9 · Cinematic",
+                              }[ratio],
+                            }))}
+                          />
+                        </label>
+                      </>
+                    )}
                   </div>
                   <p>
                     <strong>{s.selectedModel.name}:</strong> {s.selectedModel.description}
@@ -873,30 +917,38 @@ export default function Studio() {
               <p id="studio-file-help">
                 {s.video
                   ? `Type @ to mention @video or a photo · JPG, PNG or WebP references up to 10 MB each`
-                  : `4–30 sec video (trim longer ones in the editor) · MP4, MOV, M4V or WebM · up to ${MAX_VIDEO_SIZE_LABEL}`}
+                  : s.creating
+                    ? "No video needed: describe a scene, or add photos to guide it · Length and shape are in the settings"
+                    : `4–30 sec video (trim longer ones in the editor) · MP4, MOV, M4V or WebM · up to ${MAX_VIDEO_SIZE_LABEL}`}
               </p>
               <span>⌘ / Ctrl + Enter to send</span>
             </div>
-            {s.video && (
+            {(s.video || s.creating) && (
               <div className="chat-send-consent">
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={s.consent}
-                    disabled={s.busy}
-                    onChange={(e) => s.setConsent(e.target.checked)}
-                  />
-                  <span>
-                    I have permission to use this footage and these images.
-                  </span>
-                </label>
+                {s.needsConsent ? (
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={s.consent}
+                      disabled={s.busy}
+                      onChange={(e) => s.setConsent(e.target.checked)}
+                    />
+                    <span>
+                      {s.video
+                        ? "I have permission to use this footage and these images."
+                        : "I have permission to use these images."}
+                    </span>
+                  </label>
+                ) : (
+                  <span />
+                )}
                 <div className="chat-credit-cost" role="status">
                   <Sparkles size={13} />
                   <span>{priceLabel}</span>
                 </div>
               </div>
             )}
-            {s.video && !s.busy && (
+            {(s.video || s.creating) && !s.busy && (
               <p className="chat-credit-explanation">
                 {s.isAdmin
                   ? "No Reelform credits charged. Provider usage is billed to your Higgsfield account."

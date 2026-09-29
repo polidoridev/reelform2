@@ -15,7 +15,7 @@ const page = await context.newPage();
 let balance = 10000, uploadCount = 0, pollCount = 0, quoteCount = 0;
 let failSend = false, failedRecovery = false, quoteDelay = 0, failUpload = false;
 let alreadyCompleted = false;
-const submissions = [], consoleErrors = [];
+const submissions = [], quoteBodies = [], consoleErrors = [];
 page.on("pageerror", e => consoleErrors.push(e.message));
 await context.route(`${base}/api/**`, async route => {
   const path = new URL(route.request().url()).pathname;
@@ -29,6 +29,7 @@ await context.route(`${base}/api/**`, async route => {
   }
   if (path === "/api/quote") {
     quoteCount++;
+    quoteBodies.push(route.request().postDataJSON());
     if (quoteDelay) await new Promise(r => setTimeout(r, quoteDelay));
     return json({ quoteToken: `quote-${quoteCount}`, credits: 240, duration: 5, resolution: route.request().postDataJSON().resolution });
   }
@@ -136,8 +137,36 @@ try {
   await page.getByLabel("Describe your video transformation").fill("Turn the mountains into a cinematic coastal landscape.");
   await page.getByRole("checkbox").check();
   assert(await send.isDisabled(), "insufficient balance must block Send");
+  // Creating without a video: prompt only, chosen length and shape, no upload or consent box.
+  balance = 10000;
+  await page.reload();
+  await page.getByText("10,000 credits", { exact: true }).waitFor();
+  await page.locator(".chat-more-models").click();
+  await page.getByRole("button", { name: /^Seedance 2.5 Create/ }).click();
+  const uploadsBeforeCreate = uploadCount;
+  await page.getByRole("button", { name: /Original audio|No sound/ }).click();
+  await page.getByRole("combobox", { name: "Video length" }).click();
+  await page.getByRole("option", { name: "8 seconds", exact: true }).click();
+  await page.getByRole("combobox", { name: "Video shape" }).click();
+  await page.getByRole("option", { name: "9:16 · Vertical", exact: true }).click();
+  await page.getByLabel("Describe your video transformation").fill("A paper boat drifting down a rain-soaked city street at dusk.");
+  await waitFor(() => !document.querySelector('[aria-label="Send and generate video"]').disabled);
+  assert.equal(await page.getByRole("checkbox").count(), 0, "no permission box without uploaded files");
+  const createQuote = quoteBodies.at(-1);
+  assert.equal(createQuote.videoToken, undefined);
+  assert.equal(createQuote.duration, 8);
+  assert.equal(createQuote.aspectRatio, "9:16");
+  assert.equal(createQuote.model, "seedance-2.5-reference");
+  alreadyCompleted = false;
+  await send.click();
+  await page.getByText("Your video is ready.", { exact: true }).last().waitFor({ timeout: 20000 });
+  const created = submissions.at(-1);
+  assert.equal(created.videoToken, undefined);
+  assert.deepEqual(created.imageTokens, []);
+  assert.equal(created.model, "seedance-2.5-reference");
+  assert.equal(uploadCount, uploadsBeforeCreate, "creating from a prompt uploads nothing");
   assert.equal(consoleErrors.length, 0, consoleErrors.join("\n"));
-  console.log("PASS: automatic quote, references, Full HD model switching, settings invalidation, single Send, result, mobile, upload retry, recovery across reload, idempotency, insufficient credits.");
+  console.log("PASS: automatic quote, references, Full HD model switching, settings invalidation, single Send, result, mobile, upload retry, recovery across reload, idempotency, insufficient credits, prompt-only creation.");
 } catch (error) {
   console.error(await page.locator("body").innerText());
   throw error;

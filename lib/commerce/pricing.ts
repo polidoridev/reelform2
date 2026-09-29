@@ -1,4 +1,4 @@
-import { DEFAULT_VIDEO_MODEL, getVideoModel, modelRate, validateModel, type VideoResolution } from "../video-models";
+import { DEFAULT_VIDEO_MODEL, getVideoModel, modelRate, validateModel, type AspectRatio, type VideoResolution } from "../video-models";
 import { MIN_VIDEO_SECONDS, MAX_VIDEO_SECONDS } from "../video-limits";
 export const PLANS = [
   {
@@ -81,6 +81,33 @@ export type MediaInfo = {
 // Both source and output seconds are billed; no account discount is assumed.
 export const VIDEO_TOKEN_USD = 0.01284 / 1000;
 export const CREDITS_PER_PROVIDER_DOLLAR = 360;
+// Output size for a chosen shape: the short side matches the quality setting.
+export function aspectDimensions(resolution: VideoResolution, aspectRatio: AspectRatio) {
+  const short = resolution === "1080p" ? 1080 : resolution === "720p" ? 720 : 480;
+  const [w, h] = aspectRatio.split(":").map(Number);
+  const long = Math.ceil((short * Math.max(w, h)) / Math.min(w, h) / 16) * 16;
+  return w >= h ? { width: long, height: short } : { width: short, height: long };
+}
+// Created without a source video: only the generated seconds are billed, at the
+// no-video token rate and at the chosen output shape.
+export function quoteCreation(seconds: number, resolution: VideoResolution, aspectRatio: AspectRatio, modelId: string) {
+  if (!Number.isFinite(seconds) || seconds < MIN_VIDEO_SECONDS || seconds > MAX_VIDEO_SECONDS)
+    throw new Error("Choose a length between 4 and 30 seconds.");
+  const model = getVideoModel(modelId);
+  validateModel(model, resolution, seconds, undefined, undefined, false);
+  const duration = Math.ceil(seconds);
+  const { width, height } = aspectDimensions(resolution, aspectRatio);
+  const tokens = Math.ceil((duration * width * height * 24) / 1024);
+  const providerUsd = tokens * (modelRate(model, resolution, false) / 1000);
+  return {
+    credits: Math.ceil((providerUsd * CREDITS_PER_PROVIDER_DOLLAR) / 10) * 10,
+    duration,
+    model: model.id,
+    resolution,
+    estimatedProviderUsd: providerUsd,
+    media: { duration, width, height, bytes: 0 },
+  };
+}
 export function quoteVideo(media: MediaInfo, resolution: VideoResolution, modelId = DEFAULT_VIDEO_MODEL) {
   if (
     ![media.duration, media.width, media.height].every(Number.isFinite) ||

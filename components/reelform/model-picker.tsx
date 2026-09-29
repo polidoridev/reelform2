@@ -122,6 +122,7 @@ export default function ModelPicker({
                       {m.name}
                       {m.featured && <em>Recommended</em>}
                       <small className={tooLong ? "is-warning" : ""}>
+                        {m.video === "optional" && "No video needed · "}
                         {tooLong ? `Trim your clip to ${m.maxSeconds}s` : `Up to ${m.maxSeconds}s`} · {bestQuality(m)} · {photos(m)}
                       </small>
                     </span>

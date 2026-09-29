@@ -1,12 +1,13 @@
 import { videoEntitlements, validateVideoEntitlements } from "@/lib/commerce/entitlements";
-import { DEFAULT_VIDEO_MODEL, getVideoModel, modelRequest } from "@/lib/video-models";
+import { DEFAULT_VIDEO_MODEL, getVideoModel, modelEndpoint, modelRequest } from "@/lib/video-models";
 import { z } from "zod";
 import { verify, provider, sign, isConfigured } from "@/lib/higgsfield";
 import { ApiError, readJson, errorResponse, noStore } from "@/lib/http";
 import { requireUser, accountFor, admin, checked, isReelformAdmin } from "@/lib/supabase/server";
 import { maybeReload, balances } from "@/lib/commerce/billing";
 const input = z.object({
-  videoToken: z.string().max(12000),
+  // Omitted for video-optional models creating from a prompt and photos.
+  videoToken: z.string().max(12000).optional(),
   quoteToken: z.string().max(16000),
   requestId: z.string().uuid(),
   imageTokens: z.array(z.string().max(12000)).max(4),
@@ -23,15 +24,16 @@ export async function POST(request: Request) {
       throw new ApiError("Video generation is not connected yet.", 503);
     const account = await accountFor(user);
     const p = input.parse(await readJson(request));
-    const video = await verify(p.videoToken, user.id, "upload");
+    const video = p.videoToken ? await verify(p.videoToken, user.id, "upload") : null;
     const quote = await verify(p.quoteToken, user.id, "quote");
     const images = await Promise.all(
       p.imageTokens.map((t) => verify(t, user.id, "upload")),
     );
     if (
-      video.media !== "video" ||
+      (video && video.media !== "video") ||
       images.some((i) => i.media !== "image") ||
-      quote.url !== video.url ||
+      // A quote made without a video can only be used without one, and vice versa.
+      (quote.url ?? null) !== (video?.url ?? null) ||
       quote.resolution !== p.resolution ||
       (quote.model || DEFAULT_VIDEO_MODEL) !== p.model ||
       !Number.isSafeInteger(quote.credits) ||
@@ -42,7 +44,7 @@ export async function POST(request: Request) {
       );
     try {
       validateVideoEntitlements(videoEntitlements(account, isReelformAdmin(user)), { ...p, duration: quote.media.duration, imageCount: images.length });
-      modelRequest(getVideoModel(p.model), {prompt:p.prompt,videoUrl:video.url,imageUrls:images.map(i=>i.url),resolution:p.resolution,generateAudio:p.generateAudio,media:quote.media});
+      modelRequest(getVideoModel(p.model), {prompt:p.prompt,videoUrl:video?.url ?? null,imageUrls:images.map(i=>i.url),resolution:p.resolution,generateAudio:p.generateAudio,media:quote.media,aspectRatio:quote.aspectRatio});
     } catch (error) { throw new ApiError(error instanceof Error ? error.message : "Invalid model settings."); }
     const db = admin();
     const reserve = await db.rpc("rf_reserve_job", {
@@ -53,10 +55,12 @@ export async function POST(request: Request) {
       p_resolution: p.resolution,
       p_input: {
         model: p.model,
-        videoUrl: video.url,
+        videoUrl: video?.url ?? null,
         imageUrls: images.map((i) => i.url),
         generateAudio: p.generateAudio,
-        preserveOriginalAudio: !p.generateAudio,
+        // With no source video there is no original soundtrack to restore.
+        preserveOriginalAudio: !!video && !p.generateAudio,
+        aspectRatio: video ? undefined : quote.aspectRatio,
         media: quote.media,
       },
     });
@@ -91,12 +95,16 @@ export async function POST(request: Request) {
     if (claimed) {
       try {
         const result = await provider<{ request_id: string; status: string }>(
-          getVideoModel(job.input.model || DEFAULT_VIDEO_MODEL).endpoint,
+          modelEndpoint(getVideoModel(job.input.model || DEFAULT_VIDEO_MODEL), {
+            hasVideo: !!job.input.videoUrl,
+            imageCount: job.input.imageUrls?.length ?? 0,
+          }),
           {
             method: "POST",
             body: JSON.stringify(modelRequest(getVideoModel(job.input.model || DEFAULT_VIDEO_MODEL), {
-              prompt: job.prompt, videoUrl: job.input.videoUrl, imageUrls: job.input.imageUrls,
+              prompt: job.prompt, videoUrl: job.input.videoUrl ?? null, imageUrls: job.input.imageUrls,
               resolution: job.resolution, generateAudio: job.input.generateAudio, media: job.input.media,
+              aspectRatio: job.input.aspectRatio,
             })),
           },
         );

@@ -5,6 +5,7 @@ import {
   DEFAULT_VIDEO_MODEL,
   getVideoModel,
   validateModel,
+  type AspectRatio,
 } from "@/lib/video-models";
 import {
   MAX_VIDEO_BYTES,
@@ -27,7 +28,7 @@ type Video = Media & {
   source?: { file: File; duration: number; edit: Edit };
 };
 type Submission = {
-  videoToken: string;
+  videoToken?: string;
   quoteToken: string;
   requestId: string;
   imageTokens: string[];
@@ -47,7 +48,7 @@ type Job = {
   resolution?: string;
 };
 type Quote = {
-  videoToken: string;
+  videoToken?: string;
   quoteToken: string;
   credits: number;
   duration: number;
@@ -153,6 +154,9 @@ export function useStudioChat() {
   const [model, setModel] = useState(DEFAULT_VIDEO_MODEL);
   const [resolution, setResolution] = useState("720p");
   const [audio, setAudio] = useState(false);
+  // Length and shape for videos created without a source video.
+  const [createSeconds, setCreateSeconds] = useState(5);
+  const [aspectRatio, setAspectRatio] = useState<AspectRatio>("16:9");
   const [consent, setConsent] = useState(false);
   const [ready, setReady] = useState<boolean | null>(null);
   const [authenticated, setAuthenticated] = useState<boolean | null>(null);
@@ -191,27 +195,27 @@ export function useStudioChat() {
   const selectedModel = getVideoModel(model);
   const jobActive = !!job && !terminal(job.status);
   const busy = !!phase || jobActive || !!pending;
+  // Video-optional models can create from a prompt (and photos) alone.
+  const creating = !video && selectedModel.video === "optional";
+  const maxCreateSeconds = Math.min(selectedModel.maxSeconds, entitlements.maxSeconds);
+  const seconds = Math.min(createSeconds, maxCreateSeconds);
   const quoteKey = JSON.stringify([
     video?.url,
     model,
     resolution,
     audio,
     images.length,
+    creating ? [seconds, aspectRatio] : null,
   ]);
   const currentQuote = quote?.key === quoteKey ? quote : null;
-  // Only flag mentions once a video is attached, so presets can be picked first.
-  const promptError = video ? referenceProblem(prompt, images.length) ?? "" : "";
+  // Only flag mentions once there is something to send, so presets can be picked first.
+  const promptError = video || creating ? referenceProblem(prompt, images.length, !!video) ?? "" : "";
   const modelError = (() => {
-    if (!video) return "";
+    if (!video && !creating) return "";
+    const duration = video ? video.duration ?? 4 : seconds;
     try {
-      validateVideoEntitlements(entitlements, { resolution, duration: video.duration ?? 4, imageCount: images.length, generateAudio: audio });
-      validateModel(
-        selectedModel,
-        resolution,
-        video.duration ?? 4,
-        images.length,
-        audio,
-      );
+      validateVideoEntitlements(entitlements, { resolution, duration, imageCount: images.length, generateAudio: audio });
+      validateModel(selectedModel, resolution, duration, images.length, audio, !!video);
       return "";
     } catch (e) {
       return (e as Error).message;
@@ -296,8 +300,7 @@ export function useStudioChat() {
         ) as Submission | null;
         if (
           unconfirmed?.requestId &&
-          unconfirmed.quoteToken &&
-          unconfirmed.videoToken
+          unconfirmed.quoteToken
         ) {
           setPending(unconfirmed);
           setCurrentMessage({
@@ -329,7 +332,7 @@ export function useStudioChat() {
   // can never authorize a different model, quality, or attachment selection.
   useEffect(() => {
     if (
-      !video ||
+      (!video && !creating) ||
       !ready ||
       !authenticated ||
       inspecting ||
@@ -342,8 +345,23 @@ export function useStudioChat() {
     const timer = setTimeout(async () => {
       setQuote(null);
       setQuoteError("");
-      setQuotePhase("Preparing your video…");
       try {
+        if (!video) {
+          // Nothing to upload: quote the chosen length and shape directly.
+          setQuotePhase("Checking the credit cost…");
+          const data = await jsonRequest<{ quoteToken: string; credits: number; duration: number }>("/api/quote", {
+            model,
+            resolution,
+            imageCount: images.length,
+            generateAudio: audio,
+            duration: seconds,
+            aspectRatio,
+          });
+          if (active)
+            setQuote({ ...data, requestId: crypto.randomUUID(), created: Date.now(), key: quoteKey });
+          return;
+        }
+        setQuotePhase("Preparing your video…");
         let cached = uploadedVideo.current;
         if (
           !cached ||
@@ -408,6 +426,9 @@ export function useStudioChat() {
     };
   }, [
     video,
+    creating,
+    seconds,
+    aspectRatio,
     ready,
     authenticated,
     inspecting,
@@ -712,18 +733,24 @@ export function useStudioChat() {
       throw e;
     }
   }
+  const needsConsent = !!video || images.length > 0;
   async function generate() {
     if (submitLock.current || busy) return;
     setError("");
-    if (!video || !currentQuote || inspecting) {
-      setError("Add a video and wait for its credit cost to finish checking.");
+    if ((!video && !creating) || !currentQuote || inspecting) {
+      setError(
+        creating
+          ? "Wait for the credit cost to finish checking."
+          : "Add a video and wait for its credit cost to finish checking.",
+      );
       return;
     }
     if (prompt.trim().length < 10) {
-      setError("Describe your transformation in at least 10 characters.");
+      setError("Describe your video in at least 10 characters.");
       return;
     }
-    if (!consent) {
+    // Permission is only needed for files the person supplies.
+    if (needsConsent && !consent) {
       setError("Confirm that you have permission to use these files.");
       return;
     }
@@ -751,12 +778,10 @@ export function useStudioChat() {
         ...previous,
         { ...currentMessage, result, error: generationError },
       ]);
-    const preview = media(video.file);
     setCurrentMessage({
       id: currentQuote.requestId,
       prompt: prompt.trim(),
-      videoUrl: preview.url,
-      videoName: video.file.name,
+      ...(video ? { videoUrl: media(video.file).url, videoName: video.file.name } : {}),
       images: images.map((image) => ({
         url: media(image.file).url,
         name: image.file.name,
@@ -768,11 +793,11 @@ export function useStudioChat() {
     setGenerationError("");
     setJob(null);
     setPhase(
-      images.length ? "Uploading your reference images" : "Sending your video",
+      images.length ? "Uploading your reference images" : "Sending your request",
     );
     try {
       const imageTokens = await Promise.all(images.map(upload));
-      setPhase("Sending your video");
+      setPhase("Sending your request");
       await sendRequest({
         videoToken: currentQuote.videoToken,
         quoteToken: currentQuote.quoteToken,
@@ -862,6 +887,13 @@ export function useStudioChat() {
     history,
     modelError,
     promptError,
+    creating,
+    needsConsent,
+    createSeconds: seconds,
+    setCreateSeconds,
+    maxCreateSeconds,
+    aspectRatio,
+    setAspectRatio,
     pollStopped,
     configCheck,
     chooseVideo,
