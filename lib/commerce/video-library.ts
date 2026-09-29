@@ -1,48 +1,16 @@
-import { after } from "next/server";
 import { admin, checked } from "@/lib/supabase/server";
-import { getVideoModel } from "@/lib/video-models";
 import type { JobRow } from "./types";
 export const VIDEO_BUCKET = "reelform-creations";
 export const MAX_SAVED_VIDEO_BYTES = 50 * 1024 * 1024;
 export const libraryUrl = (id: string) => `/api/videos/${id}`;
 
-// Longer than the 300-second function limit, so a lease only lapses once its work has stopped.
-const PROCESSING_LEASE_MS = 6 * 60000;
-
-function matchesColors(job: JobRow) {
-  try {
-    return !!job.input?.videoUrl?.startsWith("https://") && !!getVideoModel(job.input.model ?? "").matchColors;
-  } catch {
-    return false;
-  }
-}
-
-// Exactly one request at a time may process a finished video.
-async function claimProcessing(job: JobRow) {
-  const now = new Date();
-  const { data } = await checked(
-    admin()
-      .from("rf_jobs")
-      .update({ processing_until: new Date(now.getTime() + PROCESSING_LEASE_MS).toISOString() })
-      .eq("id", job.id)
-      .eq("status", "completed")
-      .neq("result_url", libraryUrl(job.id))
-      .or(`processing_until.is.null,processing_until.lt.${now.toISOString()}`)
-      .select("id"),
-  );
-  return !!data?.length;
-}
-
 // Only server-verified provider results enter this function. The bucket is
 // private; playback is authorized against rf_jobs before issuing a signed URL.
 export async function archiveVideo(job: JobRow): Promise<JobRow> {
   if (job.status !== "completed" || !job.result_url || job.result_url === libraryUrl(job.id)) return job;
-  if (!matchesColors(job)) return saveVideo(job);
-  // Color matching re-encodes the video, which outlasts a status check. One request
-  // claims it and finishes after responding; until then the video is still generating.
-  // A failed attempt is retried by the next check once its lease lapses.
-  if (await claimProcessing(job)) after(() => saveVideo(job));
-  return { ...job, status: "in_progress", result_url: null };
+  // Keep Higgsfield's picture unchanged. Restoring source audio below copies the
+  // encoded video packets; it never grades colors or re-encodes the picture.
+  return saveVideo(job);
 }
 
 async function saveVideo(job: JobRow): Promise<JobRow> {
@@ -67,19 +35,12 @@ async function saveVideo(job: JobRow): Promise<JobRow> {
       },
       flush() { if (received !== size) throw new Error("Incomplete output"); },
     }));
-    let video: Blob | null = null;
-    if (matchesColors(job)) {
-      const { matchVideoColors } = await import("../color-match");
-      video = await matchVideoColors(await new Response(body).blob(), job.input!.videoUrl!, MAX_SAVED_VIDEO_BYTES);
-      size = video.size;
-      body = video.stream();
-    }
     if (job.input?.preserveOriginalAudio) {
       if (!job.input.videoUrl || !job.input.videoUrl.startsWith("https://")) throw new Error("Missing original video");
       const [{ preserveVideoAudio }, { UrlSource }] = await Promise.all([
         import("../preserve-video-audio"), import("mediabunny"),
       ]);
-      const merged = await preserveVideoAudio(video ?? await new Response(body).blob(), new UrlSource(job.input.videoUrl, {
+      const merged = await preserveVideoAudio(await new Response(body).blob(), new UrlSource(job.input.videoUrl, {
         maxCacheSize: 4 * 1024 * 1024,
         fetchFn: (url, init) => fetch(url, { ...init, redirect: "manual", signal: AbortSignal.any([...(init?.signal ? [init.signal] : []), AbortSignal.timeout(60000)]) }),
       }), MAX_SAVED_VIDEO_BYTES);

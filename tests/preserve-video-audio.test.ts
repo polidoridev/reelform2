@@ -43,7 +43,20 @@ test("saved output preserves original audio packets and generated video, trimmin
     assert.deepEqual(savedPacket!.data, originalPacket!.data);
     const v = (await merged.getPrimaryVideoTrack())!;
     assert.ok(await audio.computeDuration() <= await v.computeDuration() + 0.03);
-    assert.deepEqual((await new EncodedPacketSink(v).getFirstPacket())!.data, (await new EncodedPacketSink((await generated.getPrimaryVideoTrack())!).getFirstPacket())!.data);
+    const generatedTrack = (await generated.getPrimaryVideoTrack())!;
+    // Every encoded frame and its color metadata must survive audio restoration.
+    // Checking only the first frame can miss an accidental filter/transcode later.
+    assert.deepEqual(await v.getDecoderConfig(), await generatedTrack.getDecoderConfig());
+    const originalFrames = new EncodedPacketSink(generatedTrack).packets();
+    let frames = 0;
+    for await (const saved of new EncodedPacketSink(v).packets()) {
+      const expected = await originalFrames.next();
+      assert.equal(expected.done, false);
+      assert.deepEqual(saved.data, expected.value!.data);
+      frames++;
+    }
+    assert.ok(frames > 1);
+    assert.equal((await originalFrames.next()).done, true);
   } finally { merged.dispose(); source.dispose(); generated.dispose(); }
 });
 test("MOV preparation retains the original AAC track", async () => {

@@ -7,7 +7,15 @@ test("moderation failures explain the block without inventing a trigger or a ref
   assert.match(message, /content filter blocked/);
   assert.match(message, /did not identify which input/);
   assert.match(message, /No Reelform credits were charged/);
+  assert.match(message, /API content filter/);
+  assert.match(message, /after Reelform submitted it/);
   assert.doesNotMatch(message, /credits were returned/);
+});
+
+test("API rejections include a valid upstream ID for Higgsfield support", () => {
+  const id = "6b3ba40c-ef9b-4ed3-b467-2c27145039fd";
+  assert.ok(generationFailureMessage("nsfw", null, 0, id).includes(`Higgsfield request ID: ${id}`));
+  assert.doesNotMatch(generationFailureMessage("nsfw", null, 0, "private upstream data"), /private upstream data/);
 });
 
 test("provider funding failures do not tell customers to purchase more credits", () => {

@@ -21,7 +21,7 @@ export async function refreshJob(job: JobRow) {
   const url = r.video?.url?.startsWith("https://") ? r.video.url : null;
   if (status === "completed" && !url) return job;
   const error = status === "failed"
-    ? generationFailureMessage(r.status, r.error, job.credits)
+    ? generationFailureMessage(r.status, r.error, job.credits, job.provider_id)
     : null;
   await checked(
     admin().rpc("rf_finish_job", {
