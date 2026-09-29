@@ -13,7 +13,7 @@ export default function Privacy() {
       <Brand />
       <h1>Privacy policy</h1>
       <p>
-        Last updated September 27, 2026. Contact:{" "}
+        Last updated September 29, 2026. Contact:{" "}
         <a href="mailto:admin@polidori.dev">admin@polidori.dev</a>.
       </p>
       <h2>Information used by Reelform</h2>
@@ -29,6 +29,16 @@ export default function Privacy() {
         The studio’s video editor trims, cuts, reorders, and mutes clips in your
         browser. Footage you edit is not uploaded until you choose to use it for a
         generation, and edits you download never leave your device.
+      </p>
+      <h2>Saved uploads</h2>
+      <p>
+        Videos you prepare in the studio and reference photos you add are saved
+        privately to your account, in Supabase storage, so you can use them again
+        without uploading them from your device. Only you can see them. Your 60
+        most recently used videos and 120 most recently used photos are kept;
+        older ones are removed automatically. You can delete any saved upload
+        from Your uploads in the studio, and deleting your account removes them
+        all.
       </p>
       <h2>Service providers</h2>
       <p>

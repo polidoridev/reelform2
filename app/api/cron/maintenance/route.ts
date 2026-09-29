@@ -10,6 +10,8 @@ import {
 import { refreshJob } from "@/lib/commerce/jobs";
 import { sendJourney, type Journey } from "@/lib/commerce/email";
 import { cleanCommunityUploads } from "@/lib/community";
+// Finishing a video (color matching, then saving) continues after the response.
+export const maxDuration = 300;
 export async function POST(request: Request) {
   const actual = Buffer.from(request.headers.get("authorization") || ""),
     expected = Buffer.from(`Bearer ${process.env.CRON_SECRET || ""}`);

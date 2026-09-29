@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
+  bestResolution,
   DEFAULT_VIDEO_MODEL,
   getVideoModel,
   validateModel,
@@ -20,8 +21,16 @@ import { useCases } from "@/lib/use-cases";
 import { editDuration, MAX_EDITABLE_SECONDS, type Edit } from "@/lib/video-edit";
 import { referenceProblem, renumberAfterRemoval } from "@/lib/prompt-references";
 import type { EditorSource } from "./video-editor";
+import type { LibraryItem } from "@/lib/commerce/upload-library";
+import {
+  loadBackgroundVideos,
+  previewUrls,
+  saveBackgroundVideos,
+  type BackgroundVideo,
+} from "./background-videos";
 
-export type Media = { file: File; url: string; contentType?: string };
+// `libraryId` marks a file picked from the person's saved uploads.
+export type Media = { file: File; url: string; contentType?: string; libraryId?: string };
 // `source` keeps the original upload and edit list so the editor can reopen them.
 type Video = Media & {
   duration: number | null;
@@ -38,7 +47,7 @@ type Submission = {
   generateAudio: boolean;
   consent: true;
 };
-type Job = {
+export type Job = {
   token: string;
   requestId: string;
   status: string;
@@ -112,6 +121,25 @@ async function upload(media: Media) {
   return data.token;
 }
 
+// Fingerprint used to avoid saving the same file twice. Very large files get a
+// random one instead of being read into memory.
+async function fileHash(file: File) {
+  const bytes = file.size <= 512 * 1024 * 1024
+    ? new Uint8Array(await crypto.subtle.digest("SHA-256", await file.arrayBuffer()))
+    : crypto.getRandomValues(new Uint8Array(32));
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+}
+// Saves an uploaded file to the person's library. Saving never blocks or fails a generation.
+function saveToLibrary(token: string, file: File, duration: number | null) {
+  void fileHash(file)
+    .then((hash) => jsonRequest("/api/library", { token, name: file.name.slice(0, 200) || "Upload", hash, duration }))
+    .catch(() => {});
+}
+// Upload token for a saved file, so it isn't uploaded from this device again.
+async function libraryToken(id: string) {
+  return (await jsonRequest<{ token: string }>(`/api/library/${id}`, {})).token;
+}
+
 function probeDuration(url: string) {
   return new Promise<number | null>((resolve) => {
     const el = document.createElement("video");
@@ -152,7 +180,8 @@ export function useStudioChat() {
   const [images, setImages] = useState<Media[]>([]);
   const [prompt, setPrompt] = useState("");
   const [model, setModel] = useState(DEFAULT_VIDEO_MODEL);
-  const [resolution, setResolution] = useState("720p");
+  // null follows the model's best quality for the plan; set once the user picks one.
+  const [chosenResolution, setResolution] = useState<string | null>(null);
   const [audio, setAudio] = useState(false);
   // Length and shape for videos created without a source video.
   const [createSeconds, setCreateSeconds] = useState(5);
@@ -182,6 +211,9 @@ export function useStudioChat() {
   const [history, setHistory] = useState<ChatMessage[]>([]);
   const [editor, setEditor] = useState<EditorSource | null>(null);
   const [openingEditor, setOpeningEditor] = useState(false);
+  // null until restored after hydration, so the empty default is never saved over it.
+  const [background, setBackground] = useState<BackgroundVideo[] | null>(null);
+  const [backgroundRound, setBackgroundRound] = useState(0);
   const assets = useRef(new Set<string>());
   const selection = useRef(0);
   const submitLock = useRef(false);
@@ -191,10 +223,20 @@ export function useStudioChat() {
     promise: Promise<string>;
     created: number;
   } | null>(null);
+  // Reference photos upload as soon as they're added, so they're saved even if unsent.
+  const uploadedImages = useRef(new Map<File, { promise: Promise<string>; created: number }>());
+  const [library, setLibrary] = useState<LibraryItem[] | null>(null);
+  const [libraryError, setLibraryError] = useState("");
+  const [openingUpload, setOpeningUpload] = useState<string | null>(null);
   const entitlements = videoEntitlements(planAccount, isAdmin);
   const selectedModel = getVideoModel(model);
+  const resolution = chosenResolution ?? bestResolution(selectedModel, entitlements.fullHd);
   const jobActive = !!job && !terminal(job.status);
   const busy = !!phase || jobActive || !!pending;
+  // A generating video can move to the background; an unconfirmed send can't.
+  const canLeave = !pending && (!phase || jobActive);
+  const backgroundVideos = background ?? [];
+  const generatingElsewhere = backgroundVideos.filter((item) => !item.done).length;
   // Video-optional models can create from a prompt (and photos) alone.
   const creating = !video && selectedModel.video === "optional";
   const maxCreateSeconds = Math.min(selectedModel.maxSeconds, entitlements.maxSeconds);
@@ -262,6 +304,7 @@ export function useStudioChat() {
     );
     // Initial browser/session state is intentionally restored after hydration.
     // eslint-disable-next-line react-hooks/set-state-in-effect
+    setBackground(loadBackgroundVideos());
     if (scene) setPrompt(scene.prompt);
     // Opened from My creations: load that saved video into the editor.
     const editId = new URLSearchParams(location.search).get("edit");
@@ -277,7 +320,7 @@ export function useStudioChat() {
     if (preset) {
       setPrompt(preset.prompt);
       setModel(preset.model);
-      setResolution("720p");
+      setResolution(null);
       setAudio(false);
     }
     try {
@@ -368,7 +411,8 @@ export function useStudioChat() {
           cached.file !== video.file ||
           Date.now() - cached.created > 50 * 60000
         ) {
-          const promise = (async () => {
+          const libraryId = video.libraryId;
+          const promise = libraryId ? libraryToken(libraryId) : (async () => {
             const { prepareVideo } = await import("@/lib/prepare-video");
             const prepared = await prepareVideo(video.file, (progress) => {
               if (active)
@@ -377,11 +421,13 @@ export function useStudioChat() {
                 );
             });
             if (active) setQuotePhase("Uploading your video…");
-            return upload({
+            const token = await upload({
               ...video,
               file: prepared,
               contentType: "video/mp4",
             });
+            saveToLibrary(token, prepared, video.duration);
+            return token;
           })();
           cached = { file: video.file, promise, created: Date.now() };
           uploadedVideo.current = cached;
@@ -521,6 +567,67 @@ export function useStudioChat() {
     };
   }, [jobToken, jobFinished, pollAttempt]);
 
+  useEffect(() => {
+    if (background) saveBackgroundVideos(background);
+  }, [background]);
+
+  // Checks videos generating in the background; each finished one gets a banner.
+  const backgroundTokens = backgroundVideos
+    .filter((item) => !item.done)
+    .map((item) => item.job.token)
+    .join(" ");
+  useEffect(() => {
+    if (!backgroundTokens) return;
+    let disposed = false;
+    const timer = setTimeout(async () => {
+      for (const token of backgroundTokens.split(" ")) {
+        try {
+          const data = await jsonRequest<{
+            status: string;
+            videoUrl?: string;
+            error?: string;
+            balance?: number;
+          }>(`/api/jobs?token=${encodeURIComponent(token)}`);
+          if (disposed) return;
+          if (typeof data.balance === "number") setCreditBalance(data.balance);
+          const done = terminal(data.status) || data.status === "unknown";
+          setBackground((items) =>
+            (items ?? []).map((item) =>
+              item.job.token !== token
+                ? item
+                : {
+                    ...item,
+                    job: { ...item.job, status: data.status },
+                    done,
+                    ...(data.status === "completed"
+                      ? data.videoUrl
+                        ? { result: data.videoUrl }
+                        : { error: "Your video completed, but the download isn’t available. Contact support with the generation ID." }
+                      : done
+                        ? {
+                            error:
+                              data.error ||
+                              (data.status === "unknown"
+                                ? "This request needs review. Contact support with the generation ID before resubmitting."
+                                : "This video couldn’t finish. Try a different clip or a simpler description."),
+                          }
+                        : {}),
+                  },
+            ),
+          );
+        } catch {
+          if (disposed) return;
+          // Keep checking; the next round retries.
+        }
+      }
+      if (!disposed) setBackgroundRound((n) => n + 1);
+    }, 8000);
+    return () => {
+      disposed = true;
+      clearTimeout(timer);
+    };
+  }, [backgroundTokens, backgroundRound]);
+
   function media(file: File): Media {
     const url = URL.createObjectURL(file);
     assets.current.add(url);
@@ -530,7 +637,7 @@ export function useStudioChat() {
     URL.revokeObjectURL(item.url);
     assets.current.delete(item.url);
   }
-  async function chooseVideo(file?: File) {
+  async function chooseVideo(file?: File, libraryId?: string) {
     if (!file || busy || submitLock.current) return;
     setError("");
     const contentType = videoContentType(file);
@@ -577,7 +684,7 @@ export function useStudioChat() {
     // Use functional state so quick successive file choices release the actual old URL.
     setVideo((previous) => {
       if (previous) release(previous);
-      return { ...item, contentType, duration };
+      return { ...item, contentType, duration, libraryId };
     });
     setQuote(null);
     setQuoteError("");
@@ -644,7 +751,24 @@ export function useStudioChat() {
     setQuotePhase("");
     setQuoteError("");
   }
-  function chooseImages(files: FileList | File[]) {
+  function imageToken(item: Media) {
+    const cached = uploadedImages.current.get(item.file);
+    if (cached && Date.now() - cached.created < 50 * 60000) return cached.promise;
+    const promise = item.libraryId
+      ? libraryToken(item.libraryId)
+      : upload(item).then((token) => {
+          saveToLibrary(token, item.file, null);
+          return token;
+        });
+    const entry = { promise, created: Date.now() };
+    uploadedImages.current.set(item.file, entry);
+    // A failed upload is retried when the video is sent.
+    promise.catch(() => {
+      if (uploadedImages.current.get(item.file) === entry) uploadedImages.current.delete(item.file);
+    });
+    return promise;
+  }
+  function chooseImages(files: FileList | File[], libraryId?: string) {
     if (busy || submitLock.current) return;
     const list = Array.from(files);
     setError("");
@@ -665,10 +789,13 @@ export function useStudioChat() {
       setError("Use JPG, PNG, or WebP reference images, up to 10 MB each.");
       return;
     }
-    setImages((previous) => [...previous, ...list.map(media)]);
+    const added = list.map((file) => ({ ...media(file), libraryId }));
+    setImages((previous) => [...previous, ...added]);
+    if (authenticated) added.forEach((item) => void imageToken(item).catch(() => {}));
   }
   function removeImage(item: Media) {
     const index = images.indexOf(item);
+    uploadedImages.current.delete(item.file);
     release(item);
     setImages((previous) => previous.filter((image) => image !== item));
     if (index >= 0) setPrompt((text) => renumberAfterRemoval(text, index + 1));
@@ -682,7 +809,7 @@ export function useStudioChat() {
     else if (
       !next.resolutions.includes(resolution as "480p" | "720p" | "1080p")
     )
-      setResolution(next.resolutions[0]);
+      setResolution(null);
     if (!next.audio) setAudio(false);
   }
   async function sendRequest(payload: Submission, recovering = false) {
@@ -796,7 +923,7 @@ export function useStudioChat() {
       images.length ? "Uploading your reference images" : "Sending your request",
     );
     try {
-      const imageTokens = await Promise.all(images.map(upload));
+      const imageTokens = await Promise.all(images.map(imageToken));
       setPhase("Sending your request");
       await sendRequest({
         videoToken: currentQuote.videoToken,
@@ -830,8 +957,27 @@ export function useStudioChat() {
       submitLock.current = false;
     }
   }
+  // Moves a still-generating conversation aside so a new one can start.
+  function moveToBackground() {
+    if (!currentMessage || !job || !jobActive) return;
+    const message = currentMessage;
+    const moved: BackgroundVideo = {
+      id: job.requestId,
+      history,
+      message,
+      job,
+      done: false,
+    };
+    previewUrls([...history, message]).forEach((url) => assets.current.delete(url));
+    setBackground((items) => [...(items ?? []).filter((item) => item.id !== moved.id), moved]);
+    saveSession(ACTIVE_JOB, null);
+  }
   function newChat() {
-    if (busy || submitLock.current) return;
+    if (!canLeave || submitLock.current) return;
+    moveToBackground();
+    clearChat();
+  }
+  function clearChat() {
     selection.current++;
     assets.current.forEach((url) => URL.revokeObjectURL(url));
     assets.current.clear();
@@ -848,9 +994,81 @@ export function useStudioChat() {
     setHistory([]);
     setResult("");
     setJob(null);
+    setPhase("");
+    setPollStopped(false);
     setInspecting(false);
     setEditor(null);
     uploadedVideo.current = null;
+    uploadedImages.current.clear();
+  }
+  // Brings a background conversation back. The composer keeps any draft.
+  function openBackground(id: string) {
+    const item = backgroundVideos.find((entry) => entry.id === id);
+    if (!item || !canLeave || submitLock.current) return;
+    moveToBackground();
+    if (currentMessage && !jobActive)
+      previewUrls([...history, currentMessage]).forEach((url) => {
+        URL.revokeObjectURL(url);
+        assets.current.delete(url);
+      });
+    previewUrls([...item.history, item.message]).forEach((url) => assets.current.add(url));
+    setBackground((items) => (items ?? []).filter((entry) => entry.id !== id));
+    setHistory(item.history);
+    setCurrentMessage(item.message);
+    setJob(item.job);
+    setResult(item.result ?? "");
+    setGenerationError(item.error ?? "");
+    setPollStopped(false);
+    setPhase(item.done ? "" : "Creating your video");
+    saveSession(ACTIVE_JOB, item.done ? null : item.job);
+  }
+  // A dismissed video stays in My creations.
+  function dismissBackground(id: string) {
+    setBackground((items) => (items ?? []).filter((entry) => entry.id !== id));
+  }
+  async function loadLibrary() {
+    setLibraryError("");
+    try {
+      const data = await jsonRequest<{ items: LibraryItem[] }>("/api/library");
+      if (mounted.current) setLibrary(data.items);
+    } catch (e) {
+      if (mounted.current) setLibraryError((e as Error).message);
+    }
+  }
+  // Brings a saved upload back into the composer without the person choosing the file again.
+  async function pickFromLibrary(item: LibraryItem) {
+    if (busy || submitLock.current || openingUpload) return;
+    setError("");
+    setOpeningUpload(item.id);
+    try {
+      const response = await fetch(item.url);
+      if (!response.ok) throw new Error();
+      const file = new File([await response.blob()], item.name, { type: item.content_type });
+      if (!mounted.current) return;
+      if (item.kind === "video") await chooseVideo(file, item.id);
+      else chooseImages([file], item.id);
+    } catch {
+      if (mounted.current) setError("This saved upload couldn’t be opened. Please try again.");
+    } finally {
+      if (mounted.current) setOpeningUpload(null);
+    }
+  }
+  async function deleteFromLibrary(id: string) {
+    setLibraryError("");
+    try {
+      const response = await fetch(`/api/library/${id}`, { method: "DELETE", cache: "no-store" });
+      if (!response.ok && response.status !== 404) throw new Error();
+      setLibrary((items) => items?.filter((item) => item.id !== id) ?? null);
+      // Anything still attached from it uploads normally from now on.
+      setVideo((current) => (current?.libraryId === id ? { ...current, libraryId: undefined } : current));
+      setImages((current) =>
+        current.some((image) => image.libraryId === id)
+          ? current.map((image) => (image.libraryId === id ? { ...image, libraryId: undefined } : image))
+          : current,
+      );
+    } catch {
+      setLibraryError("That upload couldn’t be deleted. Please try again.");
+    }
   }
   return {
     video,
@@ -910,6 +1128,17 @@ export function useStudioChat() {
     generate,
     recoverSend,
     newChat,
+    canLeave,
+    backgroundVideos,
+    generatingElsewhere,
+    openBackground,
+    dismissBackground,
+    library,
+    libraryError,
+    openingUpload,
+    loadLibrary,
+    pickFromLibrary,
+    deleteFromLibrary,
     retryQuote: () => {
       setQuote(null);
       setQuoteAttempt((n) => n + 1);

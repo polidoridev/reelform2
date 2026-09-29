@@ -7,9 +7,11 @@ import {
   ArrowUpRight,
   AudioLines,
   Check,
+  CircleAlert,
   ChevronDown,
   Download,
   Film,
+  FolderOpen,
   ImagePlus,
   Info,
   Menu,
@@ -28,6 +30,7 @@ import AppSelect from "./app-select";
 import GenerationProgress from "./generation-progress";
 import VideoEditor from "./video-editor";
 import ModelPicker from "./model-picker";
+import UploadLibrary from "./upload-library";
 import PromptInput, { PromptWithReferences } from "./prompt-input";
 import { useStudioChat, type ChatMessage } from "./use-studio-chat";
 import { ASPECT_RATIOS, VIDEO_MODELS, type AspectRatio } from "@/lib/video-models";
@@ -139,6 +142,7 @@ export default function Studio() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [fullHdOpen, setFullHdOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [libraryOpen, setLibraryOpen] = useState(false);
   const [dragging, setDragging] = useState(false);
   const dragDepth = useRef(0);
   const promptRef = useRef<HTMLTextAreaElement>(null);
@@ -250,7 +254,7 @@ export default function Studio() {
             <X size={20} />
           </button>
         </div>
-        <button className="chat-new-button" onClick={reset} disabled={s.busy}>
+        <button className="chat-new-button" onClick={reset} disabled={!s.canLeave}>
           <Plus size={17} /> New video <span aria-hidden="true">↗</span>
         </button>
         <nav aria-label="Studio navigation">
@@ -264,6 +268,33 @@ export default function Studio() {
             <Users size={17} /> Community
           </Link>
         </nav>
+        {s.backgroundVideos.length > 0 && (
+          <div className="chat-sidebar-ideas chat-background-list">
+            <span>YOUR OTHER VIDEOS</span>
+            {s.backgroundVideos.map((item) => (
+              <button
+                key={item.id}
+                disabled={!s.canLeave}
+                onClick={() => {
+                  s.openBackground(item.id);
+                  setMenuOpen(false);
+                }}
+              >
+                <span>
+                  {item.message.prompt}
+                  <small>{!item.done ? "Generating…" : item.result ? "Ready to watch" : "Needs attention"}</small>
+                </span>
+                {!item.done ? (
+                  <Sparkles size={13} className="chat-background-working" aria-hidden="true" />
+                ) : item.result ? (
+                  <Check size={13} aria-hidden="true" />
+                ) : (
+                  <CircleAlert size={13} aria-hidden="true" />
+                )}
+              </button>
+            ))}
+          </div>
+        )}
         <div className="chat-sidebar-ideas">
           <span>START WITH AN IDEA</span>
           {useCases.map((scene) => (
@@ -350,6 +381,32 @@ export default function Studio() {
             <Plus size={13} />
           </Link>
         </header>
+        <div className="chat-ready-banners" role="status" aria-live="polite">
+          {s.backgroundVideos
+            .filter((item) => item.done)
+            .map((item) => (
+              <div className="chat-ready-banner" key={item.id}>
+                {item.result ? <Check size={16} /> : <CircleAlert size={16} />}
+                <button
+                  type="button"
+                  disabled={!s.canLeave}
+                  onClick={() => s.openBackground(item.id)}
+                >
+                  <strong>{item.result ? "Your video is ready" : "A video needs your attention"}</strong>
+                  <span>{item.message.prompt}</span>
+                </button>
+                <button
+                  type="button"
+                  className="chat-ready-dismiss"
+                  aria-label="Dismiss. The video stays in My creations."
+                  title="Dismiss. The video stays in My creations."
+                  onClick={() => s.dismissBackground(item.id)}
+                >
+                  <X size={15} />
+                </button>
+              </div>
+            ))}
+        </div>
         <div
           className="studio-conversation"
           aria-label="Video creation conversation"
@@ -492,6 +549,19 @@ export default function Studio() {
                 </p>
               </div>
             )}
+            {!s.busy && s.generatingElsewhere >= s.entitlements.concurrency && (
+              <div className="chat-notice">
+                <Info size={16} />
+                <p>
+                  {s.generatingElsewhere === 1 ? "Your other video is" : "Your other videos are"} still generating.{" "}
+                  {s.isAdmin ? "You can" : `${s.entitlements.name} can`} create{" "}
+                  {s.entitlements.concurrency === 1 ? "one video" : `${s.entitlements.concurrency} videos`} at a time, so send this one when a video finishes.
+                  {!s.isAdmin && s.entitlements.concurrency < 3 && (
+                    <> <a href="/account?tab=billing">Upgrade to create more at once</a></>
+                  )}
+                </p>
+              </div>
+            )}
             {s.ready === false && (
               <div className="chat-notice">
                 <Info size={16} />
@@ -617,6 +687,18 @@ export default function Studio() {
                     </span>
                   )}
                 </button>
+                {s.authenticated && (
+                  <button
+                    type="button"
+                    className={`chat-attach-button chat-library-button ${libraryOpen ? "is-open" : ""}`}
+                    onClick={() => setLibraryOpen(!libraryOpen)}
+                    aria-expanded={libraryOpen}
+                    disabled={s.busy}
+                  >
+                    <FolderOpen size={16} />
+                    Your uploads
+                  </button>
+                )}
                 <span className="chat-attachment-hint">
                   {videoOptional
                     ? "Video and photos optional"
@@ -625,6 +707,33 @@ export default function Studio() {
                       : "Video required · photos optional"}
                 </span>
               </div>
+              {libraryOpen && s.authenticated && (
+                <UploadLibrary
+                  items={s.library}
+                  error={s.libraryError}
+                  opening={s.openingUpload}
+                  attached={new Set([s.video?.libraryId, ...s.images.map((image) => image.libraryId)].filter((id): id is string => !!id))}
+                  canPickVideo={!s.busy && !s.inspecting}
+                  canPickImage={
+                    !s.busy &&
+                    (!!s.video || videoOptional) &&
+                    s.images.length < s.selectedModel.maxImages
+                  }
+                  imageLimitNote={
+                    !s.video && !videoOptional
+                      ? "Add your video first, then photos."
+                      : `${s.selectedModel.name} takes up to ${s.selectedModel.maxImages} photo${s.selectedModel.maxImages === 1 ? "" : "s"}.`
+                  }
+                  onLoad={() => void s.loadLibrary()}
+                  onPick={(item) => {
+                    void s.pickFromLibrary(item).then(() => {
+                      if (item.kind === "video") setLibraryOpen(false);
+                    });
+                  }}
+                  onDelete={(id) => void s.deleteFromLibrary(id)}
+                  onClose={() => setLibraryOpen(false)}
+                />
+              )}
               {(s.video || s.images.length > 0) && (
                 <div className="chat-attachment-previews">
                   {s.video && (

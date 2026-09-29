@@ -50,6 +50,7 @@ export async function POST(request: Request) {
       url: data.public_url,
       bytes: size,
       media: contentType.startsWith("video/") ? "video" : "image",
+      type: contentType,
       exp: Date.now() + 3600000,
     });
     return Response.json({

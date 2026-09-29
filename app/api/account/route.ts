@@ -12,8 +12,11 @@ import {
 import { ApiError, errorResponse, readJson, noStore } from "@/lib/http";
 import { balances } from "@/lib/commerce/billing";
 import { refreshJob } from "@/lib/commerce/jobs";
+import { removeUserLibrary } from "@/lib/commerce/upload-library";
 import { pendingPlan } from "@/lib/commerce/subscriptions";
 import { stripe, billingEnabled } from "@/lib/commerce/stripe";
+// Finishing a video (color matching, then saving) continues after the response.
+export const maxDuration = 300;
 export async function GET(request: Request) {
   try {
     const user = await requireUser(request),
@@ -232,6 +235,7 @@ export async function DELETE(request: Request) {
         .eq("user_id", user.id),
     );
     await removeUserCommunity(user.id);
+    await removeUserLibrary(user.id);
     // Remove private creation files before deleting the owning account.
     while (true) {
       const { data: files, error: listError } = await admin().storage.from(VIDEO_BUCKET).list(user.id, { limit: 100 });

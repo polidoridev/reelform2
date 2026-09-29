@@ -72,7 +72,7 @@ export async function POST(request: Request) {
         );
       if (reserve.error.message.includes("CONCURRENCY_LIMIT"))
         throw new ApiError(
-          "Wait for your current video to finish before starting another.",
+          "Your plan’s videos-at-a-time limit is reached. Wait for one to finish, or upgrade to create more at once.",
           409,
         );
       if (reserve.error.message.includes("BILLING_HOLD"))

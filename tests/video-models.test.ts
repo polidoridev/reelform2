@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {VIDEO_MODELS,FEATURED_VIDEO_MODELS,DEFAULT_VIDEO_MODEL,getVideoModel,modelEndpoint,modelRequest,validateModel} from "../lib/video-models";
+import {VIDEO_MODELS,FEATURED_VIDEO_MODELS,DEFAULT_VIDEO_MODEL,bestResolution,getVideoModel,modelEndpoint,modelRequest,validateModel} from "../lib/video-models";
 import {aspectDimensions,quoteCreation,quoteVideo} from "../lib/commerce/pricing";
 const media={duration:8.2,width:1920,height:1080,bytes:2000};
 const base={prompt:"Replace my car with a luxury sports car",videoUrl:"https://media.example/input.mp4",imageUrls:["https://media.example/car.jpg"],resolution:"720p",generateAudio:false,media};
@@ -87,4 +87,10 @@ test("created videos are priced on generated seconds, chosen shape, and the no-v
  assert.ok(quoteCreation(6,"720p","21:9","seedance-2.5-reference").credits>q.credits);
  assert.throws(()=>quoteCreation(20,"720p","16:9","seedance-2-reference"),/between 4 and 15/);
  assert.throws(()=>quoteCreation(6,"720p","16:9","genjutsu-motion"),/Add a video/);
+});
+test("default quality is the model's best that the plan allows",()=>{
+ assert.equal(bestResolution(getVideoModel("genjutsu-object")),"1080p");
+ assert.equal(bestResolution(getVideoModel("genjutsu-object"),false),"720p");
+ assert.equal(bestResolution(getVideoModel("kling-3-motion-std")),"720p");
+ assert.equal(bestResolution(getVideoModel("kling-3-motion-pro"),false),"1080p");
 });

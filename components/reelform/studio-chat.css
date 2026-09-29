@@ -130,6 +130,108 @@
 .chat-sidebar-ideas button:disabled {
   opacity: 0.5;
 }
+.chat-background-list {
+  margin-bottom: 30px;
+}
+.chat-background-list button > span {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+.chat-background-list button > span,
+.chat-background-list small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.chat-background-list small {
+  font-size: 10px;
+  color: #6b7186;
+}
+.chat-background-list button > svg {
+  flex-shrink: 0;
+  color: #294fbd;
+}
+.chat-background-working {
+  animation: chat-background-pulse 1.6s ease-in-out infinite;
+}
+@keyframes chat-background-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+.chat-ready-banners {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 40;
+  display: grid;
+  gap: 8px;
+  width: min(360px, calc(100vw - 32px));
+}
+.chat-ready-banners:empty {
+  display: none;
+}
+.chat-ready-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 8px 10px 14px;
+  border: 1px solid #c9cedc;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 10px 30px #1c26461f;
+  animation: chat-banner-in 0.25s ease-out;
+}
+.chat-ready-banner > svg {
+  flex-shrink: 0;
+  color: #294fbd;
+}
+.chat-ready-banner > button:not(.chat-ready-dismiss) {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  color: inherit;
+}
+.chat-ready-banner strong {
+  font-size: 13px;
+}
+.chat-ready-banner span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  color: #59627d;
+}
+.chat-ready-banner > button:not(.chat-ready-dismiss):hover strong {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.chat-ready-dismiss {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: #59627d;
+}
+.chat-ready-dismiss:hover {
+  background: #f0f1f5;
+}
+@keyframes chat-banner-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
 .chat-sidebar-bottom {
   margin-top: auto;
   padding-top: 35px;
@@ -330,6 +432,187 @@
   font-size: 11px !important;
   font-weight: 600 !important;
   color: #3a466b;
+}
+.chat-library-button {
+  border-style: solid;
+}
+.chat-library-button.is-open {
+  background: #eaecf4;
+  border-color: #64719a;
+}
+.chat-library {
+  margin-top: 12px;
+  padding: 14px;
+  border: 1px solid #dcdfe9;
+  border-radius: 12px;
+  background: #f8f9fb;
+}
+.chat-library-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+.chat-library-heading > div {
+  display: grid;
+  gap: 2px;
+}
+.chat-library-heading strong {
+  font-size: 13px;
+}
+.chat-library-heading span,
+.chat-library-note,
+.chat-library-message {
+  font-size: 11px;
+  color: #59627d;
+}
+.chat-library-heading > button {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: #59627d;
+}
+.chat-library-heading > button:hover {
+  background: #eaecf4;
+}
+.chat-library h3 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 14px 0 8px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: #636774;
+}
+.chat-library-message {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 12px 0 0;
+}
+.chat-library-note {
+  margin: 10px 0 0;
+}
+.chat-library-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+  gap: 8px;
+  max-height: 290px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.chat-library-item {
+  position: relative;
+}
+.chat-library-pick {
+  position: relative;
+  width: 100%;
+  display: grid;
+  gap: 2px;
+  padding: 0 0 7px;
+  border: 1px solid #d6dae7;
+  border-radius: 10px;
+  background: #fff;
+  overflow: hidden;
+  text-align: left;
+  color: inherit;
+}
+.chat-library-pick:hover:not(:disabled) {
+  border-color: #64719a;
+}
+.chat-library-pick:disabled {
+  opacity: 0.55;
+}
+.chat-library-pick video,
+.chat-library-pick img {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  background: #e5e7ee;
+  margin-bottom: 4px;
+}
+.chat-library-name,
+.chat-library-pick small {
+  padding: 0 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.chat-library-name {
+  font-size: 11px;
+  font-weight: 700;
+}
+.chat-library-pick small {
+  font-size: 10px;
+  color: #6b7186;
+}
+.chat-library-state {
+  position: absolute;
+  inset: 0 0 auto;
+  aspect-ratio: 16 / 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: #151d36b3;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+.chat-library-delete {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 7px;
+  background: #ffffffe6;
+  color: #3a466b;
+  box-shadow: 0 1px 3px #1c26462e;
+}
+.chat-library-delete:hover {
+  background: #fff;
+  color: #b42318;
+}
+.chat-library-confirm {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  display: flex;
+  gap: 4px;
+}
+.chat-library-confirm button {
+  padding: 5px 8px;
+  border: 0;
+  border-radius: 7px;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  background: #fff;
+  color: #3a466b;
+  box-shadow: 0 1px 3px #1c26462e;
+}
+.chat-library-confirm button:first-child {
+  background: #b42318;
+  color: #fff;
+}
+.chat-library-spin {
+  animation: chat-library-spin 0.9s linear infinite;
+}
+@keyframes chat-library-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 .chat-attach-button:disabled {
   opacity: 0.48;
@@ -1040,6 +1323,10 @@
 @media (max-width: 850px) {
   .studio-chat-layout {
     display: block;
+  }
+  /* Below the header so the menu and credits stay reachable. */
+  .chat-ready-banners {
+    top: 82px;
   }
   .studio-chat-sidebar {
     position: fixed;

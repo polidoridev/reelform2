@@ -18,7 +18,7 @@ export interface AccountRow {
   email_suppressed: boolean;
 }
 export interface JobRow {
-  input?: { videoUrl?: string | null; preserveOriginalAudio?: boolean; generateAudio?: boolean };
+  input?: { model?: string; videoUrl?: string | null; preserveOriginalAudio?: boolean; generateAudio?: boolean };
   user_id?: string;
   id: string;
   provider_id?: string | null;

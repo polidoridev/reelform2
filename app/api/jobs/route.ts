@@ -3,6 +3,8 @@ import { ApiError, errorResponse, noStore } from "@/lib/http";
 import { admin, checked } from "@/lib/supabase/server";
 import { balances } from "@/lib/commerce/billing";
 import { refreshJob } from "@/lib/commerce/jobs";
+// Finishing a video (color matching, then saving) continues after the response.
+export const maxDuration = 300;
 export async function GET(request: Request) {
   try {
     const user = await authorize(request);
