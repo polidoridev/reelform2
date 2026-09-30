@@ -7,6 +7,7 @@ import {
   fulfillPayment,
   maybeReload,
   balances,
+  reconcileSubscriptionCheckout,
 } from "../lib/commerce/billing";
 import {
   schedulePlanChange,
@@ -31,7 +32,8 @@ async function ok<T extends {data:unknown;error:{message:string}|null}>(q: Promi
 let userId = "",
   customerId = "",
   subscriptionId = "",
-  eventId = "";
+  eventId = "",
+  checkoutEventId = "";
 try {
   const created = await ok(
     db.auth.admin.createUser({
@@ -74,9 +76,59 @@ try {
       : sub.latest_invoice!.id,
   );
   assert.equal(invoice.status, "paid");
+  checkoutEventId = `evt_reelform_checkout_${randomUUID()}`;
+  const checkoutPayload = JSON.stringify({
+    id: checkoutEventId,
+    object: "event",
+    type: "checkout.session.completed",
+    created: Math.floor(Date.now() / 1000),
+    data: {
+      object: {
+        id: `cs_reelform_qa_${randomUUID()}`,
+        object: "checkout.session",
+        mode: "subscription",
+        payment_status: "paid",
+        subscription: sub.id,
+      },
+    },
+  });
+  const checkoutSignature = stripe.webhooks.generateTestHeaderString({
+    payload: checkoutPayload,
+    secret: process.env.STRIPE_WEBHOOK_SECRET,
+  });
+  assert.equal(
+    (await webhook(new Request("http://localhost/api/webhooks/stripe", {
+      method: "POST",
+      headers: { "stripe-signature": checkoutSignature },
+      body: checkoutPayload,
+    }))).status,
+    200,
+  );
+  assert.equal((await balances(userId)).total, 2000);
+  console.log("PASS paid subscription Checkout event activates Starter before invoice event");
   await Promise.all([fulfillInvoice(invoice), fulfillInvoice(invoice)]);
   assert.equal((await balances(userId)).total, 2000);
   console.log("PASS real Stripe sandbox invoice grants one monthly allowance");
+  await ok(db.from("rf_accounts").update({
+    plan: "free",
+    cadence: null,
+    subscription_status: "none",
+    stripe_subscription_id: null,
+    stripe_updated_at: 0,
+    paid_until: null,
+  }).eq("user_id", userId));
+  await reconcileSubscriptionCheckout(customerId);
+  const recovered = await ok(db.from("rf_accounts").select("plan,paid_until").eq("user_id", userId).single());
+  assert.equal(recovered.plan, "starter");
+  assert.ok(recovered.paid_until);
+  assert.equal((await balances(userId)).total, 2000);
+  console.log("PASS stale Free account recovers from paid Stripe invoice without duplicate credits");
+  await ok(db.from("rf_accounts").update({ paid_until: null }).eq("user_id", userId));
+  await reconcileSubscriptionCheckout(customerId);
+  const restoredPeriod = await ok(db.from("rf_accounts").select("paid_until").eq("user_id", userId).single());
+  assert.ok(restoredPeriod.paid_until);
+  assert.equal((await balances(userId)).total, 2000);
+  console.log("PASS active Starter account recovers a missing paid period");
   eventId = `evt_reelform_qa_${randomUUID()}`;
   const payload = JSON.stringify({
     id: eventId,
@@ -217,6 +269,8 @@ try {
   if (userId) await ok(db.auth.admin.deleteUser(userId));
   if (eventId)
     await ok(db.from("rf_webhook_events").delete().eq("id", eventId));
+  if (checkoutEventId)
+    await ok(db.from("rf_webhook_events").delete().eq("id", checkoutEventId));
   console.log(
     "Sandbox subscriptions, customers and temporary application accounts cleaned up. No live charges.",
   );

@@ -42,6 +42,14 @@ const date = (v: string | number | null) =>
         { month: "short", day: "numeric", year: "numeric" },
       )
     : "—";
+const paidSubscriptionReady = (data: AccountData | null | undefined) =>
+  Boolean(
+    data &&
+      data.account.plan !== "free" &&
+      data.account.subscription_status === "active" &&
+      data.account.paid_until &&
+      new Date(data.account.paid_until).getTime() > Date.now(),
+  );
 async function call(url: string, body: unknown, method = "POST") {
   const r = await fetch(url, {
     method,
@@ -73,8 +81,32 @@ export default function Account({
     [consent, setConsent] = useState(false),
     [deleting, setDeleting] = useState(false);
   useEffect(() => {
-    load();
-  }, []);
+    let stopped = false;
+    const checkoutReturn =
+      initialTab === "billing" &&
+      new URLSearchParams(window.location.search).get("checkout") === "success";
+    async function refreshAfterCheckout() {
+      let result = await load();
+      if (!checkoutReturn) return;
+      if (!paidSubscriptionReady(result))
+        setNotice("Confirming your subscription payment…");
+      for (let attempt = 0; !stopped && !paidSubscriptionReady(result) && attempt < 6; attempt++) {
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+        if (stopped) return;
+        result = await load();
+      }
+      if (stopped) return;
+      setNotice(
+        paidSubscriptionReady(result)
+          ? "Your subscription is ready."
+          : "Your payment is still being confirmed. Refresh this page in a moment, or contact support if it stays on Free.",
+      );
+      if (new URLSearchParams(window.location.search).get("checkout") === "success")
+        history.replaceState(null, "", "/account?tab=billing");
+    }
+    void refreshAfterCheckout();
+    return () => { stopped = true; };
+  }, [initialTab]);
   async function load() {
     try {
       const r = await fetch("/api/account", { cache: "no-store" });
@@ -89,8 +121,10 @@ export default function Account({
       setPack(d.account.auto_reload_pack);
       setThreshold(d.account.auto_reload_threshold);
       setCap(d.account.auto_reload_cap_cents / 100);
+      return d;
     } catch (e) {
       setError((e as Error).message);
+      return null;
     } finally {
       setLoading(false);
     }

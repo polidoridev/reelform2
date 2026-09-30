@@ -10,7 +10,7 @@ import {
   isReelformAdmin,
 } from "@/lib/supabase/server";
 import { ApiError, errorResponse, readJson, noStore } from "@/lib/http";
-import { balances } from "@/lib/commerce/billing";
+import { balances, reconcileSubscriptionCheckout } from "@/lib/commerce/billing";
 import { refreshJob } from "@/lib/commerce/jobs";
 import { removeUserLibrary } from "@/lib/commerce/upload-library";
 import { pendingPlan } from "@/lib/commerce/subscriptions";
@@ -20,8 +20,23 @@ export const maxDuration = 300;
 export async function GET(request: Request) {
   try {
     const user = await requireUser(request),
-      account = await accountFor(user),
       db = admin();
+    let account = await accountFor(user);
+    if (
+      account.stripe_customer_id &&
+      process.env.STRIPE_SECRET_KEY &&
+      (account.plan === "free" ||
+        (account.subscription_status === "active" &&
+          (!account.paid_until ||
+            new Date(account.paid_until).getTime() <= Date.now())))
+    ) {
+      try {
+        await reconcileSubscriptionCheckout(account.stripe_customer_id);
+        account = await accountFor(user);
+      } catch {
+        // The account response still loads; Stripe webhooks can retry independently.
+      }
+    }
     const [balance, jobs, ledger, orders] = await Promise.all([
       balances(user.id),
       checked(

@@ -34,6 +34,19 @@ export async function POST(request: Request) {
       await fulfillInvoice(
         await stripe().invoices.retrieve(event.data.object.id),
       );
+    if (
+      event.type === "checkout.session.completed" &&
+      event.data.object.mode === "subscription" &&
+      event.data.object.payment_status === "paid"
+    ) {
+      const subscriptionId = stripeId(event.data.object.subscription);
+      if (subscriptionId) {
+        const sub = await stripe().subscriptions.retrieve(subscriptionId);
+        const invoiceId = stripeId(sub.latest_invoice);
+        if (invoiceId)
+          await fulfillInvoice(await stripe().invoices.retrieve(invoiceId));
+      }
+    }
     if (event.type.startsWith("customer.subscription."))
       await syncSubscription(
         await stripe().subscriptions.retrieve(

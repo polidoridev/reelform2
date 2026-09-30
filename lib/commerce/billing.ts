@@ -109,6 +109,26 @@ export async function fulfillInvoice(invoice: Stripe.Invoice) {
     }),
   );
 }
+// Repair a Checkout return if its webhook has not arrived (or was missed).
+// fulfillInvoice checks the paid invoice, customer, user metadata and price,
+// and the grant RPC is idempotent by invoice ID.
+export async function reconcileSubscriptionCheckout(customer: string) {
+  const api = stripe();
+  const subscriptions = await api.subscriptions.list({
+    customer,
+    status: "all",
+    limit: 10,
+  });
+  for (const sub of subscriptions.data) {
+    if (sub.status !== "active") continue;
+    const invoices = await api.invoices.list({
+      subscription: sub.id,
+      status: "paid",
+      limit: 3,
+    });
+    for (const invoice of invoices.data) await fulfillInvoice(invoice);
+  }
+}
 export async function fulfillPayment(pi: Stripe.PaymentIntent) {
   if (
     pi.status !== "succeeded" ||
