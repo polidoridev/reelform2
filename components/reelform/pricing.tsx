@@ -4,8 +4,11 @@ import { useEffect, useState } from "react";
 import { ArrowUpRight, Check, ArrowLeft, Sparkles } from "lucide-react";
 import type { ApiResult } from "@/lib/commerce/types";
 import Brand from "./brand";
-import { PLANS, TOPUPS, money } from "@/lib/commerce/pricing";
+import { PLANS, TOPUPS, money, quoteVideo } from "@/lib/commerce/pricing";
 import "./accounts.css";
+const exampleMedia = { duration: 5, width: 1280, height: 720, bytes: 0 };
+const featured720Credits = quoteVideo(exampleMedia, "720p", "genjutsu-object").credits;
+const featured480Credits = quoteVideo(exampleMedia, "480p", "genjutsu-object").credits;
 export function PlanCards({
   compact = false,
   subscribed = false,
@@ -151,6 +154,11 @@ export function PlanCards({
               <Sparkles size={17} />
               <strong>{p.credits.toLocaleString()}</strong> credits / month
             </div>
+            <p className="billing-caption">
+              Enough for {Math.floor(p.credits / featured720Credits)} five-second Genjutsu
+              {" "}720p video{Math.floor(p.credits / featured720Credits) === 1 ? "" : "s"} per monthly allowance.
+              Other models and settings use different amounts.
+            </p>
             <ul>
               <li>
                 <Check />
@@ -254,12 +262,14 @@ export default function Pricing() {
             </h2>
             <p>
               Every video shows its exact credit quote before you start. The
-              quote depends on your clip’s length and resolution. Failed
+              quote depends on the AI model, clip length, resolution, and shape. Failed
               generations automatically return their reserved credits.
             </p>
             <p>
-              For a typical 5-second 720p clip, budget around 1,000 credits. A
-              5-second 480p clip uses around 450 credits.
+              A 5-second Genjutsu Object Swap or Motion Transfer uses {featured720Credits.toLocaleString()} credits
+              {" "}at 720p or {featured480Credits.toLocaleString()} at 480p. A 5-second
+              {" "}16:9 Seedance 2.5 Edit uses {quoteVideo(exampleMedia, "720p", "seedance-2.5-edit").credits.toLocaleString()} credits
+              {" "}at 720p. Your quote shows the cost for your settings.
             </p>
           </div>
           <div className="pack-grid">
