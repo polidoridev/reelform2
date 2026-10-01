@@ -253,7 +253,7 @@ export default function Landing() {
             {useCases.map((item) => (
               <a key={item.id} href={`/studio?useCase=${item.id}`}>
                 {item.poster && (
-                  <Image unoptimized className="use-case-poster" src={item.poster} alt="Two performers in the duo character swap source clip" width={1280} height={720} loading="lazy" />
+                  <Image unoptimized className="use-case-poster" src={item.poster} alt={`${item.shortLabel} source clip`} width={item.posterWidth ?? 1280} height={item.posterHeight ?? 720} loading="lazy" />
                 )}
                 <span className="section-label">{item.audience}</span>
                 <h3>{item.title}</h3>

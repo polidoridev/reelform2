@@ -699,8 +699,8 @@ export default function Studio() {
                   </button>
                 )}
                 <span className="chat-attachment-hint">
-                  {s.selectedPreset?.sourceVideo
-                    ? "Video and 2 references required"
+                  {s.selectedPreset?.referenceCount
+                    ? `Video and ${s.selectedPreset.referenceCount} references required`
                     : videoOptional
                     ? "Video and photos optional"
                     : s.selectedModel.minImages

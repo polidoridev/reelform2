@@ -9,11 +9,30 @@ export type UseCase = {
   sourceVideo?: string;
   poster?: string;
   referenceHint?: string;
+  referenceCount?: number;
+  posterWidth?: number;
+  posterHeight?: number;
 };
 
 export const useCases: readonly UseCase[] = [
   {
+    id: "trio-character-swap",
+    audience: "Ready-to-use preset",
+    title: "Recast all three characters.",
+    shortLabel: "Trio character swap",
+    model: "genjutsu-motion",
+    description: "Use this clip with three character photos: the first guy, the guy holding the camera, and the guy coming out of the car. Keep their original movements.",
+    prompt: "Replace the first guy with @image1 replace the guy holding the camera with @image2 and replace the guy coming out the car with @image3. The characters are just swapping, movements should stay the same.",
+    sourceVideo: "/media/presets/trio-character-swap.mp4",
+    poster: "/media/presets/trio-character-swap.jpg",
+    posterWidth: 720,
+    posterHeight: 1280,
+    referenceCount: 3,
+    referenceHint: "Add three reference images: @image1 replaces the first guy; @image2 replaces the guy holding the camera; @image3 replaces the guy coming out of the car. Keep the original movements.",
+  },
+  {
     id: "duo-character-swap",
+    referenceCount: 2,
     audience: "Ready-to-use preset",
     title: "Give this duo a new cast.",
     shortLabel: "Duo character swap",
