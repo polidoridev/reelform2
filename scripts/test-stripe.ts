@@ -1,8 +1,11 @@
 import assert from "node:assert/strict";
+import { mock } from "node:test";
 import { randomUUID } from "node:crypto";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 import {
+  syncSubscription,
+  reconcileCheckout,
   fulfillInvoice,
   fulfillPayment,
   maybeReload,
@@ -76,6 +79,34 @@ try {
       : sub.latest_invoice!.id,
   );
   assert.equal(invoice.status, "paid");
+  await syncSubscription(sub);
+  const beforePayment = await ok(db.from("rf_accounts").select("plan,paid_until").eq("user_id", userId).single());
+  assert.equal(beforePayment.plan, "free");
+  assert.equal(beforePayment.paid_until, null);
+  console.log("PASS subscription status alone does not unlock paid features");
+  const session = await stripe.checkout.sessions.create({
+    mode: "subscription", customer: customerId,
+    line_items: [{ price: process.env.STRIPE_PRICE_STARTER!, quantity: 1 }],
+    success_url: "https://example.invalid/success",
+    cancel_url: "https://example.invalid/cancel",
+  });
+  const checkoutAccount = await ok(db.from("rf_accounts").select("*").eq("user_id", userId).single());
+  assert.deepEqual(await reconcileCheckout(checkoutAccount, session.id), { ready: false });
+  await assert.rejects(reconcileCheckout({ ...checkoutAccount, stripe_customer_id: "cus_wrong" }, session.id), /does not belong/);
+  await stripe.checkout.sessions.expire(session.id);
+  console.log("PASS unpaid Checkout cannot grant access; another customer's session is rejected");
+  // Simulate a completed return session; invoice/payment retrieval and all
+  // grants still execute against Stripe sandbox and the real database.
+  const sessionLookup = mock.method(Object.getPrototypeOf(stripe.checkout.sessions), "retrieve",
+    async () => ({ ...session, status: "complete", payment_status: "paid", subscription: sub.id, invoice: invoice.id }));
+  try {
+    assert.deepEqual(await reconcileCheckout(checkoutAccount, session.id), { ready: true });
+    assert.deepEqual(await reconcileCheckout(checkoutAccount, session.id), { ready: true });
+    assert.equal((await balances(userId)).total, 2000);
+  } finally { sessionLookup.mock.restore(); }
+  console.log("PASS simulated paid Checkout return repairs access exactly once using real sandbox invoice");
+
+
   checkoutEventId = `evt_reelform_checkout_${randomUUID()}`;
   const checkoutPayload = JSON.stringify({
     id: checkoutEventId,
@@ -205,6 +236,14 @@ try {
     metadata: { reelform_order_id: order.id },
   });
   assert.equal(pi.status, "succeeded");
+  const topupLookup = mock.method(Object.getPrototypeOf(stripe.checkout.sessions), "retrieve",
+    async () => ({ status: "complete", payment_status: "paid", mode: "payment", customer: customerId, payment_intent: pi.id }));
+  try {
+    assert.deepEqual(await reconcileCheckout(checkoutAccount, "cs_test_return"), { ready: true });
+    assert.deepEqual(await reconcileCheckout(checkoutAccount, "cs_test_return"), { ready: true });
+  } finally { topupLookup.mock.restore(); }
+  console.log("PASS simulated top-up return repairs credits using real sandbox payment");
+
   await Promise.all([fulfillPayment(pi), fulfillPayment(pi)]);
   assert.equal((await balances(userId)).total, 2900);
   console.log("PASS paid test credit pack is credited exactly once");

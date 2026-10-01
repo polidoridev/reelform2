@@ -40,6 +40,7 @@ export interface CreditBalance {
   nextExpiryCredits: number;
 }
 export interface ApiResult {
+  ready?: boolean;
   url?: string;
   message?: string;
   error?: string;

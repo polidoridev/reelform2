@@ -1,5 +1,6 @@
 "use client";
 
+import LowCreditNotice from "./low-credit-notice";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -380,6 +381,7 @@ export default function Studio() {
             <Plus size={13} />
           </Link>
         </header>
+        <LowCreditNotice balance={s.creditBalance} plan={s.creditPlan} isAdmin={s.isAdmin} />
         <div className="chat-ready-banners" role="status" aria-live="polite">
           {s.backgroundVideos
             .filter((item) => item.done)

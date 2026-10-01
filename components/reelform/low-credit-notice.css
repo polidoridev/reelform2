@@ -1,0 +1,6 @@
+.low-credit-notice { display: flex; align-items: center; gap: 12px; margin: 12px 20px; padding: 14px 16px; border: 1px solid #80683b; border-radius: 12px; background: #292419; color: #f6e3ba; font-size: 13px; }
+.low-credit-notice > svg { flex-shrink: 0; }
+.low-credit-notice p { margin: 4px 0 0; line-height: 1.5; }
+.low-credit-notice a { margin-left: auto; flex-shrink: 0; color: #f6e3ba; text-decoration: underline; text-underline-offset: 3px; }
+.low-credit-notice a:focus-visible { outline: 2px solid currentColor; outline-offset: 4px; }
+@media (max-width: 600px) { .low-credit-notice { display: grid; grid-template-columns: 18px minmax(0, 1fr); align-items: start; margin: 10px 12px; } .low-credit-notice a { grid-column: 2; margin-left: 0; } }

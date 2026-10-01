@@ -13,7 +13,7 @@ import {
   schedulePlanChange,
   releaseSchedule,
 } from "@/lib/commerce/subscriptions";
-import { syncSubscription } from "@/lib/commerce/billing";
+import { syncSubscription, reconcileCheckout } from "@/lib/commerce/billing";
 import { PLANS, TOPUPS } from "@/lib/commerce/pricing";
 export async function POST(
   request: Request,
@@ -26,6 +26,10 @@ export async function POST(
     const body = await readJson(request);
     if (isReelformAdmin(user) && ["subscribe", "topup", "auto-reload", "change-plan"].includes(action))
       throw new ApiError("Your admin account already includes free Reelform generation. No subscription or credit purchase is needed.", 409);
+    if (action === "confirm-checkout") {
+      const sessionId = z.string().regex(/^cs_[a-zA-Z0-9_]+$/).max(255).parse(body.sessionId);
+      return noStore(await reconcileCheckout(account, sessionId));
+    }
     requireBilling();
     const api = stripe();
     if (
@@ -161,7 +165,7 @@ export async function POST(
           payment_method_types: ["card"],
           client_reference_id: user.id,
           subscription_data: { metadata: { reelform_user_id: user.id } },
-          success_url: `${appUrl()}/account?tab=billing&checkout=success`,
+          success_url: `${appUrl()}/account?tab=billing&checkout=success&session_id={CHECKOUT_SESSION_ID}`,
           cancel_url: `${appUrl()}/pricing?checkout=cancelled`,
           allow_promotion_codes: false,
           billing_address_collection: "auto",
@@ -253,7 +257,7 @@ export async function POST(
           },
           invoice_creation: { enabled: true },
           custom_text: { submit: { message: "Credits expire 90 days after they become available. Credits expiring soonest are used first." } },
-          success_url: `${appUrl()}/account?tab=credits&checkout=success`,
+          success_url: `${appUrl()}/account?tab=credits&checkout=success&session_id={CHECKOUT_SESSION_ID}`,
           cancel_url: `${appUrl()}/account?tab=credits`,
         },
         { idempotencyKey: `rf-topup:${order.id}` },
