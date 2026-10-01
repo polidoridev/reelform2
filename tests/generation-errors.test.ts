@@ -2,6 +2,19 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { generationFailureMessage } from "../lib/commerce/generation-errors";
 
+test("copyright failures explain the restriction and credit refund", () => {
+  for (const status of ["failed", "nsfw"]) {
+    const message = generationFailureMessage(status, "Reference rejected: copyrighted content", 200);
+    assert.match(message, /failed due to a copyright restriction/);
+    assert.match(message, /try a different reference image/);
+    assert.match(message, /Your credits were returned/);
+  }
+  const freeMessage = generationFailureMessage("failed", "COPYRIGHT restriction", 0);
+  assert.match(freeMessage, /No Reelform credits were charged/);
+  assert.doesNotMatch(freeMessage, /credits were returned/);
+  assert.match(generationFailureMessage("canceled", "copyright restriction", 0), /was canceled/);
+});
+
 test("moderation failures explain the block without inventing a trigger or a refund", () => {
   const message = generationFailureMessage("nsfw", undefined, 0);
   assert.match(message, /content filter blocked/);
