@@ -252,7 +252,10 @@ export function useStudioChat() {
   ]);
   const currentQuote = quote?.key === quoteKey ? quote : null;
   // Only flag mentions once there is something to send, so presets can be picked first.
-  const promptError = video || creating ? referenceProblem(prompt, images.length, !!video) ?? "" : "";
+  const presetReferenceError = selectedPreset?.referenceCount && images.length < selectedPreset.referenceCount
+    ? `Add ${selectedPreset.referenceCount} reference photos for ${selectedPreset.shortLabel}. Photos are numbered in the order you add them.`
+    : "";
+  const promptError = presetReferenceError || (video || creating ? referenceProblem(prompt, images.length, !!video) ?? "" : "");
   const modelError = (() => {
     if (!video && !creating) return "";
     const duration = video ? video.duration ?? 4 : seconds;

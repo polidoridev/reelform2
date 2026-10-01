@@ -16,6 +16,21 @@ export type UseCase = {
 
 export const useCases: readonly UseCase[] = [
   {
+    id: "seaside-character-swap",
+    audience: "Ready-to-use preset",
+    title: "Recast the seaside scene.",
+    shortLabel: "Seaside character swap",
+    model: "genjutsu-motion",
+    description: "Use two reference photos to replace the man and woman in this seaside clip, carrying over each reference person’s face, hairstyle, body shape, and proportions.",
+    prompt: "Replace the man with the person in reference photo 1 and the woman with the person in reference photo 2. Take each person's face, skin, head shape, hairstyle, neck, body shape and proportions from their own reference photo.",
+    sourceVideo: "/media/presets/seaside-character-swap.mp4",
+    poster: "/media/presets/seaside-character-swap.jpg",
+    posterWidth: 1280,
+    posterHeight: 960,
+    referenceCount: 2,
+    referenceHint: "Add two reference photos in order: photo 1 replaces the man; photo 2 replaces the woman. Each character takes their appearance and proportions from their own reference photo.",
+  },
+  {
     id: "car-crew-swap",
     audience: "Ready-to-use preset",
     title: "Give the car crew a new cast.",
