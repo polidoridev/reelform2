@@ -1,4 +1,5 @@
 "use client";
+import LowCreditNotice from "./low-credit-notice";
 import { useEffect, useState } from "react";
 import {
   ArrowUpRight,
@@ -82,27 +83,31 @@ export default function Account({
     [deleting, setDeleting] = useState(false);
   useEffect(() => {
     let stopped = false;
-    const checkoutReturn =
-      initialTab === "billing" &&
-      new URLSearchParams(window.location.search).get("checkout") === "success";
+    const query = new URLSearchParams(window.location.search);
+    const checkoutReturn = query.get("checkout") === "success";
+    const sessionId = query.get("session_id");
     async function refreshAfterCheckout() {
       let result = await load();
-      if (!checkoutReturn) return;
-      if (!paidSubscriptionReady(result))
-        setNotice("Confirming your subscription payment…");
-      for (let attempt = 0; !stopped && !paidSubscriptionReady(result) && attempt < 6; attempt++) {
-        await new Promise((resolve) => setTimeout(resolve, 3000));
-        if (stopped) return;
-        result = await load();
+      if (!checkoutReturn || stopped) return;
+      setNotice("Confirming your payment…");
+      let confirmed = false;
+      for (let attempt = 0; !stopped && attempt < 7; attempt++) {
+        try {
+          confirmed = sessionId
+            ? (await call("/api/billing/confirm-checkout", { sessionId })).ready === true
+            : initialTab === "billing" && paidSubscriptionReady(result);
+          result = await load();
+          if (confirmed) break;
+        } catch {
+          // A webhook may still be in flight. Keep the return URL for retry.
+        }
+        if (attempt < 6) await new Promise((resolve) => setTimeout(resolve, 3000));
       }
       if (stopped) return;
-      setNotice(
-        paidSubscriptionReady(result)
-          ? "Your subscription is ready."
-          : "Your payment is still being confirmed. Refresh this page in a moment, or contact support if it stays on Free.",
-      );
-      if (new URLSearchParams(window.location.search).get("checkout") === "success")
-        history.replaceState(null, "", "/account?tab=billing");
+      setNotice(confirmed
+        ? initialTab === "credits" ? "Your credits are ready." : "Your subscription is ready."
+        : "Your payment is still being confirmed. Refresh this page in a moment, or contact support if it continues.");
+      if (confirmed) history.replaceState(null, "", `/account?tab=${initialTab}`);
     }
     void refreshAfterCheckout();
     return () => { stopped = true; };
@@ -253,6 +258,7 @@ export default function Account({
                   {notice}
                 </div>
               )}
+              {data && <LowCreditNotice balance={data.balance.total} plan={data.account.plan} isAdmin={data.isAdmin} />}
               {data?.isAdmin && (
                 <div className="account-notice"><ShieldCheck size={18} />Admin access · Free Reelform generations, all video features, and up to 3 simultaneous jobs. Higgsfield API charges still apply. No subscription or credit purchase needed.</div>
               )}

@@ -1088,6 +1088,7 @@ export function useStudioChat() {
     isAdmin,
     entitlements,
     creditBalance,
+    creditPlan: planAccount?.plan ?? "free",
     error,
     setError,
     generationError,

@@ -22,6 +22,7 @@ export async function balances(userId: string) {
 export async function syncSubscription(
   sub: Stripe.Subscription,
   eventTime = Math.floor(Date.now() / 1000),
+  paymentConfirmed = false,
 ) {
   const customer = stripeId(sub.customer);
   if (!customer) return;
@@ -32,7 +33,7 @@ export async function syncSubscription(
       .eq("stripe_customer_id", customer)
       .maybeSingle(),
   );
-  if (!account) return;
+  if (!account || sub.metadata.reelform_user_id !== account.user_id) return;
   const mapped = planByPrice(sub.items.data[0]?.price.id || "");
   if (!mapped) return;
   // Never let an old subscription's event overwrite a newer subscription.
@@ -50,8 +51,8 @@ export async function syncSubscription(
       .from("rf_accounts")
       .update({
         stripe_subscription_id: sub.id,
-        plan: mapped.plan.id,
-        cadence: mapped.cadence,
+        // A pending or failed renewal must not unlock an unpaid plan.
+        ...(paymentConfirmed ? { plan: mapped.plan.id, cadence: mapped.cadence } : {}),
         subscription_status: sub.status,
         cancel_at_period_end: sub.cancel_at_period_end,
         stripe_updated_at: eventTime,
@@ -96,7 +97,9 @@ export async function fulfillInvoice(invoice: Stripe.Invoice) {
     ? planByPrice(stripeId(line.pricing?.price_details?.price) || "")
     : null;
   if (!mapped || !line?.period) return;
-  await syncSubscription(sub);
+  await syncSubscription(sub, undefined,
+    sub.status === "active" && stripeId(sub.latest_invoice) === invoice.id &&
+    sub.items.data[0]?.price.id === stripeId(line.pricing?.price_details?.price));
   await checked(
     admin().rpc("rf_grant_subscription", {
       p_user: account.user_id,
@@ -255,4 +258,36 @@ export async function maybeReload(account: AccountRow) {
     // Unknown outcomes remain pending: never issue a second charge to guess.
     throw error;
   }
+}
+
+// The return URL is only a hint: retrieve the session and verify ownership and
+// payment server-side. Both webhook and return use the same idempotent grants.
+export async function reconcileCheckout(account: AccountRow, sessionId: string) {
+  const session = await stripe().checkout.sessions.retrieve(sessionId);
+  if (!account.stripe_customer_id || stripeId(session.customer) !== account.stripe_customer_id)
+    throw new ApiError("This checkout does not belong to your account.", 403);
+  if (session.status !== "complete" || session.payment_status !== "paid")
+    return { ready: false };
+  if (session.mode === "subscription") {
+    const id = stripeId(session.subscription);
+    if (!id) return { ready: false };
+    const sub = await stripe().subscriptions.retrieve(id);
+    if (sub.metadata.reelform_user_id !== account.user_id)
+      throw new ApiError("This subscription could not be verified.", 403);
+    const invoiceId = stripeId(session.invoice);
+    if (!invoiceId) return { ready: false };
+    await fulfillInvoice(await stripe().invoices.retrieve(invoiceId));
+    const { data: updated } = await checked(admin().from("rf_accounts")
+      .select("plan,paid_until,stripe_subscription_id").eq("user_id", account.user_id).single());
+    return { ready: !!updated && updated.stripe_subscription_id === id && updated.plan !== "free" &&
+      Date.parse(updated.paid_until || "") > Date.now() };
+  }
+  const paymentId = stripeId(session.payment_intent);
+  if (session.mode !== "payment" || !paymentId) return { ready: false };
+  const payment = await stripe().paymentIntents.retrieve(paymentId);
+  await fulfillPayment(payment);
+  const { data: order } = await checked(admin().from("rf_orders").select("status")
+    .eq("id", payment.metadata.reelform_order_id || "")
+    .eq("user_id", account.user_id).maybeSingle());
+  return { ready: order?.status === "paid" };
 }
