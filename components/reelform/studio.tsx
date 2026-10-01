@@ -35,7 +35,7 @@ import PromptInput, { PromptWithReferences } from "./prompt-input";
 import { useStudioChat, type ChatMessage } from "./use-studio-chat";
 import { ASPECT_RATIOS, VIDEO_MODELS, type AspectRatio } from "@/lib/video-models";
 import { VIDEO_ACCEPT, MAX_VIDEO_SIZE_LABEL, MAX_VIDEO_SECONDS } from "@/lib/video-limits";
-import { useCases } from "@/lib/use-cases";
+import { useCases, type UseCase } from "@/lib/use-cases";
 import "./studio-chat.css";
 
 function SentMessage({ message }: { message: ChatMessage }) {
@@ -191,9 +191,8 @@ export default function Studio() {
       el?.setSelectionRange(caret, caret);
     });
   }
-  function chooseScene(prompt: string, model: string) {
-    s.changeModel(model);
-    s.setPrompt(prompt);
+  function chooseScene(preset: UseCase) {
+    void s.choosePreset(preset);
     promptRef.current?.focus();
   }
   function reset() {
@@ -302,7 +301,7 @@ export default function Studio() {
               key={scene.id}
               disabled={s.busy}
               onClick={() => {
-                chooseScene(scene.prompt, scene.model);
+                chooseScene(scene);
                 setMenuOpen(false);
               }}
             >
@@ -700,7 +699,9 @@ export default function Studio() {
                   </button>
                 )}
                 <span className="chat-attachment-hint">
-                  {videoOptional
+                  {s.selectedPreset?.sourceVideo
+                    ? "Video and 2 references required"
+                    : videoOptional
                     ? "Video and photos optional"
                     : s.selectedModel.minImages
                       ? `Video and ${s.selectedModel.minImages} reference required`
@@ -733,6 +734,9 @@ export default function Studio() {
                   onDelete={(id) => void s.deleteFromLibrary(id)}
                   onClose={() => setLibraryOpen(false)}
                 />
+              )}
+              {s.selectedPreset?.referenceHint && (
+                <p className="chat-preset-hint">{s.selectedPreset.referenceHint}</p>
               )}
               {(s.video || s.images.length > 0) && (
                 <div className="chat-attachment-previews">
@@ -1103,7 +1107,7 @@ export default function Studio() {
                     <button
                       key={scene.id}
                       disabled={s.busy}
-                      onClick={() => chooseScene(scene.prompt, scene.model)}
+                      onClick={() => chooseScene(scene)}
                     >
                       <span>{scene.shortLabel}</span>
                       <ArrowUpRight size={13} />

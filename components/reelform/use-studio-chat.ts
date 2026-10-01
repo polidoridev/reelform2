@@ -17,7 +17,7 @@ import {
 } from "@/lib/video-limits";
 import { videoEntitlements, validateVideoEntitlements, type PlanAccount } from "@/lib/commerce/entitlements";
 import { scenes } from "@/lib/scenes";
-import { useCases } from "@/lib/use-cases";
+import { useCases, type UseCase } from "@/lib/use-cases";
 import { editDuration, MAX_EDITABLE_SECONDS, type Edit } from "@/lib/video-edit";
 import { referenceProblem, renumberAfterRemoval } from "@/lib/prompt-references";
 import type { EditorSource } from "./video-editor";
@@ -177,6 +177,7 @@ function saveSession(key: string, data: unknown) {
 
 export function useStudioChat() {
   const [video, setVideo] = useState<Video | null>(null);
+  const [selectedPreset, setSelectedPreset] = useState<UseCase | null>(null);
   const [images, setImages] = useState<Media[]>([]);
   const [prompt, setPrompt] = useState("");
   const [model, setModel] = useState(DEFAULT_VIDEO_MODEL);
@@ -318,10 +319,7 @@ export function useStudioChat() {
       (item) => item.id === new URLSearchParams(location.search).get("useCase"),
     );
     if (preset) {
-      setPrompt(preset.prompt);
-      setModel(preset.model);
-      setResolution(null);
-      setAudio(false);
+      void choosePreset(preset);
     }
     try {
       const saved = JSON.parse(
@@ -637,7 +635,38 @@ export function useStudioChat() {
     URL.revokeObjectURL(item.url);
     assets.current.delete(item.url);
   }
-  async function chooseVideo(file?: File, libraryId?: string) {
+  async function choosePreset(preset: UseCase) {
+    if (busy || submitLock.current) return;
+    const sequence = ++selection.current;
+    setPrompt(preset.prompt);
+    setModel(preset.model);
+    setResolution(null);
+    setAudio(false);
+    setSelectedPreset(null);
+    setError("");
+    setInspecting(!!preset.sourceVideo);
+    if (!preset.sourceVideo) return;
+    // Clear the old clip so a failed download cannot submit the preset with it.
+    setVideo((previous) => {
+      if (previous) release(previous);
+      return null;
+    });
+    setQuote(null);
+    setQuoteError("");
+    try {
+      const response = await fetch(preset.sourceVideo);
+      if (!response.ok) throw new Error("Couldn’t load this preset’s video. Select the preset again to retry.");
+      const blob = await response.blob();
+      if (!mounted.current || sequence !== selection.current) return;
+      const loaded = await chooseVideo(new File([blob], `${preset.shortLabel}.mp4`, { type: "video/mp4" }), undefined, sequence);
+      if (loaded && mounted.current && sequence === selection.current) setSelectedPreset(preset);
+    } catch (e) {
+      if (mounted.current && sequence === selection.current) setError((e as Error).message);
+    } finally {
+      if (mounted.current && sequence === selection.current) setInspecting(false);
+    }
+  }
+  async function chooseVideo(file?: File, libraryId?: string, presetSequence?: number) {
     if (!file || busy || submitLock.current) return;
     setError("");
     const contentType = videoContentType(file);
@@ -649,7 +678,8 @@ export function useStudioChat() {
       setError(`Choose a video up to ${MAX_VIDEO_SIZE_LABEL}.`);
       return;
     }
-    const sequence = ++selection.current;
+    const sequence = presetSequence ?? ++selection.current;
+    setSelectedPreset(null);
     setInspecting(true);
     const item = media(file);
     const duration = await probeDuration(item.url);
@@ -743,6 +773,7 @@ export function useStudioChat() {
     setError("");
   }
   function removeVideo() {
+    setSelectedPreset(null);
     selection.current++;
     setInspecting(false);
     if (video) release(video);
@@ -798,7 +829,7 @@ export function useStudioChat() {
     uploadedImages.current.delete(item.file);
     release(item);
     setImages((previous) => previous.filter((image) => image !== item));
-    if (index >= 0) setPrompt((text) => renumberAfterRemoval(text, index + 1));
+    if (index >= 0 && !selectedPreset) setPrompt((text) => renumberAfterRemoval(text, index + 1));
   }
   function changeModel(value: string, quality?: string) {
     const next = getVideoModel(value);
@@ -978,6 +1009,7 @@ export function useStudioChat() {
     clearChat();
   }
   function clearChat() {
+    setSelectedPreset(null);
     selection.current++;
     assets.current.forEach((url) => URL.revokeObjectURL(url));
     assets.current.clear();
@@ -1071,6 +1103,8 @@ export function useStudioChat() {
     }
   }
   return {
+    selectedPreset,
+    choosePreset,
     video,
     images,
     prompt,

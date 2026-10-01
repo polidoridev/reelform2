@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import {
   motion,
   useReducedMotion,
@@ -251,6 +252,9 @@ export default function Landing() {
           <div className="use-case-list">
             {useCases.map((item) => (
               <a key={item.id} href={`/studio?useCase=${item.id}`}>
+                {item.poster && (
+                  <Image unoptimized className="use-case-poster" src={item.poster} alt="Two performers in the duo character swap source clip" width={1280} height={720} loading="lazy" />
+                )}
                 <span className="section-label">{item.audience}</span>
                 <h3>{item.title}</h3>
                 <p>{item.description}</p>

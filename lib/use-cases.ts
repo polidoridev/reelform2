@@ -1,4 +1,29 @@
-export const useCases = [
+export type UseCase = {
+  id: string;
+  audience: string;
+  title: string;
+  shortLabel: string;
+  model: string;
+  description: string;
+  prompt: string;
+  sourceVideo?: string;
+  poster?: string;
+  referenceHint?: string;
+};
+
+export const useCases: readonly UseCase[] = [
+  {
+    id: "duo-character-swap",
+    audience: "Ready-to-use preset",
+    title: "Give this duo a new cast.",
+    shortLabel: "Duo character swap",
+    model: "genjutsu-motion",
+    description: "Use this performance clip with two character photos. Photo 1 replaces the guy on the right; photo 2 replaces the guy on the left.",
+    prompt: "Replace the guy on the right (@image1) and replace the guy on the left with (@image2). Just swap the characters, the movements should stay the same.",
+    sourceVideo: "/media/presets/duo-character-swap.mp4",
+    poster: "/media/presets/duo-character-swap.jpg",
+    referenceHint: "Add two reference images: @image1 replaces the guy on the right; @image2 replaces the guy on the left. Keep the original movements.",
+  },
   {
     id: "character-remix",
     audience: "Creators & entertainment",
