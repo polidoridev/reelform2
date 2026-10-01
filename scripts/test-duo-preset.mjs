@@ -4,10 +4,11 @@ import { resolve } from 'node:path';
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const browser = await chromium.launch({ headless: true, channel: 'chrome' });
 const base = process.env.TEST_BASE_URL || 'http://localhost:3012';
+const car = process.env.TEST_PRESET === 'car';
 const trio = process.env.TEST_PRESET === 'trio';
-const presetId = trio ? 'trio-character-swap' : 'duo-character-swap';
-const presetName = trio ? 'Trio character swap' : 'Duo character swap';
-const count = trio ? 3 : 2;
+const presetId = car ? 'car-crew-swap' : trio ? 'trio-character-swap' : 'duo-character-swap';
+const presetName = car ? 'Car crew swap' : trio ? 'Trio character swap' : 'Duo character swap';
+const count = car || trio ? 3 : 2;
 const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, reducedMotion: 'reduce' });
 const page = await context.newPage();
 const submissions = [], errors = [];
@@ -20,19 +21,19 @@ await context.route(`${base}/api/**`, async route => {
   if (path === '/api/account') return json({ balance: { total: 10000 }, isAdmin: false, account: { plan: 'studio', paid_until: '2099-01-01T00:00:00Z' } });
   if (path === '/api/uploads') return json({ uploadUrl: `${base}/__test-upload`, headers: {}, token: `upload-${++uploads}` });
   if (path === '/api/library') return json({ items: [] });
-  if (path === '/api/quote') return json({ quoteToken: 'test-quote', credits: 240, duration: trio ? 18.04 : 24.05 });
+  if (path === '/api/quote') return json({ quoteToken: 'test-quote', credits: 240, duration: car ? 20.05 : trio ? 18.04 : 24.05 });
   if (path === '/api/generate') { submissions.push(route.request().postDataJSON()); return json({ token: 'test-job', requestId: 'test-request', status: 'queued', balance: 9760 }); }
   if (path === '/api/jobs') return json({ status: 'completed', videoUrl: `/media/presets/${presetId}.mp4`, balance: 9760 });
   return route.fulfill({ status: 501, json: { error: 'Unexpected test endpoint' } });
 });
 await context.route(`${base}/__test-upload`, route => route.fulfill({ body: '' }));
-const prompt = trio ? 'Replace the first guy with @image1 replace the guy holding the camera with @image2 and replace the guy coming out the car with @image3. The characters are just swapping, movements should stay the same.' : 'Replace the guy on the right (@image1) and replace the guy on the left with (@image2). Just swap the characters, the movements should stay the same.';
+const prompt = car ? 'Replace the man in the orange shirt in the front seat with @image1, replace the man in the red cap and green jacket in the back seat with @image2, and replace the man in the pink-and-navy striped shirt in the back seat with @image3. Only swap the characters. Keep each replacement consistent across every camera cut. Preserve the original movements, gestures, facial expressions, timing, camera movements, car interior, and background.' : trio ? 'Replace the first guy with @image1 replace the guy holding the camera with @image2 and replace the guy coming out the car with @image3. The characters are just swapping, movements should stay the same.' : 'Replace the guy on the right (@image1) and replace the guy on the left with (@image2). Just swap the characters, the movements should stay the same.';
 const send = page.getByRole('button', { name: 'Send and generate video' });
 async function loaded() {
   await page.getByText(`${presetName}.mp4`, { exact: true }).waitFor();
   assert.equal(await page.getByLabel('Describe your video transformation').inputValue(), prompt);
   assert(await page.getByRole('radio', { name: 'Motion Transfer', exact: true }).isChecked());
-  await page.waitForFunction(min => document.querySelector('[aria-label="Original video preview"]').duration > min, trio ? 18 : 24);
+  await page.waitForFunction(min => document.querySelector('[aria-label="Original video preview"]').duration > min, car ? 20 : trio ? 18 : 24);
   await page.getByText(`Video and ${count} references required`, { exact: true }).waitFor();
 }
 try {
@@ -43,7 +44,7 @@ try {
   await page.getByRole('checkbox').check();
   assert(await send.isDisabled(), 'one reference must not permit this preset prompt');
   await page.getByLabel('Upload reference images', { exact: true }).setInputFiles(resolve('public/media/escape.jpg'));
-  if (trio) {
+  if (count === 3) {
     assert(await send.isDisabled(), 'two references must not permit the three-person prompt');
     await page.getByLabel('Upload reference images', { exact: true }).setInputFiles(resolve('public/media/alpine.jpg'));
   }
