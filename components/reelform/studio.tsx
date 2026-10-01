@@ -1070,6 +1070,11 @@ export default function Studio() {
                   : "Credits are used when you press Send. Failed generations return your credits."}
               </p>
             )}
+            <p className="chat-credit-explanation">
+              Some generations may fail due to copyright protection on reference
+              images. Any Reelform credits charged for these generations will be
+              refunded.
+            </p>
             {s.modelError && (
               <p className="chat-composer-error" role="alert">
                 {s.modelError}
