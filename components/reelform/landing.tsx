@@ -106,6 +106,9 @@ export default function Landing() {
             <a href="#explore" onClick={() => setMenu(false)}>
               Explore
             </a>
+            <Link prefetch={false} href="/cinemalab" onClick={() => setMenu(false)}>
+              CinemaLab
+            </Link>
             <a href="#how-it-works" onClick={() => setMenu(false)}>
               How it works
             </a>

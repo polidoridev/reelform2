@@ -5,6 +5,7 @@ import {
   bestResolution,
   DEFAULT_VIDEO_MODEL,
   getVideoModel,
+  modelAspectRatios,
   validateModel,
   type AspectRatio,
 } from "@/lib/video-models";
@@ -162,8 +163,6 @@ function probeDuration(url: string) {
 const minutes = (seconds: number) =>
   `${Math.floor(seconds / 60)}:${String(Math.round(seconds % 60)).padStart(2, "0")}`;
 
-const ACTIVE_JOB = "reelform-active-job";
-const PENDING_SEND = "reelform-pending-send";
 const terminal = (status: string) =>
   ["completed", "failed", "nsfw", "canceled"].includes(status);
 function saveSession(key: string, data: unknown) {
@@ -175,18 +174,20 @@ function saveSession(key: string, data: unknown) {
   }
 }
 
-export function useStudioChat() {
+export function useStudioChat(cinema = false) {
+  const ACTIVE_JOB = cinema ? "reelform-cinema-active-job" : "reelform-active-job";
+  const PENDING_SEND = cinema ? "reelform-cinema-pending-send" : "reelform-pending-send";
   const [video, setVideo] = useState<Video | null>(null);
   const [selectedPreset, setSelectedPreset] = useState<UseCase | null>(null);
   const [images, setImages] = useState<Media[]>([]);
   const [prompt, setPrompt] = useState("");
-  const [model, setModel] = useState(DEFAULT_VIDEO_MODEL);
+  const [model, setModel] = useState(cinema ? "seedance-2.5-reference" : DEFAULT_VIDEO_MODEL);
   // null follows the model's best quality for the plan; set once the user picks one.
   const [chosenResolution, setResolution] = useState<string | null>(null);
   const [audio, setAudio] = useState(false);
   // Length and shape for videos created without a source video.
   const [createSeconds, setCreateSeconds] = useState(5);
-  const [aspectRatio, setAspectRatio] = useState<AspectRatio>("16:9");
+  const [chosenAspectRatio, setAspectRatio] = useState<AspectRatio>("16:9");
   const [consent, setConsent] = useState(false);
   const [ready, setReady] = useState<boolean | null>(null);
   const [authenticated, setAuthenticated] = useState<boolean | null>(null);
@@ -231,6 +232,8 @@ export function useStudioChat() {
   const [openingUpload, setOpeningUpload] = useState<string | null>(null);
   const entitlements = videoEntitlements(planAccount, isAdmin);
   const selectedModel = getVideoModel(model);
+  const aspectRatios = modelAspectRatios(selectedModel);
+  const aspectRatio = aspectRatios.includes(chosenAspectRatio) ? chosenAspectRatio : aspectRatios[0];
   const resolution = chosenResolution ?? bestResolution(selectedModel, entitlements.fullHd);
   const jobActive = !!job && !terminal(job.status);
   const busy = !!phase || jobActive || !!pending;
@@ -566,7 +569,7 @@ export function useStudioChat() {
       disposed = true;
       clearTimeout(timer);
     };
-  }, [jobToken, jobFinished, pollAttempt]);
+  }, [jobToken, jobFinished, pollAttempt, ACTIVE_JOB]);
 
   useEffect(() => {
     if (background) saveBackgroundVideos(background);
@@ -1114,6 +1117,7 @@ export function useStudioChat() {
     setPrompt,
     model,
     selectedModel,
+    aspectRatios,
     resolution,
     setResolution,
     audio,

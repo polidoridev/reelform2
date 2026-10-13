@@ -31,10 +31,11 @@ import AppSelect from "./app-select";
 import GenerationProgress from "./generation-progress";
 import VideoEditor from "./video-editor";
 import ModelPicker from "./model-picker";
+import CinemaLab from "./cinema-lab";
 import UploadLibrary from "./upload-library";
 import PromptInput, { PromptWithReferences } from "./prompt-input";
 import { useStudioChat, type ChatMessage } from "./use-studio-chat";
-import { ASPECT_RATIOS, VIDEO_MODELS, type AspectRatio } from "@/lib/video-models";
+import { VIDEO_MODELS, type AspectRatio } from "@/lib/video-models";
 import { VIDEO_ACCEPT, MAX_VIDEO_SIZE_LABEL, MAX_VIDEO_SECONDS } from "@/lib/video-limits";
 import { useCases, type UseCase } from "@/lib/use-cases";
 import "./studio-chat.css";
@@ -138,9 +139,9 @@ function VideoResult({
   );
 }
 
-export default function Studio() {
-  const s = useStudioChat();
-  const [settingsOpen, setSettingsOpen] = useState(false);
+export default function Studio({ cinema = false }: { cinema?: boolean }) {
+  const s = useStudioChat(cinema);
+  const [settingsOpen, setSettingsOpen] = useState(cinema);
   const [fullHdOpen, setFullHdOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [libraryOpen, setLibraryOpen] = useState(false);
@@ -236,7 +237,7 @@ export default function Studio() {
             ? "Cost shown in a moment"
             : "Credit cost appears after upload";
   return (
-    <div className="studio-chat-layout">
+    <div className={`studio-chat-layout${cinema ? " cinemalab-layout" : ""}`}>
       <a className="skip-link" href="#studio-main">
         Skip to studio
       </a>
@@ -258,8 +259,11 @@ export default function Studio() {
           <Plus size={17} /> New video <span aria-hidden="true">↗</span>
         </button>
         <nav aria-label="Studio navigation">
-          <Link prefetch={false} href="/studio" aria-current="page">
+          <Link prefetch={false} href="/studio" aria-current={cinema ? undefined : "page"}>
             <AudioLines size={17} /> Video studio
+          </Link>
+          <Link prefetch={false} href="/cinemalab" aria-current={cinema ? "page" : undefined}>
+            <Film size={17} /> CinemaLab
           </Link>
           <Link prefetch={false} href="/account?tab=creations">
             <Film size={17} /> My creations
@@ -295,7 +299,7 @@ export default function Studio() {
             ))}
           </div>
         )}
-        <div className="chat-sidebar-ideas">
+        {!cinema && <div className="chat-sidebar-ideas">
           <span>START WITH AN IDEA</span>
           {useCases.map((scene) => (
             <button
@@ -310,7 +314,7 @@ export default function Studio() {
               <ArrowUpRight size={13} />
             </button>
           ))}
-        </div>
+        </div>}
         <div className="chat-sidebar-bottom">
           <div className="chat-creator-note">
             <ShieldCheck size={19} />
@@ -361,7 +365,7 @@ export default function Studio() {
             >
               <Menu size={21} />
             </button>
-            <span>Video studio</span>
+            <span>{cinema ? "CinemaLab" : "Video studio"}</span>
             <span className="chat-header-separator">/</span>
             <small>
               {hasConversation ? "Your conversation" : "New creation"}
@@ -419,12 +423,10 @@ export default function Studio() {
               </span>
               <span className="chat-eyebrow">YOUR IMAGINATION, IN MOTION</span>
               <h1>
-                What will you <span>create?</span>
+                {cinema ? <>Your scene. <span>Your direction.</span></> : <>What will you <span>create?</span></>}
               </h1>
               <p>
-                Start with your video. Add a little inspiration.
-                <br />
-                Tell us what you want to change.
+                {cinema ? "Plan your shots, then bring them to life with words, photos, or a reference clip." : <>Start with your video. Add a little inspiration.<br />Tell us what you want to change.</>}
               </p>
             </section>
           )}
@@ -539,11 +541,12 @@ export default function Studio() {
         </div>
         <div className="studio-composer-area">
           <div className="studio-composer-wrap">
+            {cinema && <CinemaLab disabled={s.busy} prompt={s.prompt} onApply={(prompt) => { s.setPrompt(prompt); promptRef.current?.focus(); }} />}
             {s.authenticated === false && (
               <div className="chat-notice">
                 <Info size={16} />
                 <p>
-                  <Link prefetch={false} href="/login?next=%2Fstudio">
+                  <Link prefetch={false} href={cinema ? "/login?next=%2Fcinemalab" : "/login?next=%2Fstudio"}>
                     Sign in
                   </Link>{" "}
                   to upload your files and generate a video.
@@ -612,7 +615,7 @@ export default function Studio() {
                   <strong>Drop your video or reference images</strong>
                 </div>
               )}
-              <ModelPicker
+              {cinema ? <div className="cinemalab-model"><label>Generation model<AppSelect label="CinemaLab model" value={s.model} disabled={s.busy} onValueChange={s.changeModel} options={VIDEO_MODELS.filter(model => model.video === "optional" || model.id === s.model).map(model => ({ value: model.id, label: model.name }))} /></label></div> : <ModelPicker
                 model={s.model}
                 onChange={(id) => {
                   s.changeModel(id);
@@ -620,7 +623,7 @@ export default function Studio() {
                 }}
                 disabled={s.busy}
                 videoSeconds={s.video?.duration ?? null}
-              />
+              />}
               <div className="chat-attachment-bar">
                 <input
                   ref={videoInput}
@@ -642,7 +645,7 @@ export default function Studio() {
                   accept="image/jpeg,image/png,image/webp"
                   multiple
                   className="sr-only"
-                  disabled={s.busy || !s.video}
+                  disabled={s.busy || (!s.video && !videoOptional)}
                   aria-label="Upload reference images"
                   onChange={(e) => {
                     if (e.target.files) s.chooseImages(e.target.files);
@@ -965,7 +968,7 @@ export default function Studio() {
                             value={s.aspectRatio}
                             disabled={s.busy}
                             onValueChange={(value) => s.setAspectRatio(value as AspectRatio)}
-                            options={ASPECT_RATIOS.map((ratio) => ({
+                            options={s.aspectRatios.map((ratio) => ({
                               value: ratio,
                               label: {
                                 "16:9": "16:9 · Landscape",
@@ -1106,7 +1109,7 @@ export default function Studio() {
                 </Link>
               </p>
             )}
-            {!hasConversation && !s.video && (
+            {!cinema && !hasConversation && !s.video && (
               <div className="chat-starter-prompts">
                 <span>A LITTLE INSPIRATION</span>
                 <div>

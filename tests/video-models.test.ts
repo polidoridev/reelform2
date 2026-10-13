@@ -72,7 +72,7 @@ test("Seedance Create models work without a video; Genjutsu and video models sti
  assert.throws(()=>modelRequest(getVideoModel("seedance-2.5-reference"),{...noVideo,prompt:"Restyle the scene in @video as a watercolor"}),/@video doesn’t match a video/);
  for(const id of ["genjutsu-motion","genjutsu-object","seedance-2.5-edit","kling-o3-edit","kling-3-motion-pro"])
   assert.throws(()=>modelRequest(getVideoModel(id),{...noVideo,imageUrls:["https://media.example/a.jpg"]}),/Add a video/);
- assert.deepEqual(VIDEO_MODELS.filter(m=>m.video==="optional").map(m=>m.id),["seedance-2.5-reference","seedance-2-reference"]);
+ assert.deepEqual(VIDEO_MODELS.filter(m=>m.video==="optional").map(m=>m.id),["seedance-2.5-reference","wan-3-reference","wan-3-prime-reference","seedance-2-reference"]);
 });
 const near=(a:number,b:number)=>assert.ok(Math.abs(a-b)<1e-9,`${a} ≈ ${b}`);
 test("created videos are priced on generated seconds, chosen shape, and the no-video rate",()=>{
