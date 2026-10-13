@@ -38,7 +38,7 @@ const organization = {
       name: SITE_NAME,
       url: CANONICAL_ORIGIN,
       logo: `${CANONICAL_ORIGIN}/favicon.svg`,
-      email: "admin@polidori.dev",
+      email: "contact@polidori.dev",
     },
     {
       "@type": "WebSite",

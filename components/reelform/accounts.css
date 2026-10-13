@@ -531,6 +531,88 @@
 .account-packs {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
+.custom-topup {
+  margin-top: 20px;
+  padding: clamp(20px, 3vw, 30px);
+  border: 1px solid #d6dae6;
+  border-radius: 14px;
+  background: #fcfcfe;
+}
+.custom-topup-heading,
+.custom-topup-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+.custom-topup h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 550;
+}
+.custom-topup p {
+  margin: 6px 0 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #626778;
+}
+.custom-topup output {
+  color: #535b72;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.custom-topup output strong {
+  color: #192445;
+  font-size: 30px;
+  font-weight: 550;
+  font-variant-numeric: tabular-nums;
+}
+.custom-topup input[type="range"] {
+  display: block;
+  width: 100%;
+  height: 32px;
+  margin: 22px 0 0;
+  accent-color: #526aa7;
+  cursor: pointer;
+}
+.custom-topup input[type="range"]:focus-visible {
+  outline: 2px solid #526aa7;
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+.custom-topup input[type="range"]:disabled {
+  cursor: wait;
+  opacity: .6;
+}
+.custom-topup-limits {
+  display: flex;
+  justify-content: space-between;
+  color: #626778;
+  font-size: 11px;
+}
+.custom-topup-footer {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #e3e6ee;
+}
+.custom-topup-footer > div {
+  flex: 1 1 240px;
+}
+.custom-topup-footer strong {
+  font-size: 22px;
+  font-weight: 550;
+  font-variant-numeric: tabular-nums;
+}
+.custom-topup-footer small {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 400;
+  color: #626778;
+}
+.custom-topup-footer button {
+  flex: 1 1 180px;
+}
 .account-card form {
   max-width: 700px;
 }
@@ -658,6 +740,7 @@
   background: #fff;
 }
 .creation-card > video,
+.creation-card > a > video,
 .creation-pending {
   height: 250px;
   width: 100%;
@@ -1281,6 +1364,7 @@
     gap: 12px;
   }
   .creation-card > video,
+.creation-card > a > video,
   .creation-pending {
     height: 200px;
   }
@@ -1413,3 +1497,6 @@
     padding: 9px 10px;
   }
 }
+
+.creation-card > a { display: block; }
+.creation-card > a:focus-visible { outline: 3px solid var(--accent, #4569ee); outline-offset: 3px; }

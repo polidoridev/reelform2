@@ -1,3 +1,4 @@
+import type { TrialStatus } from "./trial";
 export interface AccountRow {
   user_id: string;
   full_name: string;
@@ -47,6 +48,7 @@ export interface ApiResult {
   redirect?: string;
 }
 export interface AccountData {
+  trial?: TrialStatus;
   isAdmin: boolean;
   account: AccountRow;
   balance: CreditBalance;

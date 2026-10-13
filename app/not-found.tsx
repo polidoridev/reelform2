@@ -22,7 +22,7 @@ export default function NotFound() {
       </div>
       <p className="not-found-help">
         Looking for a shared video? It may have been removed by its creator. Something else wrong? Email{" "}
-        <a href="mailto:admin@polidori.dev">admin@polidori.dev</a>.
+        <a href="mailto:contact@polidori.dev">contact@polidori.dev</a>.
       </p>
     </main>
   );

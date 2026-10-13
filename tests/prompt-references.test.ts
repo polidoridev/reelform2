@@ -15,8 +15,13 @@ test("reports mentions that don't match an attached photo", () => {
   assert.throws(() => resolvePromptReferences("Swap for @image2", 1), /doesn’t match/);
 });
 
-test("removing a photo shifts later mentions up and leaves the removed one", () => {
-  assert.equal(renumberAfterRemoval("@image1 then @image2 then @image3 in @video", 2), "@image1 then @image2 then @image2 in @video");
+test("removing a photo preserves surviving references and blocks a dangling reference", () => {
+  const prompt = renumberAfterRemoval("@image1 then @image2 then @image3 in @video", 2);
+  assert.equal(prompt, "@image1 then @image0 then @image2 in @video");
+  assert.throws(() => resolvePromptReferences(prompt, 2), /original photo may have been removed/);
+  assert.throws(() => resolvePromptReferences(prompt, 4), /original photo may have been removed/);
+  assert.equal(resolvePromptReferences(renumberAfterRemoval("Use @image3 in @video", 2), 2), "Use reference image 2 in the input video");
+  assert.equal(renumberAfterRemoval(prompt, 1), "@image0 then @image0 then @image1 in @video");
 });
 
 test("@video is only valid when a video is attached", () => {

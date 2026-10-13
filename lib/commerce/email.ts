@@ -88,7 +88,7 @@ export async function sendJourney(userId: string, kind: Journey) {
     url = `${appUrl()}/studio`,
     token = unsubscribeToken(a.user_id),
     unsub = `${appUrl()}/unsubscribe?token=${encodeURIComponent(token)}`;
-  const footer = `You’re receiving this because you opted into Reelform emails.<br>Reelform · ${escapeHtml(process.env.MARKETING_POSTAL_ADDRESS)}<br><a href="${escapeHtml(unsub)}" style="color:#356b64">Unsubscribe</a> · <a href="${appUrl()}/account?tab=settings" style="color:#356b64">Email preferences</a><br>Questions? admin@polidori.dev`;
+  const footer = `You’re receiving this because you opted into Reelform emails.<br>Reelform · ${escapeHtml(process.env.MARKETING_POSTAL_ADDRESS)}<br><a href="${escapeHtml(unsub)}" style="color:#356b64">Unsubscribe</a> · <a href="${appUrl()}/account?tab=settings" style="color:#356b64">Email preferences</a><br>Questions? contact@polidori.dev`;
   const greeting = a.full_name
     ? `<p>Hi ${escapeHtml(a.full_name.split(" ")[0])},</p>`
     : "";
@@ -96,7 +96,7 @@ export async function sendJourney(userId: string, kind: Journey) {
     const result = await new Resend(process.env.RESEND_API_KEY).emails.send(
       {
         from: process.env.EMAIL_FROM || "Reelform <admin@polidori.dev>",
-        replyTo: process.env.EMAIL_REPLY_TO || "admin@polidori.dev",
+        replyTo: process.env.EMAIL_REPLY_TO || "contact@polidori.dev",
         to: a.email,
         subject: item.subject,
         html: emailFrame(

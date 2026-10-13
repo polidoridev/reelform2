@@ -1,3 +1,4 @@
+import { trialStatus } from "@/lib/commerce/trial-server";
 import { VIDEO_BUCKET } from "@/lib/commerce/video-library";
 import { removeUserCommunity } from "@/lib/community";
 import { z } from "zod";
@@ -134,6 +135,7 @@ export async function GET(request: Request) {
         stripe_updated_at: undefined,
       },
       balance,
+      trial: await trialStatus(user.id),
       jobs: visibleJobs,
       ledger: ledger.data,
       orders: orders.data,

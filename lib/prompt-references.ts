@@ -21,7 +21,7 @@ export function referenceProblem(prompt: string, imageCount: number, hasVideo = 
     return "@video doesn’t match a video. Add a video or remove the mention.";
   const missing = refs.find((ref) => ref.kind === "image" && (ref.index < 1 || ref.index > imageCount));
   if (!missing) return null;
-  if (missing.index < 1) return "Photos are numbered from @image1.";
+  if (missing.index < 1) return "Photos are numbered from @image1. Replace @image0 with an attached photo or remove the mention; its original photo may have been removed.";
   return imageCount
     ? `${missing.token} doesn’t match a photo. You’ve added ${imageCount}, so use @image1${imageCount > 1 ? `–@image${imageCount}` : ""}.`
     : `${missing.token} doesn’t match a photo. Add a reference photo or remove the mention.`;
@@ -37,10 +37,12 @@ export function resolvePromptReferences(prompt: string, imageCount: number, hasV
   );
 }
 
-// After photo `removed` (1-based) is deleted, later photos move up one place. Mentions of
-// the removed photo are left as they are, so the prompt shows that one needs attention.
+// After photo `removed` (1-based) is deleted, later photos move up one place.
+// Mark the removed reference with an invalid index so it cannot silently point
+// at the next photo, even after new photos are attached.
 export function renumberAfterRemoval(prompt: string, removed: number) {
   return prompt.replace(PATTERN, (token: string, _name: string, index?: string) =>
+    index && Number(index) === removed ? "@image0" :
     index && Number(index) > removed ? `@image${Number(index) - 1}` : token,
   );
 }

@@ -15,7 +15,7 @@ export type BackgroundVideo = {
 
 const KEY = "reelform-background-videos";
 // Client-side navigation keeps this copy, including local previews.
-let memory: BackgroundVideo[] | null = null;
+const memory = new Map<string, BackgroundVideo[]>();
 
 // Local previews don't survive a reload, so the saved copy leaves them out.
 const withoutPreviews = (message: ChatMessage): ChatMessage => ({
@@ -24,24 +24,25 @@ const withoutPreviews = (message: ChatMessage): ChatMessage => ({
   images: message.images.filter((image) => !image.url.startsWith("blob:")),
 });
 
-export function loadBackgroundVideos(): BackgroundVideo[] {
-  if (memory) return memory;
+export function loadBackgroundVideos(userId: string): BackgroundVideo[] {
+  const cached = memory.get(userId);
+  if (cached) return cached;
   try {
-    const saved = JSON.parse(sessionStorage.getItem(KEY) || "[]") as BackgroundVideo[];
-    memory = Array.isArray(saved) ? saved.filter((item) => item?.job?.token) : [];
+    const saved = JSON.parse(sessionStorage.getItem(`${KEY}:${userId}`) || "[]") as BackgroundVideo[];
+    memory.set(userId, Array.isArray(saved) ? saved.filter((item) => item?.job?.token) : []);
   } catch {
-    memory = [];
+    memory.set(userId, []);
   }
-  return memory;
+  return memory.get(userId) ?? [];
 }
 
-export function saveBackgroundVideos(items: BackgroundVideo[]) {
-  memory = items;
+export function saveBackgroundVideos(items: BackgroundVideo[], userId: string) {
+  memory.set(userId, items);
   try {
-    if (!items.length) sessionStorage.removeItem(KEY);
+    if (!items.length) sessionStorage.removeItem(`${KEY}:${userId}`);
     else
       sessionStorage.setItem(
-        KEY,
+        `${KEY}:${userId}`,
         JSON.stringify(
           items.map((item) => ({
             ...item,

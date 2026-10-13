@@ -1,5 +1,10 @@
 "use client";
+
+import Instagram from "./instagram-icon";
+
+import InstagramPublisher from "./instagram-publisher";
 import LowCreditNotice from "./low-credit-notice";
+import { trialMessage } from "@/lib/commerce/trial";
 import { useEffect, useState } from "react";
 import {
   ArrowUpRight,
@@ -26,7 +31,7 @@ import Brand from "./brand";
 import Link from "next/link";
 import AppSelect from "./app-select";
 import { PlanCards } from "./pricing";
-import { PLANS, TOPUPS, money } from "@/lib/commerce/pricing";
+import { CUSTOM_TOPUP, PLANS, TOPUPS, money, quoteTopupCredits } from "@/lib/commerce/pricing";
 import "./accounts.css";
 const tabs = [
   { id: "overview", label: "Overview", icon: UserRound },
@@ -34,6 +39,7 @@ const tabs = [
   { id: "credits", label: "Credits & auto-reload", icon: Sparkles },
   { id: "usage", label: "Usage history", icon: History },
   { id: "creations", label: "My creations", icon: Film },
+  { id: "instagram", label: "Instagram", icon: Instagram },
   { id: "settings", label: "Account settings", icon: Settings },
 ];
 const date = (v: string | number | null) =>
@@ -81,6 +87,7 @@ export default function Account({
     [cap, setCap] = useState(30),
     [consent, setConsent] = useState(false),
     [deleting, setDeleting] = useState(false);
+  const [topupCredits, setTopupCredits] = useState<number>(TOPUPS[1].credits);
   useEffect(() => {
     let stopped = false;
     const query = new URLSearchParams(window.location.search);
@@ -209,7 +216,7 @@ export default function Account({
             <span>{a?.email || "Welcome to Reelform"}</span>
           </div>
           <nav aria-label="Account navigation">{nav}</nav>
-          <a className="sidebar-help" href="mailto:admin@polidori.dev">
+          <a className="sidebar-help" href="mailto:contact@polidori.dev">
             <Mail size={17} />
             Need a hand?
           </a>
@@ -257,6 +264,9 @@ export default function Account({
                   <Check size={16} />
                   {notice}
                 </div>
+              )}
+              {data?.trial && data.trial.state !== "ineligible" && !data.isAdmin && (
+                <div className="account-notice"><Sparkles size={18} /><span>{trialMessage(data.trial.state)} <Link prefetch={false} href={data.trial.state === "available" ? "/studio" : "/pricing"}>{data.trial.state === "available" ? "Try your free transformation" : "Explore plans"}</Link></span></div>
               )}
               {data && <LowCreditNotice balance={data.balance.total} plan={data.account.plan} isAdmin={data.isAdmin} />}
               {data?.isAdmin && (
@@ -609,7 +619,7 @@ export default function Account({
                             <button
                               className="account-secondary"
                               disabled={
-                                !!busy || a.subscription_status !== "active"
+                                !!busy || !paidSubscriptionReady(data) || a.billing_hold
                               }
                               onClick={() =>
                                 action(p.id, () =>
@@ -625,6 +635,51 @@ export default function Account({
                           </article>
                         ))}
                       </div>
+                      <section className="custom-topup" aria-labelledby="custom-topup-title">
+                        <div className="custom-topup-heading">
+                          <div>
+                            <h3 id="custom-topup-title">Choose your own amount</h3>
+                            <p>Slide to find the right amount for your next idea.</p>
+                          </div>
+                          <output htmlFor="topup-credits">
+                            <strong>{topupCredits.toLocaleString("en-US")}</strong> credits
+                          </output>
+                        </div>
+                        <label className="sr-only" htmlFor="topup-credits">Credits to purchase</label>
+                        <input
+                          id="topup-credits"
+                          type="range"
+                          min={CUSTOM_TOPUP.min}
+                          max={CUSTOM_TOPUP.max}
+                          step={CUSTOM_TOPUP.step}
+                          value={topupCredits}
+                          aria-valuetext={`${topupCredits.toLocaleString("en-US")} credits for ${money(quoteTopupCredits(topupCredits) / 100)}`}
+                          aria-describedby="custom-topup-pricing"
+                          disabled={!!busy}
+                          onChange={(event) => setTopupCredits(Number(event.target.value))}
+                        />
+                        <div className="custom-topup-limits" aria-hidden="true">
+                          <span>{CUSTOM_TOPUP.min.toLocaleString("en-US")} credits</span>
+                          <span>{CUSTOM_TOPUP.max.toLocaleString("en-US")} credits</span>
+                        </div>
+                        <div className="custom-topup-footer">
+                          <div>
+                            <strong>{money(quoteTopupCredits(topupCredits) / 100)} <small>USD · one-time purchase</small></strong>
+                            <p id="custom-topup-pricing">Volume pricing matches our packs. Above 6,200 credits, the same best rate applies.</p>
+                          </div>
+                          <button
+                            className="account-primary"
+                            disabled={!!busy || !paidSubscriptionReady(data) || a.billing_hold}
+                            onClick={() => action("custom-topup", () => call("/api/billing/topup", {
+                              credits: topupCredits,
+                              requestId: crypto.randomUUID(),
+                            }))}
+                          >
+                            {busy === "custom-topup" ? "Opening checkout…" : `Buy ${topupCredits.toLocaleString("en-US")} credits`}
+                            <ArrowUpRight size={16} />
+                          </button>
+                        </div>
+                      </section>
                       <p className="account-muted">
                         Purchased and auto-reload credits expire 90 days after they become available.
                         They remain usable until that date if you cancel your subscription.
@@ -842,7 +897,7 @@ export default function Account({
                   {tab === "creations" && (
                     <>
                       <p className="account-muted">
-                        Your videos are saved to your account. Play or download them here. Showing your latest 50 generations.
+                        Your videos are saved to your account. Open a creation to return to its chat, prompt, and original uploads. Showing your latest 50 generations.
                       </p>
                       <p className="account-muted">Your creations stay private until you choose to share them. You retain ownership of your videos.</p>
                       <p><Link prefetch={false} className="account-primary" href="/community/share">Share a video with the community <ArrowUpRight size={16} /></Link></p>
@@ -850,10 +905,11 @@ export default function Account({
                         <div className="creation-grid">
                           {data.jobs.map((j) => (
                             <article className="creation-card" key={j.id}>
+                              <Link prefetch={false} href={`/studio?generation=${j.id}`} aria-label={`Open chat: ${j.prompt}`}>
                               {j.result_url ? (
                                 <video
                                   src={j.result_url}
-                                  controls
+                                  muted
                                   playsInline
                                   preload="metadata"
                                 />
@@ -867,9 +923,11 @@ export default function Account({
                                   </span>
                                 </div>
                               )}
+                              </Link>
                               <div>
                                 <span className="status-pill">{j.status}</span>
-                                <p>{j.prompt}</p>
+                                <p><Link prefetch={false} href={`/studio?generation=${j.id}`}>{j.prompt}</Link></p>
+                                <Link prefetch={false} href={`/studio?generation=${j.id}`} className="quiet-link">Open chat <ArrowUpRight size={15} /></Link>
                                 <small>
                                   {date(j.created_at)} · {j.resolution} ·{" "}
                                   {j.credits} credits
@@ -893,6 +951,7 @@ export default function Account({
                                     Edit in studio <Scissors size={15} />
                                   </Link>
                                 )}
+                                {j.status === "completed" && j.result_url?.startsWith("/api/videos/") && <Link prefetch={false} href={`/instagram?generation=${j.id}`} className="quiet-link">Publish to Instagram <Instagram size={15} /></Link>}
                                 <details>
                                   <summary>Generation ID</summary>
                                   <code>{j.id}</code>
@@ -910,6 +969,7 @@ export default function Account({
                       )}
                     </>
                   )}
+                  {tab === "instagram" && <InstagramPublisher />}
                   {tab === "settings" && (
                     <>
                       <section className="account-card">

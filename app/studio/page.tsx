@@ -6,6 +6,9 @@ export const metadata = pageMetadata({
   path: "/studio",
   index: false,
 });
-export default function StudioPage() {
-  return <Studio />;
+export default async function StudioPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const params = await searchParams;
+  // A link to another saved chat must replace the current studio state.
+  const key = typeof params.generation === "string" ? params.generation : typeof params.request === "string" ? params.request : "new";
+  return <Studio key={key} />;
 }

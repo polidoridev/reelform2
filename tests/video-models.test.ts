@@ -4,6 +4,25 @@ import {VIDEO_MODELS,FEATURED_VIDEO_MODELS,DEFAULT_VIDEO_MODEL,bestResolution,ge
 import {aspectDimensions,quoteCreation,quoteVideo} from "../lib/commerce/pricing";
 const media={duration:8.2,width:1920,height:1080,bytes:2000};
 const base={prompt:"Replace my car with a luxury sports car",videoUrl:"https://media.example/input.mp4",imageUrls:["https://media.example/car.jpg"],resolution:"720p",generateAudio:false,media};
+test("Seedance 2.5 requests high bitrate for edits, references, and text creation",()=>{
+ for(const id of ["seedance-2.5-edit","seedance-2.5-reference"]){
+  const model=getVideoModel(id);
+  assert.equal(modelRequest(model,base).bitrate_mode,"high");
+  if(model.video==="optional"){
+   assert.equal(modelRequest(model,{...base,videoUrl:null}).bitrate_mode,"high");
+   assert.equal(modelRequest(model,{...base,videoUrl:null,imageUrls:[]}).bitrate_mode,"high");
+  }
+ }
+ assert.equal("bitrate_mode" in modelRequest(getVideoModel("genjutsu-object"),base),false);
+});
+test("multiple reference photos reach the provider in prompt order without substitutions",()=>{
+ const imageUrls=["https://media.example/face.png","https://media.example/outfit.webp","https://media.example/place.jpg"];
+ for(const model of VIDEO_MODELS.filter(m=>m.maxImages>=3)){
+  const payload=modelRequest(model,{...base,resolution:bestResolution(model),imageUrls,prompt:"Use @image1 for the face, @image2 for the outfit, and @image3 for the location"});
+  assert.deepEqual(payload.image_urls,imageUrls);
+  assert.equal(payload.prompt,"Use reference image 1 for the face, reference image 2 for the outfit, and reference image 3 for the location");
+ }
+});
 test("all catalog models have a valid adapter and a positive, model-specific quote",()=>{
  for(const model of VIDEO_MODELS){
   const resolution=model.resolutions[0];
@@ -72,7 +91,7 @@ test("Seedance Create models work without a video; Genjutsu and video models sti
  assert.throws(()=>modelRequest(getVideoModel("seedance-2.5-reference"),{...noVideo,prompt:"Restyle the scene in @video as a watercolor"}),/@video doesn’t match a video/);
  for(const id of ["genjutsu-motion","genjutsu-object","seedance-2.5-edit","kling-o3-edit","kling-3-motion-pro"])
   assert.throws(()=>modelRequest(getVideoModel(id),{...noVideo,imageUrls:["https://media.example/a.jpg"]}),/Add a video/);
- assert.deepEqual(VIDEO_MODELS.filter(m=>m.video==="optional").map(m=>m.id),["seedance-2.5-reference","seedance-2-reference"]);
+ assert.deepEqual(VIDEO_MODELS.filter(m=>m.video==="optional").map(m=>m.id),["seedance-2.5-reference","wan-3-reference","wan-3-prime-reference","seedance-2-reference"]);
 });
 const near=(a:number,b:number)=>assert.ok(Math.abs(a-b)<1e-9,`${a} ≈ ${b}`);
 test("created videos are priced on generated seconds, chosen shape, and the no-video rate",()=>{

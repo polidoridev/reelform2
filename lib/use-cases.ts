@@ -1,4 +1,61 @@
-export const useCases = [
+export type UseCase = {
+  id: string;
+  audience: string;
+  title: string;
+  shortLabel: string;
+  model: string;
+  description: string;
+  prompt: string;
+  sourceVideo?: string;
+  poster?: string;
+  referenceHint?: string;
+  referenceCount?: number;
+  posterWidth?: number;
+  posterHeight?: number;
+};
+
+export const useCases: readonly UseCase[] = [
+  {
+    id: "car-crew-swap",
+    audience: "Ready-to-use preset",
+    title: "Give the car crew a new cast.",
+    shortLabel: "Car crew swap",
+    model: "genjutsu-motion",
+    description: "Recast this car performance with three character photos: the man in the orange shirt, the man in the red cap, and the man in the striped shirt.",
+    prompt: "Replace the man in the orange shirt in the front seat with @image1, replace the man in the red cap and green jacket in the back seat with @image2, and replace the man in the pink-and-navy striped shirt in the back seat with @image3. Only swap the characters. Keep each replacement consistent across every camera cut. Preserve the original movements, gestures, facial expressions, timing, camera movements, car interior, and background.",
+    sourceVideo: "/media/presets/car-crew-swap.mp4",
+    poster: "/media/presets/car-crew-swap.jpg",
+    referenceCount: 3,
+    referenceHint: "Add three reference images: @image1 replaces the man in the orange shirt; @image2 replaces the man in the red cap; @image3 replaces the man in the striped shirt. Keep the original movements and the same character mapping across camera cuts.",
+  },
+  {
+    id: "trio-character-swap",
+    audience: "Ready-to-use preset",
+    title: "Recast all three characters.",
+    shortLabel: "Trio character swap",
+    model: "genjutsu-motion",
+    description: "Use this clip with three character photos: the first guy, the guy holding the camera, and the guy coming out of the car. Keep their original movements.",
+    prompt: "Replace the first guy with @image1 replace the guy holding the camera with @image2 and replace the guy coming out the car with @image3. The characters are just swapping, movements should stay the same.",
+    sourceVideo: "/media/presets/trio-character-swap.mp4",
+    poster: "/media/presets/trio-character-swap.jpg",
+    posterWidth: 720,
+    posterHeight: 1280,
+    referenceCount: 3,
+    referenceHint: "Add three reference images: @image1 replaces the first guy; @image2 replaces the guy holding the camera; @image3 replaces the guy coming out of the car. Keep the original movements.",
+  },
+  {
+    id: "duo-character-swap",
+    referenceCount: 2,
+    audience: "Ready-to-use preset",
+    title: "Give this duo a new cast.",
+    shortLabel: "Duo character swap",
+    model: "genjutsu-motion",
+    description: "Use this performance clip with two character photos. Photo 1 replaces the guy on the right; photo 2 replaces the guy on the left.",
+    prompt: "Replace the guy on the right (@image1) and replace the guy on the left with (@image2). Just swap the characters, the movements should stay the same.",
+    sourceVideo: "/media/presets/duo-character-swap.mp4",
+    poster: "/media/presets/duo-character-swap.jpg",
+    referenceHint: "Add two reference images: @image1 replaces the guy on the right; @image2 replaces the guy on the left. Keep the original movements.",
+  },
   {
     id: "character-remix",
     audience: "Creators & entertainment",

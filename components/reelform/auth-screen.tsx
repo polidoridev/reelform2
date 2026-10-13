@@ -130,7 +130,9 @@ export default function AuthScreen({
                 ? "We’ll email you a link to reset your password."
                 : mode === "reset"
                   ? "Choose a new password with at least 10 characters."
-                  : "One place for your creations, credits, and subscription."}
+                  : mode === "signup"
+                    ? "Try your first transformation free. Verify your email to check availability. No credit card needed; limited pilot for new users."
+                    : "One place for your creations, credits, and subscription."}
           </p>
           {message ? (
             <div className="account-notice">

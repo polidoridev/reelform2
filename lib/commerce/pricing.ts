@@ -1,4 +1,4 @@
-import { DEFAULT_VIDEO_MODEL, getVideoModel, modelRate, validateModel, type AspectRatio, type VideoResolution } from "../video-models";
+import { DEFAULT_VIDEO_MODEL, getVideoModel, validateModelAspectRatio, modelRate, validateModel, type AspectRatio, type VideoResolution } from "../video-models";
 import { MIN_VIDEO_SECONDS, MAX_VIDEO_SECONDS } from "../video-limits";
 export const PLANS = [
   {
@@ -70,6 +70,25 @@ export const TOPUPS = [
     env: "STRIPE_PRICE_TOPUP_LARGE",
   },
 ] as const;
+export const CUSTOM_TOPUP = { min: 900, max: 20000, step: 100 } as const;
+
+// Interpolate in cents between the published packs, then extend the largest
+// pack's rate. Totals always increase and every preset keeps its exact price.
+export function quoteTopupCredits(credits: number) {
+  if (!Number.isInteger(credits) || credits < CUSTOM_TOPUP.min ||
+      credits > CUSTOM_TOPUP.max || credits % CUSTOM_TOPUP.step !== 0)
+    throw new Error("Choose 900–20,000 credits in steps of 100.");
+  for (let i = 1; i < TOPUPS.length; i++) {
+    const lower = TOPUPS[i - 1], upper = TOPUPS[i];
+    if (credits <= upper.credits)
+      return lower.price * 100 + Math.round(
+        (credits - lower.credits) * (upper.price - lower.price) * 100 /
+        (upper.credits - lower.credits),
+      );
+  }
+  const largest = TOPUPS[TOPUPS.length - 1];
+  return Math.round(credits * largest.price * 100 / largest.credits);
+}
 export type PlanId = (typeof PLANS)[number]["id"];
 export type MediaInfo = {
   duration: number;
@@ -88,17 +107,21 @@ export function aspectDimensions(resolution: VideoResolution, aspectRatio: Aspec
   const long = Math.ceil((short * Math.max(w, h)) / Math.min(w, h) / 16) * 16;
   return w >= h ? { width: long, height: short } : { width: short, height: long };
 }
-// Created without a source video: only the generated seconds are billed, at the
-// no-video token rate and at the chosen output shape.
+// Created without a source video: bill output seconds for per-second models,
+// or generated tokens at the no-video rate and chosen output shape.
 export function quoteCreation(seconds: number, resolution: VideoResolution, aspectRatio: AspectRatio, modelId: string) {
   if (!Number.isFinite(seconds) || seconds < MIN_VIDEO_SECONDS || seconds > MAX_VIDEO_SECONDS)
     throw new Error("Choose a length between 4 and 30 seconds.");
   const model = getVideoModel(modelId);
   validateModel(model, resolution, seconds, undefined, undefined, false);
+  validateModelAspectRatio(model, aspectRatio);
   const duration = Math.ceil(seconds);
   const { width, height } = aspectDimensions(resolution, aspectRatio);
   const tokens = Math.ceil((duration * width * height * 24) / 1024);
-  const providerUsd = tokens * (modelRate(model, resolution, false) / 1000);
+  const rate = modelRate(model, resolution, false);
+  const providerUsd = model.secondRate !== undefined
+    ? duration * rate
+    : tokens * (rate / 1000);
   return {
     credits: Math.ceil((providerUsd * CREDITS_PER_PROVIDER_DOLLAR) / 10) * 10,
     duration,

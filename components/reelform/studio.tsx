@@ -1,5 +1,7 @@
 "use client";
 
+import Instagram from "./instagram-icon";
+
 import LowCreditNotice from "./low-credit-notice";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -31,12 +33,14 @@ import AppSelect from "./app-select";
 import GenerationProgress from "./generation-progress";
 import VideoEditor from "./video-editor";
 import ModelPicker from "./model-picker";
+import CinemaLab from "./cinema-lab";
 import UploadLibrary from "./upload-library";
 import PromptInput, { PromptWithReferences } from "./prompt-input";
 import { useStudioChat, type ChatMessage } from "./use-studio-chat";
-import { ASPECT_RATIOS, VIDEO_MODELS, type AspectRatio } from "@/lib/video-models";
+import { VIDEO_MODELS, type AspectRatio } from "@/lib/video-models";
 import { VIDEO_ACCEPT, MAX_VIDEO_SIZE_LABEL, MAX_VIDEO_SECONDS } from "@/lib/video-limits";
-import { useCases } from "@/lib/use-cases";
+import { TRIAL_PROMPTS, trialMessage } from "@/lib/commerce/trial";
+import { useCases, type UseCase } from "@/lib/use-cases";
 import "./studio-chat.css";
 
 function SentMessage({ message }: { message: ChatMessage }) {
@@ -127,6 +131,7 @@ function VideoResult({
         >
           <Download size={15} /> Download video
         </a>
+        {/^\/api\/videos\/[\da-f-]{36}$/.test(url) && <Link prefetch={false} href={`/instagram?generation=${url.split("/").pop()}`}><Instagram size={15} /> Publish to Instagram</Link>}
         <Link prefetch={false} href="/account?tab=creations">
           My creations <ArrowUpRight size={14} />
         </Link>
@@ -138,9 +143,9 @@ function VideoResult({
   );
 }
 
-export default function Studio() {
-  const s = useStudioChat();
-  const [settingsOpen, setSettingsOpen] = useState(false);
+export default function Studio({ cinema = false }: { cinema?: boolean }) {
+  const s = useStudioChat(cinema);
+  const [settingsOpen, setSettingsOpen] = useState(cinema);
   const [fullHdOpen, setFullHdOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [libraryOpen, setLibraryOpen] = useState(false);
@@ -192,9 +197,8 @@ export default function Studio() {
       el?.setSelectionRange(caret, caret);
     });
   }
-  function chooseScene(prompt: string, model: string) {
-    s.changeModel(model);
-    s.setPrompt(prompt);
+  function chooseScene(preset: UseCase) {
+    void s.choosePreset(preset);
     promptRef.current?.focus();
   }
   function reset() {
@@ -225,7 +229,7 @@ export default function Studio() {
   }
   const priceLabel = s.quote
     ? s.quote.credits === 0
-      ? "Free admin generation"
+      ? s.isAdmin ? "Free admin generation" : "Free transformation"
       : `${s.quote.credits.toLocaleString()} credits`
     : s.inspecting
       ? "Checking your clip…"
@@ -237,7 +241,7 @@ export default function Studio() {
             ? "Cost shown in a moment"
             : "Credit cost appears after upload";
   return (
-    <div className="studio-chat-layout">
+    <div className={`studio-chat-layout${cinema ? " cinemalab-layout" : ""}`}>
       <a className="skip-link" href="#studio-main">
         Skip to studio
       </a>
@@ -259,8 +263,14 @@ export default function Studio() {
           <Plus size={17} /> New video <span aria-hidden="true">↗</span>
         </button>
         <nav aria-label="Studio navigation">
-          <Link prefetch={false} href="/studio" aria-current="page">
+          <Link prefetch={false} href="/studio" aria-current={cinema ? undefined : "page"}>
             <AudioLines size={17} /> Video studio
+          </Link>
+          <Link prefetch={false} href="/cinemalab" aria-current={cinema ? "page" : undefined}>
+            <Film size={17} /> CinemaLab
+          </Link>
+          <Link prefetch={false} href="/aura">
+            <Sparkles size={17} /> Aura edits
           </Link>
           <Link prefetch={false} href="/account?tab=creations">
             <Film size={17} /> My creations
@@ -296,14 +306,15 @@ export default function Studio() {
             ))}
           </div>
         )}
-        <div className="chat-sidebar-ideas">
+        {!cinema && <div className="chat-sidebar-ideas">
           <span>START WITH AN IDEA</span>
-          {useCases.map((scene) => (
+          {(s.trialMode ? TRIAL_PROMPTS : useCases).map((scene) => (
             <button
               key={scene.id}
               disabled={s.busy}
               onClick={() => {
-                chooseScene(scene.prompt, scene.model);
+                if (s.trialMode) s.setPrompt(scene.prompt);
+                else chooseScene(scene as UseCase);
                 setMenuOpen(false);
               }}
             >
@@ -311,7 +322,7 @@ export default function Studio() {
               <ArrowUpRight size={13} />
             </button>
           ))}
-        </div>
+        </div>}
         <div className="chat-sidebar-bottom">
           <div className="chat-creator-note">
             <ShieldCheck size={19} />
@@ -362,7 +373,7 @@ export default function Studio() {
             >
               <Menu size={21} />
             </button>
-            <span>Video studio</span>
+            <span>{cinema ? "CinemaLab" : "Video studio"}</span>
             <span className="chat-header-separator">/</span>
             <small>
               {hasConversation ? "Your conversation" : "New creation"}
@@ -376,13 +387,14 @@ export default function Studio() {
             <Sparkles size={14} />
             {s.isAdmin
               ? "Admin access"
+              : !cinema && s.trial?.state === "available" ? "Free transformation"
               : s.creditBalance === null
                 ? "My credits"
                 : `${s.creditBalance.toLocaleString()} credits`}
             <Plus size={13} />
           </Link>
         </header>
-        <LowCreditNotice balance={s.creditBalance} plan={s.creditPlan} isAdmin={s.isAdmin} />
+        <LowCreditNotice balance={s.creditBalance} plan={s.creditPlan} isAdmin={s.isAdmin || s.trialMode} />
         <div className="chat-ready-banners" role="status" aria-live="polite">
           {s.backgroundVideos
             .filter((item) => item.done)
@@ -420,12 +432,10 @@ export default function Studio() {
               </span>
               <span className="chat-eyebrow">YOUR IMAGINATION, IN MOTION</span>
               <h1>
-                What will you <span>create?</span>
+                {cinema ? <>Your scene. <span>Your direction.</span></> : <>What will you <span>create?</span></>}
               </h1>
               <p>
-                Start with your video. Add a little inspiration.
-                <br />
-                Tell us what you want to change.
+                {cinema ? "Plan your shots, then bring them to life with words, photos, or a reference clip." : <>Start with your video. Add a little inspiration.<br />Tell us what you want to change.</>}
               </p>
             </section>
           )}
@@ -540,11 +550,25 @@ export default function Studio() {
         </div>
         <div className="studio-composer-area">
           <div className="studio-composer-wrap">
+            {cinema && <CinemaLab disabled={s.busy} prompt={s.prompt} onApply={(prompt) => { s.setPrompt(prompt); promptRef.current?.focus(); }} />}
+            {s.restoring && <div className="chat-notice" role="status"><RefreshCw size={16} /><p>Opening your saved chat and original uploads…</p></div>}
+            {s.restoreError && <div className="chat-notice" role="alert"><Info size={16} /><p>{s.restoreError}</p><button type="button" onClick={s.retryRestore}>Retry opening chat</button></div>}
+            {cinema && s.trial?.state === "available" && !s.isAdmin && <div className="chat-notice"><Info size={16} /><p>CinemaLab uses your credit balance. Your free video transformation is available in <Link prefetch={false} href="/studio">Video studio</Link>.</p></div>}
+            {!cinema && s.trial && s.trial.state !== "ineligible" && !s.isAdmin && (
+              <div className="chat-notice" role="status">
+                <Sparkles size={16} />
+                <p>{trialMessage(s.trial.state)}{" "}
+                  {s.trial.state === "available" && <>Seedance 2.5 Edit · Up to one reference photo. {s.trial.attemptsRemaining < 3 && `${s.trial.attemptsRemaining} attempts remaining.`} </>}
+                  <Link prefetch={false} href="/pricing">{s.trial.state === "completed" ? "Keep creating" : "Explore plans"}</Link>
+                  {s.trialMode && s.trial.state !== "available" && s.trial.state !== "active" && <> · <button type="button" className="chat-inline-button" onClick={s.usePaidSettings}>Use paid settings</button></>}
+                </p>
+              </div>
+            )}
             {s.authenticated === false && (
               <div className="chat-notice">
                 <Info size={16} />
                 <p>
-                  <Link prefetch={false} href="/login?next=%2Fstudio">
+                  <Link prefetch={false} href={s.signInHref}>
                     Sign in
                   </Link>{" "}
                   to upload your files and generate a video.
@@ -613,15 +637,15 @@ export default function Studio() {
                   <strong>Drop your video or reference images</strong>
                 </div>
               )}
-              <ModelPicker
+              {cinema ? <div className="cinemalab-model"><label>Generation model<AppSelect label="CinemaLab model" value={s.model} disabled={s.busy || s.trialMode} onValueChange={s.changeModel} options={VIDEO_MODELS.filter(model => model.video === "optional" || model.id === s.model).map(model => ({ value: model.id, label: model.name }))} /></label></div> : <ModelPicker
                 model={s.model}
                 onChange={(id) => {
                   s.changeModel(id);
                   setFullHdOpen(false);
                 }}
-                disabled={s.busy}
+                disabled={s.busy || s.trialMode}
                 videoSeconds={s.video?.duration ?? null}
-              />
+              />}
               <div className="chat-attachment-bar">
                 <input
                   ref={videoInput}
@@ -643,7 +667,7 @@ export default function Studio() {
                   accept="image/jpeg,image/png,image/webp"
                   multiple
                   className="sr-only"
-                  disabled={s.busy || !s.video}
+                  disabled={s.busy || (!s.video && !videoOptional)}
                   aria-label="Upload reference images"
                   onChange={(e) => {
                     if (e.target.files) s.chooseImages(e.target.files);
@@ -702,7 +726,9 @@ export default function Studio() {
                   </button>
                 )}
                 <span className="chat-attachment-hint">
-                  {videoOptional
+                  {s.selectedPreset?.referenceCount
+                    ? `Video and ${s.selectedPreset.referenceCount} references required`
+                    : videoOptional
                     ? "Video and photos optional"
                     : s.selectedModel.minImages
                       ? `Video and ${s.selectedModel.minImages} reference required`
@@ -735,6 +761,9 @@ export default function Studio() {
                   onDelete={(id) => void s.deleteFromLibrary(id)}
                   onClose={() => setLibraryOpen(false)}
                 />
+              )}
+              {s.selectedPreset?.referenceHint && (
+                <p className="chat-preset-hint">{s.selectedPreset.referenceHint}</p>
               )}
               {(s.video || s.images.length > 0) && (
                 <div className="chat-attachment-previews">
@@ -897,7 +926,7 @@ export default function Studio() {
                       <AppSelect
                         label="Output quality"
                         value={s.resolution}
-                        disabled={s.busy}
+                        disabled={s.busy || s.trialMode}
                         onValueChange={(value) => {
                           if (value === "choose-1080p") {
                             setFullHdOpen(true);
@@ -932,7 +961,7 @@ export default function Studio() {
                       <AppSelect
                         label="Sound"
                         value={s.audio ? "yes" : "no"}
-                        disabled={s.busy}
+                        disabled={s.busy || s.trialMode}
                         onValueChange={(value) => s.setAudio(value === "yes")}
                         options={[
                           { value: "no", label: s.video ? "Original audio" : "No sound" },
@@ -961,7 +990,7 @@ export default function Studio() {
                             value={s.aspectRatio}
                             disabled={s.busy}
                             onValueChange={(value) => s.setAspectRatio(value as AspectRatio)}
-                            options={ASPECT_RATIOS.map((ratio) => ({
+                            options={s.aspectRatios.map((ratio) => ({
                               value: ratio,
                               label: {
                                 "16:9": "16:9 · Landscape",
@@ -981,7 +1010,7 @@ export default function Studio() {
                     <strong>{s.selectedModel.name}:</strong> {s.selectedModel.description}
                   </p>
                   <p>
-                    {s.isAdmin ? "Admin access" : `${s.entitlements.name} features`} · Up to {s.entitlements.maxSeconds}s · {s.entitlements.maxImages} reference photo{s.entitlements.maxImages === 1 ? "" : "s"} · {s.entitlements.fullHd ? "Full HD available" : "Up to 720p"}
+                    {s.isAdmin ? "Admin access" : `${s.entitlements.name} features`} · Up to {s.entitlements.maxSeconds}s · {s.entitlements.maxImages} reference photo{s.entitlements.maxImages === 1 ? "" : "s"} · {s.trialMode ? "480p" : s.entitlements.fullHd ? "Full HD available" : "Up to 720p"}
                     {!s.entitlements.fullHd && <> · <a href="/account?tab=billing">Upgrade for Full HD and generated audio</a></>}
                   </p>
                   {!s.selectedModel.resolutions.includes("1080p") && (
@@ -1061,11 +1090,18 @@ export default function Studio() {
             )}
             {(s.video || s.creating) && !s.busy && (
               <p className="chat-credit-explanation">
-                {s.isAdmin
+                {s.trialMode
+                  ? "One successful transformation is free. Failed attempts can be retried, up to three attempts total while the pilot is available."
+                  : s.isAdmin
                   ? "No Reelform credits charged. Provider usage is billed to your Higgsfield account."
                   : "Credits are used when you press Send. Failed generations return your credits."}
               </p>
             )}
+            <p className="chat-credit-explanation">
+              Some generations may fail due to copyright protection on reference
+              images. Any Reelform credits charged for these generations will be
+              refunded.
+            </p>
             {s.modelError && (
               <p className="chat-composer-error" role="alert">
                 {s.modelError}
@@ -1097,15 +1133,15 @@ export default function Studio() {
                 </Link>
               </p>
             )}
-            {!hasConversation && !s.video && (
+            {!cinema && !hasConversation && !s.video && (
               <div className="chat-starter-prompts">
                 <span>A LITTLE INSPIRATION</span>
                 <div>
-                  {useCases.slice(0, 3).map((scene) => (
+                  {(s.trialMode ? TRIAL_PROMPTS : useCases.slice(0, 3)).map((scene) => (
                     <button
                       key={scene.id}
                       disabled={s.busy}
-                      onClick={() => chooseScene(scene.prompt, scene.model)}
+                      onClick={() => { if (s.trialMode) s.setPrompt(scene.prompt); else chooseScene(scene as UseCase); }}
                     >
                       <span>{scene.shortLabel}</span>
                       <ArrowUpRight size={13} />

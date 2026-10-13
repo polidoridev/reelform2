@@ -13,9 +13,11 @@ export default function Privacy() {
       <Brand />
       <h1>Privacy policy</h1>
       <p>
-        Last updated September 29, 2026. Contact:{" "}
-        <a href="mailto:admin@polidori.dev">admin@polidori.dev</a>.
+        Last updated October 12, 2026. Contact:{" "}
+        <a href="mailto:contact@polidori.dev">contact@polidori.dev</a>.
       </p>
+      <p>When you generate a video, we save private copies of the source video and reference photos with its prompt and settings so you can reopen the chat. These generation copies remain with your account even if you remove the separate upload-library item, and are removed when you delete your account.</p>
+      <p>To prevent repeat free trials, we use an essential first-party browser cookie and retain hashed email and browser identifiers, trial attempt records, and a pseudonymous account identifier after account deletion. These records are used for trial eligibility and abuse prevention.</p>
       <h2>Information used by Reelform</h2>
       <p>
         We process your name, email, account settings, subscription and credit
@@ -29,6 +31,16 @@ export default function Privacy() {
         The studio’s video editor trims, cuts, reorders, and mutes clips in your
         browser. Footage you edit is not uploaded until you choose to use it for a
         generation, and edits you download never leave your device.
+      </p>
+      <h2>Aura AI planning</h2>
+      <p>
+        Aura edits are rendered on your device and are not saved to your account.
+        If you choose Plan with AI or Revise AI plan, we send your instructions,
+        clip timing, three small preview frames per clip, and the previous plan
+        when revising to OpenAI to suggest cuts. Full source videos and music are
+        not sent for this feature. We keep request counters associated with your
+        account to enforce usage limits. OpenAI processes these requests under
+        its API data policies.
       </p>
       <h2>Saved uploads</h2>
       <p>
@@ -70,6 +82,11 @@ export default function Privacy() {
         are cleaned up after 24 hours by scheduled maintenance. Public content may
         have been saved by viewers; removal cannot recall their copies.
       </p>
+      <h2 id="instagram">Instagram publishing and data deletion</h2>
+      <p>If you connect Instagram, we store your Instagram account ID, username, an encrypted access token, and token expiry to publish Reels you explicitly approve. We send the selected video and caption to Meta and retain publishing status and post links in your account. Your private generation prompts are not sent as captions automatically. Meta receives a temporary link to retrieve the selected video.</p>
+      <p>For scheduled posts, we store your chosen posting time and publish automatically once that time is reached while your eligible subscription remains active.</p>
+      <p>You can disconnect Instagram in Account → Instagram to remove the saved credential and cancel posts not yet submitted. A request already sent may still finish. Disconnecting or deleting Reelform does not remove Reels already published on Instagram; manage those in Instagram. You can also remove Reelform’s permissions in Instagram’s Apps and Websites settings.</p>
+      <p>To delete all Instagram connection and publishing records held by Reelform, delete your Reelform account in Account settings, or email <a href="mailto:contact@polidori.dev">contact@polidori.dev</a> with an Instagram data deletion request. We verify account ownership before handling email requests.</p>
       <h2>Email preferences</h2>
       <p>
         Marketing emails are optional. You can withdraw consent through the
@@ -106,6 +123,12 @@ export default function Privacy() {
               <td>Completes a sign-in or email confirmation securely.</td>
               <td>Essential</td>
               <td>Minutes, during sign-in</td>
+            </tr>
+            <tr>
+              <td><code>rf_instagram_oauth</code></td>
+              <td>Protects the Instagram connection permission flow.</td>
+              <td>Essential</td>
+              <td>10 minutes, or until the connection completes</td>
             </tr>
             <tr>
               <td><code>rf_consent</code></td>
@@ -157,7 +180,7 @@ export default function Privacy() {
         personal information, to object to or restrict certain processing, and to
         withdraw consent at any time. Reelform does not sell your personal
         information or share it for cross-context behavioral advertising. To make
-        a request, email <a href="mailto:admin@polidori.dev">admin@polidori.dev</a>;
+        a request, email <a href="mailto:contact@polidori.dev">contact@polidori.dev</a>;
         we may need to verify your identity. You can also complain to your local
         data protection authority.
       </p>

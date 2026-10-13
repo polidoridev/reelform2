@@ -5,6 +5,7 @@ import {
   bestResolution,
   DEFAULT_VIDEO_MODEL,
   getVideoModel,
+  modelAspectRatios,
   validateModel,
   type AspectRatio,
 } from "@/lib/video-models";
@@ -16,8 +17,10 @@ import {
   videoContentType,
 } from "@/lib/video-limits";
 import { videoEntitlements, validateVideoEntitlements, type PlanAccount } from "@/lib/commerce/entitlements";
+import { TRIAL_MODEL, TRIAL_RESOLUTION, TRIAL_PROMPTS, validateTrialSettings, type TrialStatus } from "@/lib/commerce/trial";
+import { type GenerationChat, type SavedGeneration } from "@/lib/commerce/generation-chat";
 import { scenes } from "@/lib/scenes";
-import { useCases } from "@/lib/use-cases";
+import { useCases, type UseCase } from "@/lib/use-cases";
 import { editDuration, MAX_EDITABLE_SECONDS, type Edit } from "@/lib/video-edit";
 import { referenceProblem, renumberAfterRemoval } from "@/lib/prompt-references";
 import type { EditorSource } from "./video-editor";
@@ -37,6 +40,10 @@ type Video = Media & {
   source?: { file: File; duration: number; edit: Edit };
 };
 type Submission = {
+  ownerId?: string;
+  parentJobId?: string;
+  videoName?: string;
+  imageNames?: string[];
   videoToken?: string;
   quoteToken: string;
   requestId: string;
@@ -162,8 +169,6 @@ function probeDuration(url: string) {
 const minutes = (seconds: number) =>
   `${Math.floor(seconds / 60)}:${String(Math.round(seconds % 60)).padStart(2, "0")}`;
 
-const ACTIVE_JOB = "reelform-active-job";
-const PENDING_SEND = "reelform-pending-send";
 const terminal = (status: string) =>
   ["completed", "failed", "nsfw", "canceled"].includes(status);
 function saveSession(key: string, data: unknown) {
@@ -175,21 +180,34 @@ function saveSession(key: string, data: unknown) {
   }
 }
 
-export function useStudioChat() {
+export function useStudioChat(cinema = false) {
+  const basePath = cinema ? "/cinemalab" : "/studio";
+  const ACTIVE_JOB = cinema ? "reelform-cinema-active-job" : "reelform-active-job";
+  const PENDING_SEND = cinema ? "reelform-cinema-pending-send" : "reelform-pending-send";
+  const chatUrl = (id: string, lookup = false) => `${basePath}?${lookup ? "request" : "generation"}=${encodeURIComponent(id)}`;
+  const [userId, setUserId] = useState<string | null>(null);
+  const [chatDestination, setChatDestination] = useState(basePath);
+  const [restoring, setRestoring] = useState(false);
+  const [restoreError, setRestoreError] = useState("");
+  const restoreTarget = useRef<{ id: string; lookup: boolean } | null>(null);
+  const restoringSavedChat = useRef(false);
   const [video, setVideo] = useState<Video | null>(null);
+  const [selectedPreset, setSelectedPreset] = useState<UseCase | null>(null);
   const [images, setImages] = useState<Media[]>([]);
   const [prompt, setPrompt] = useState("");
-  const [model, setModel] = useState(DEFAULT_VIDEO_MODEL);
+  const [model, setModel] = useState(cinema ? "seedance-2.5-reference" : DEFAULT_VIDEO_MODEL);
   // null follows the model's best quality for the plan; set once the user picks one.
   const [chosenResolution, setResolution] = useState<string | null>(null);
   const [audio, setAudio] = useState(false);
   // Length and shape for videos created without a source video.
   const [createSeconds, setCreateSeconds] = useState(5);
-  const [aspectRatio, setAspectRatio] = useState<AspectRatio>("16:9");
+  const [chosenAspectRatio, setAspectRatio] = useState<AspectRatio>("16:9");
   const [consent, setConsent] = useState(false);
   const [ready, setReady] = useState<boolean | null>(null);
   const [authenticated, setAuthenticated] = useState<boolean | null>(null);
   const [planAccount, setPlanAccount] = useState<PlanAccount | null>(null);
+  const [trial, setTrial] = useState<TrialStatus | null>(null);
+  const [trialMode, setTrialMode] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [creditBalance, setCreditBalance] = useState<number | null>(null);
   const [error, setError] = useState("");
@@ -228,13 +246,16 @@ export function useStudioChat() {
   const [library, setLibrary] = useState<LibraryItem[] | null>(null);
   const [libraryError, setLibraryError] = useState("");
   const [openingUpload, setOpeningUpload] = useState<string | null>(null);
-  const entitlements = videoEntitlements(planAccount, isAdmin);
+  const paidEntitlements = videoEntitlements(planAccount, isAdmin);
+  const entitlements = trialMode ? { ...paidEntitlements, name: "Free trial", maxSeconds: 5 } : paidEntitlements;
   const selectedModel = getVideoModel(model);
-  const resolution = chosenResolution ?? bestResolution(selectedModel, entitlements.fullHd);
+  const aspectRatios = modelAspectRatios(selectedModel);
+  const aspectRatio = aspectRatios.includes(chosenAspectRatio) ? chosenAspectRatio : aspectRatios[0];
+  const resolution = trialMode ? TRIAL_RESOLUTION : chosenResolution ?? bestResolution(selectedModel, entitlements.fullHd);
   const jobActive = !!job && !terminal(job.status);
-  const busy = !!phase || jobActive || !!pending;
+  const busy = restoring || !!phase || jobActive || !!pending;
   // A generating video can move to the background; an unconfirmed send can't.
-  const canLeave = !pending && (!phase || jobActive);
+  const canLeave = !restoring && !pending && (!phase || jobActive);
   const backgroundVideos = background ?? [];
   const generatingElsewhere = backgroundVideos.filter((item) => !item.done).length;
   // Video-optional models can create from a prompt (and photos) alone.
@@ -242,6 +263,7 @@ export function useStudioChat() {
   const maxCreateSeconds = Math.min(selectedModel.maxSeconds, entitlements.maxSeconds);
   const seconds = Math.min(createSeconds, maxCreateSeconds);
   const quoteKey = JSON.stringify([
+    trialMode, trial?.state,
     video?.url,
     model,
     resolution,
@@ -251,11 +273,15 @@ export function useStudioChat() {
   ]);
   const currentQuote = quote?.key === quoteKey ? quote : null;
   // Only flag mentions once there is something to send, so presets can be picked first.
-  const promptError = video || creating ? referenceProblem(prompt, images.length, !!video) ?? "" : "";
+  const presetReferenceError = selectedPreset?.referenceCount && images.length < selectedPreset.referenceCount
+    ? `Add ${selectedPreset.referenceCount} reference photos for ${selectedPreset.shortLabel}. Photos are numbered in the order you add them.`
+    : "";
+  const promptError = presetReferenceError || (video || creating ? referenceProblem(prompt, images.length, !!video) ?? "" : "");
   const modelError = (() => {
     if (!video && !creating) return "";
     const duration = video ? video.duration ?? 4 : seconds;
     try {
+      if (trialMode) validateTrialSettings({ model, resolution, duration, imageCount: images.length, generateAudio: audio, hasVideo: !!video });
       validateVideoEntitlements(entitlements, { resolution, duration, imageCount: images.length, generateAudio: audio });
       validateModel(selectedModel, resolution, duration, images.length, audio, !!video);
       return "";
@@ -263,6 +289,91 @@ export function useStudioChat() {
       return (e as Error).message;
     }
   })();
+
+  function setChatLocation(id?: string, lookup = false) {
+    const url = id ? chatUrl(id, lookup) : basePath;
+    window.history.replaceState(window.history.state, "", url);
+    setChatDestination(url);
+  }
+  function savedMessage(generation: SavedGeneration): ChatMessage {
+    const original = generation.assets.find(asset => asset.slot === "video");
+    return {
+      id: generation.id, prompt: generation.prompt,
+      videoUrl: original?.url, videoName: original?.name,
+      images: generation.assets.filter(asset => asset.slot !== "video").map(asset => ({ url: asset.url, name: asset.name })),
+      modelName: getVideoModel(generation.model).name, resolution: generation.resolution,
+      result: generation.result ?? undefined, error: generation.error ?? undefined,
+    };
+  }
+  async function restoreGeneration(id: string, lookup = false) {
+    const sequence = ++selection.current;
+    restoreTarget.current = { id, lookup };
+    restoringSavedChat.current = true;
+    setRestoring(true);
+    setChatDestination(chatUrl(id, lookup));
+    setRestoreError("");
+    setQuote(null);
+    try {
+      const data = await jsonRequest<GenerationChat>(`/api/generations/${encodeURIComponent(id)}${lookup ? "?lookup=client" : ""}`);
+      if (!mounted.current || sequence !== selection.current) return;
+      const saved = data.generation;
+      const restoredJob: Job = { token: data.token, requestId: saved.id, status: saved.status, started: Date.parse(saved.createdAt), prompt: saved.prompt, modelName: getVideoModel(saved.model).name, resolution: saved.resolution };
+      setJob(restoredJob);
+      setPending(null);
+      saveSession(PENDING_SEND, null);
+      saveSession(ACTIVE_JOB, restoredJob);
+      setChatLocation(saved.id);
+      setHistory(data.history.map(savedMessage));
+      setCurrentMessage(savedMessage(saved));
+      setPrompt(saved.prompt);
+      setModel(saved.model);
+      setResolution(saved.resolution);
+      setAudio(saved.generateAudio);
+      setCreateSeconds(Math.ceil(saved.duration));
+      if (saved.aspectRatio) setAspectRatio(saved.aspectRatio);
+      setTrialMode(saved.trial);
+      setConsent(false);
+      setResult(saved.result ?? "");
+      setGenerationError(saved.error ?? "");
+      setPhase(terminal(saved.status) || saved.status === "unknown" ? "" : "Your video is still generating");
+      setPollStopped(saved.status === "unknown");
+      setVideo(null);
+      setImages([]);
+      const files = await Promise.all(saved.assets.map(async asset => {
+        const response = await fetch(asset.url, { cache: "no-store" });
+        if (!response.ok) throw new Error("One of this chat’s original uploads is no longer available. Your prompt and result are still saved.");
+        const blob = await response.blob();
+        return { asset, file: new File([blob], asset.name, { type: blob.type || asset.type }) };
+      }));
+      if (!mounted.current || sequence !== selection.current) return;
+      uploadedVideo.current = null;
+      uploadedImages.current.clear();
+      for (const { asset, file } of files) {
+        const item = media(file);
+        if (asset.slot === "video") setVideo({ ...item, contentType: file.type, duration: saved.duration });
+        else setImages(previous => [...previous, item]);
+      }
+    } catch (error) {
+      if (!mounted.current || sequence !== selection.current) return;
+      if (lookup && error instanceof RequestError && error.status === 404) {
+        try {
+          const payload = JSON.parse(sessionStorage.getItem(PENDING_SEND) || "null") as Submission | null;
+          const account = await jsonRequest<{ account: { user_id: string } }>("/api/account");
+          if (!mounted.current || sequence !== selection.current) return;
+          if (payload?.requestId === id && payload.ownerId === account.account.user_id) {
+            setPending(payload);
+            setPrompt(payload.prompt);
+            setCurrentMessage({ id, prompt: payload.prompt, images: [], modelName: getVideoModel(payload.model).name, resolution: payload.resolution });
+            setGenerationError("The last send wasn’t confirmed. Check this request to continue without creating a duplicate.");
+            return;
+          }
+        } catch { /* Show the normal recovery message below. */ }
+      }
+      setRestoreError(error instanceof Error ? error.message : "This saved chat could not be opened. Please try again.");
+    } finally {
+      if (mounted.current && sequence === selection.current) setRestoring(false);
+    }
+  }
 
   function configCheck() {
     setReady(null);
@@ -283,15 +394,25 @@ export function useStudioChat() {
         setReady(data.ready);
         setAuthenticated(data.authenticated);
         // Signed-out visitors have no account to load (and would get a 401).
-        if (!data.authenticated) return;
-        return jsonRequest<{ balance: { total: number }; isAdmin: boolean; account: PlanAccount }>(
+        if (!data.authenticated) { setBackground([]); return; }
+        return jsonRequest<{ balance: { total: number }; isAdmin: boolean; account: PlanAccount & { user_id: string }; trial?: TrialStatus }>(
           "/api/account",
         )
           .then((account) => {
             if (mounted.current) {
+              setUserId(account.account.user_id);
+              setBackground(loadBackgroundVideos(account.account.user_id));
               setCreditBalance(account.balance.total);
               setIsAdmin(account.isAdmin);
               setPlanAccount(account.account);
+              setTrial(account.trial ?? null);
+              if (!cinema && !restoringSavedChat.current && (account.trial?.state === "available" || account.trial?.state === "active")) {
+                setTrialMode(true);
+                setModel(TRIAL_MODEL);
+                setResolution(TRIAL_RESOLUTION);
+                setAudio(false);
+                if (new URLSearchParams(location.search).has("useCase") || new URLSearchParams(location.search).has("scene")) setPrompt(TRIAL_PROMPTS[0].prompt);
+              }
             }
           })
           .catch(() => {});
@@ -299,13 +420,15 @@ export function useStudioChat() {
       .catch(() => {
         if (mounted.current) setReady(false);
       });
+    const query = new URLSearchParams(location.search);
+    const generationId = query.get("generation") || query.get("request");
+    const explicitStart = !!(query.get("edit") || query.get("scene") || query.get("useCase"));
     const scene = scenes.find(
       (s) => s.id === new URLSearchParams(location.search).get("scene"),
     );
-    // Initial browser/session state is intentionally restored after hydration.
+    // URL presets initialize browser-only state once after hydration.
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setBackground(loadBackgroundVideos());
-    if (scene) setPrompt(scene.prompt);
+    if (!generationId && scene) setPrompt(scene.prompt);
     // Opened from My creations: load that saved video into the editor.
     const editId = new URLSearchParams(location.search).get("edit");
     if (editId && /^[0-9a-f-]{36}$/i.test(editId)) {
@@ -317,25 +440,17 @@ export function useStudioChat() {
     const preset = useCases.find(
       (item) => item.id === new URLSearchParams(location.search).get("useCase"),
     );
-    if (preset) {
-      setPrompt(preset.prompt);
-      setModel(preset.model);
-      setResolution(null);
-      setAudio(false);
+    if (!generationId && preset) {
+      void choosePreset(preset);
     }
-    try {
+    if (generationId) {
+      void restoreGeneration(generationId, !query.get("generation"));
+    } else if (!explicitStart) try {
       const saved = JSON.parse(
         sessionStorage.getItem(ACTIVE_JOB) || "null",
       ) as Job | null;
       if (saved?.token && saved.started > Date.now() - 7 * 86400000) {
-        setJob(saved);
-        setCurrentMessage({
-          id: saved.requestId,
-          prompt: saved.prompt || "Your video transformation",
-          images: [],
-          modelName: saved.modelName || "Video generation",
-          resolution: saved.resolution || "",
-        });
+        void restoreGeneration(saved.requestId);
       } else {
         saveSession(ACTIVE_JOB, null);
         const unconfirmed = JSON.parse(
@@ -345,17 +460,7 @@ export function useStudioChat() {
           unconfirmed?.requestId &&
           unconfirmed.quoteToken
         ) {
-          setPending(unconfirmed);
-          setCurrentMessage({
-            id: unconfirmed.requestId,
-            prompt: unconfirmed.prompt,
-            images: [],
-            modelName: getVideoModel(unconfirmed.model).name,
-            resolution: unconfirmed.resolution,
-          });
-          setGenerationError(
-            "The last send wasn’t confirmed. Check that request before creating another video.",
-          );
+          void restoreGeneration(unconfirmed.requestId, true);
         }
       }
     } catch {
@@ -376,12 +481,13 @@ export function useStudioChat() {
   useEffect(() => {
     if (
       (!video && !creating) ||
+      restoring || !!restoreError ||
       !ready ||
       !authenticated ||
       inspecting ||
       modelError ||
       pending ||
-      jobActive
+      jobActive || (trialMode && trial?.state !== "available")
     )
       return;
     let active = true;
@@ -447,6 +553,7 @@ export function useStudioChat() {
           duration: number;
         }>("/api/quote", {
           videoToken,
+          trial: trialMode,
           model,
           resolution,
           imageCount: images.length,
@@ -485,6 +592,10 @@ export function useStudioChat() {
     audio,
     quoteKey,
     quoteAttempt,
+    restoring,
+    restoreError,
+    trialMode,
+    trial?.state,
     pending,
     jobActive,
   ]);
@@ -511,6 +622,7 @@ export function useStudioChat() {
         errors = 0;
         if (typeof data.balance === "number") setCreditBalance(data.balance);
         setJob((prev) => (prev ? { ...prev, status: data.status } : null));
+        if (terminal(data.status)) void refreshTrial();
         if (data.status === "completed") {
           if (data.videoUrl) setResult(data.videoUrl);
           else
@@ -518,7 +630,6 @@ export function useStudioChat() {
               "Your video completed, but the download isn’t available. Contact support with the generation ID.",
             );
           setPhase("");
-          saveSession(ACTIVE_JOB, null);
           return;
         }
         if (terminal(data.status)) {
@@ -527,7 +638,6 @@ export function useStudioChat() {
               "This video couldn’t finish. Try a different clip or a simpler description.",
           );
           setPhase("");
-          saveSession(ACTIVE_JOB, null);
           return;
         }
         if (data.status === "unknown") {
@@ -568,8 +678,8 @@ export function useStudioChat() {
   }, [jobToken, jobFinished, pollAttempt]);
 
   useEffect(() => {
-    if (background) saveBackgroundVideos(background);
-  }, [background]);
+    if (background && userId) saveBackgroundVideos(background, userId);
+  }, [background, userId]);
 
   // Checks videos generating in the background; each finished one gets a banner.
   const backgroundTokens = backgroundVideos
@@ -591,6 +701,7 @@ export function useStudioChat() {
           if (disposed) return;
           if (typeof data.balance === "number") setCreditBalance(data.balance);
           const done = terminal(data.status) || data.status === "unknown";
+          if (done) void refreshTrial();
           setBackground((items) =>
             (items ?? []).map((item) =>
               item.job.token !== token
@@ -637,7 +748,42 @@ export function useStudioChat() {
     URL.revokeObjectURL(item.url);
     assets.current.delete(item.url);
   }
-  async function chooseVideo(file?: File, libraryId?: string) {
+  async function choosePreset(preset: UseCase) {
+    if (trialMode && preset.model !== TRIAL_MODEL) {
+      setError("This preset requires a paid plan. Try one of the free transformation ideas below.");
+      return;
+    }
+    if (busy || submitLock.current) return;
+    const sequence = ++selection.current;
+    setPrompt(preset.prompt);
+    setModel(preset.model);
+    setResolution(null);
+    setAudio(false);
+    setSelectedPreset(null);
+    setError("");
+    setInspecting(!!preset.sourceVideo);
+    if (!preset.sourceVideo) return;
+    // Clear the old clip so a failed download cannot submit the preset with it.
+    setVideo((previous) => {
+      if (previous) release(previous);
+      return null;
+    });
+    setQuote(null);
+    setQuoteError("");
+    try {
+      const response = await fetch(preset.sourceVideo);
+      if (!response.ok) throw new Error("Couldn’t load this preset’s video. Select the preset again to retry.");
+      const blob = await response.blob();
+      if (!mounted.current || sequence !== selection.current) return;
+      const loaded = await chooseVideo(new File([blob], `${preset.shortLabel}.mp4`, { type: "video/mp4" }), undefined, sequence);
+      if (loaded && mounted.current && sequence === selection.current) setSelectedPreset(preset);
+    } catch (e) {
+      if (mounted.current && sequence === selection.current) setError((e as Error).message);
+    } finally {
+      if (mounted.current && sequence === selection.current) setInspecting(false);
+    }
+  }
+  async function chooseVideo(file?: File, libraryId?: string, presetSequence?: number) {
     if (!file || busy || submitLock.current) return;
     setError("");
     const contentType = videoContentType(file);
@@ -649,7 +795,8 @@ export function useStudioChat() {
       setError(`Choose a video up to ${MAX_VIDEO_SIZE_LABEL}.`);
       return;
     }
-    const sequence = ++selection.current;
+    const sequence = presetSequence ?? ++selection.current;
+    setSelectedPreset(null);
     setInspecting(true);
     const item = media(file);
     const duration = await probeDuration(item.url);
@@ -671,7 +818,7 @@ export function useStudioChat() {
       return;
     }
     // Longer footage goes straight to the editor to be trimmed before upload.
-    if (duration !== null && duration > MAX_VIDEO_SECONDS) {
+    if (duration !== null && duration > Math.min(MAX_VIDEO_SECONDS, entitlements.maxSeconds)) {
       release(item);
       setEditor({
         file,
@@ -743,6 +890,7 @@ export function useStudioChat() {
     setError("");
   }
   function removeVideo() {
+    setSelectedPreset(null);
     selection.current++;
     setInspecting(false);
     if (video) release(video);
@@ -798,9 +946,13 @@ export function useStudioChat() {
     uploadedImages.current.delete(item.file);
     release(item);
     setImages((previous) => previous.filter((image) => image !== item));
-    if (index >= 0) setPrompt((text) => renumberAfterRemoval(text, index + 1));
+    if (index >= 0 && !selectedPreset) setPrompt((text) => renumberAfterRemoval(text, index + 1));
   }
   function changeModel(value: string, quality?: string) {
+    if (trialMode && value !== TRIAL_MODEL) {
+      setError("The free transformation uses Seedance 2.5 Edit. Choose a plan to use other models.");
+      return;
+    }
     const next = getVideoModel(value);
     setModel(value);
     setQuote(null);
@@ -817,6 +969,7 @@ export function useStudioChat() {
     // reuses its idempotency ID rather than authorizing another paid generation.
     setPending(payload);
     saveSession(PENDING_SEND, payload);
+    setChatLocation(payload.requestId, true);
     try {
       const data = await jsonRequest<{
         token: string;
@@ -836,9 +989,11 @@ export function useStudioChat() {
         resolution: payload.resolution,
       };
       setJob(active);
-      setPrompt("");
+      setChatLocation(active.requestId);
+      saveSession(ACTIVE_JOB, active);
       setQuote(null);
       setCreditBalance(data.balance);
+      void refreshTrial();
       setPending(null);
       saveSession(PENDING_SEND, null);
       if (terminal(active.status)) {
@@ -847,18 +1002,26 @@ export function useStudioChat() {
             "The video couldn’t start. Check your account for returned credits.",
         );
         setPhase("");
-        saveSession(ACTIVE_JOB, null);
       } else {
         saveSession(ACTIVE_JOB, active);
         setPhase("Your video is in the queue");
       }
+      if (recovering) void restoreGeneration(active.requestId);
     } catch (e) {
       if (!recovering && e instanceof RequestError && e.status < 500) {
         setPending(null);
         saveSession(PENDING_SEND, null);
+        if (payload.parentJobId) setChatLocation(payload.parentJobId);
+        else setChatLocation();
       }
       throw e;
     }
+  }
+  async function refreshTrial() {
+    try {
+      const data = await jsonRequest<{ trial?: TrialStatus }>("/api/account");
+      if (mounted.current) setTrial(data.trial ?? null);
+    } catch { /* Server reservation remains authoritative if refresh fails. */ }
   }
   const needsConsent = !!video || images.length > 0;
   async function generate() {
@@ -930,6 +1093,10 @@ export function useStudioChat() {
         quoteToken: currentQuote.quoteToken,
         requestId: currentQuote.requestId,
         imageTokens,
+        ownerId: userId ?? undefined,
+        parentJobId: job?.requestId,
+        videoName: video?.file.name.slice(0, 200),
+        imageNames: images.map(image => image.file.name.slice(0, 200)),
         prompt: prompt.trim(),
         resolution,
         model,
@@ -976,8 +1143,14 @@ export function useStudioChat() {
     if (!canLeave || submitLock.current) return;
     moveToBackground();
     clearChat();
+    restoreTarget.current = null;
+    restoringSavedChat.current = false;
+    setChatLocation();
+    saveSession(ACTIVE_JOB, null);
   }
   function clearChat() {
+    setSelectedPreset(null);
+    setRestoreError("");
     selection.current++;
     assets.current.forEach((url) => URL.revokeObjectURL(url));
     assets.current.clear();
@@ -1001,26 +1174,13 @@ export function useStudioChat() {
     uploadedVideo.current = null;
     uploadedImages.current.clear();
   }
-  // Brings a background conversation back. The composer keeps any draft.
+  // Reload the saved inputs as well as the messages when switching conversations.
   function openBackground(id: string) {
-    const item = backgroundVideos.find((entry) => entry.id === id);
-    if (!item || !canLeave || submitLock.current) return;
+    if (!canLeave || submitLock.current) return;
     moveToBackground();
-    if (currentMessage && !jobActive)
-      previewUrls([...history, currentMessage]).forEach((url) => {
-        URL.revokeObjectURL(url);
-        assets.current.delete(url);
-      });
-    previewUrls([...item.history, item.message]).forEach((url) => assets.current.add(url));
-    setBackground((items) => (items ?? []).filter((entry) => entry.id !== id));
-    setHistory(item.history);
-    setCurrentMessage(item.message);
-    setJob(item.job);
-    setResult(item.result ?? "");
-    setGenerationError(item.error ?? "");
-    setPollStopped(false);
-    setPhase(item.done ? "" : "Creating your video");
-    saveSession(ACTIVE_JOB, item.done ? null : item.job);
+    setBackground(items => (items ?? []).filter(item => item.id !== id));
+    clearChat();
+    void restoreGeneration(id);
   }
   // A dismissed video stays in My creations.
   function dismissBackground(id: string) {
@@ -1071,12 +1231,22 @@ export function useStudioChat() {
     }
   }
   return {
+    restoring,
+    restoreError,
+    signInHref: `/login?next=${encodeURIComponent(chatDestination)}`,
+    retryRestore: () => { if (restoreTarget.current) void restoreGeneration(restoreTarget.current.id, restoreTarget.current.lookup); },
+    selectedPreset,
+    choosePreset,
+    trial,
+    trialMode,
+    usePaidSettings: () => { setTrialMode(false); setQuote(null); setResolution(null); },
     video,
     images,
     prompt,
     setPrompt,
     model,
     selectedModel,
+    aspectRatios,
     resolution,
     setResolution,
     audio,

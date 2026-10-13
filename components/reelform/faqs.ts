@@ -1,5 +1,9 @@
 export const faqs = [
   [
+    "Can I try Reelform for free?",
+    "Eligible new users can try one successful transformation with a verified email and no credit card. Upload a 4–5 second clip for Seedance 2.5 Edit at 480p, with original audio and up to one reference photo. Failed attempts can be retried up to three attempts total. The pilot is limited to 100 users and a shared budget, so availability may end sooner. One trial per person; creating duplicate accounts does not grant more trials. Other models and settings require credits.",
+  ],
+  [
     "What is Reelform?",
     "Reelform is an AI video studio for motion transfer and object swaps. Upload footage and reference images to create character remixes, product variations, site concepts, and other edits using Genjutsu and additional video models.",
   ],

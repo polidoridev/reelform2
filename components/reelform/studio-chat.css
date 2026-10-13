@@ -1555,3 +1555,5 @@
     scroll-behavior: auto !important;
   }
 }
+
+.chat-preset-hint { margin: 12px 0; color: var(--chat-muted, #59647a); font-size: 13px; line-height: 1.6; }

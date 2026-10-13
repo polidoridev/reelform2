@@ -57,7 +57,7 @@ for (const [id, subject, title, body, button, type] of templates) {
   // Keep authentication links on the canonical domain and preserve token parameters.
   const url = `${SITE_URL}/auth/confirm?token_hash={{ .TokenHash }}&type=${type}`;
   const footer =
-    'If you didn’t request this, you can safely ignore this email. Never share your sign-in links or security codes.<br>Need help? <a href="mailto:admin@polidori.dev" style="color:#356b64">admin@polidori.dev</a><br>Reelform · Your reality, reimagined.';
+    'If you didn’t request this, you can safely ignore this email. Never share your sign-in links or security codes.<br>Need help? <a href="mailto:contact@polidori.dev" style="color:#356b64">contact@polidori.dev</a><br>Reelform · Your reality, reimagined.';
   const file = `emails/supabase/${id}.html`;
   writeFileSync(file, emailFrame(title, `<p>${body}</p>`, button, url, footer));
   manifest[id] = { subject, file };
@@ -80,7 +80,7 @@ for (const [id, description] of Object.entries({
       `<p>${description}</p><p>If this was you, you’re all set. If you don’t recognize this change, reset your password and contact us right away.</p>`,
       "Review my account",
       `${SITE_URL}/account?tab=settings`,
-      'Reelform security notification<br><a href="mailto:admin@polidori.dev">admin@polidori.dev</a>',
+      'Reelform security notification<br><a href="mailto:contact@polidori.dev">contact@polidori.dev</a>',
     ),
   );
 }

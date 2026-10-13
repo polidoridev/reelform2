@@ -13,7 +13,7 @@ export default function Terms() {
       <h1>Terms of use</h1>
       <p>
         Last updated September 27, 2026. Questions:{" "}
-        <a href="mailto:admin@polidori.dev">admin@polidori.dev</a>.
+        <a href="mailto:contact@polidori.dev">contact@polidori.dev</a>.
       </p>
       <h2>Your account</h2>
       <p>
@@ -90,9 +90,11 @@ export default function Terms() {
         reuse, remix, or commercially exploit a creator’s video merely because
         it is publicly viewable. Contact the creator for permission. We may
         remove posts that violate these terms. Use the Report link on a post
-        or contact admin@polidori.dev with its link to report misuse or a rights
+        or contact contact@polidori.dev with its link to report misuse or a rights
         concern.
       </p>
+      <h2>Free transformation pilot</h2>
+      <p>Eligible new users with a verified email may receive one successful 4–5 second transformation using Seedance 2.5 Edit at 480p, original audio, and up to one reference image. No payment card is required. The pilot is limited to 100 users and a shared generation budget; availability is confirmed in the studio and may end sooner. Failed generations may be retried up to three total attempts, subject to remaining availability. A request with an uncertain provider outcome remains on hold until resolved. Trials are limited to one per person; duplicate accounts are not eligible.</p>
       <h2>Subscriptions and credits</h2>
       <p>
         Prices are shown in USD. Subscriptions renew automatically at the

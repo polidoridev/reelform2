@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import {
   motion,
   useReducedMotion,
@@ -105,6 +106,12 @@ export default function Landing() {
             <a href="#explore" onClick={() => setMenu(false)}>
               Explore
             </a>
+            <Link prefetch={false} href="/cinemalab" onClick={() => setMenu(false)}>
+              CinemaLab
+            </Link>
+            <Link prefetch={false} href="/aura" onClick={() => setMenu(false)}>
+              Aura edits
+            </Link>
             <a href="#how-it-works" onClick={() => setMenu(false)}>
               How it works
             </a>
@@ -196,7 +203,7 @@ export default function Landing() {
               transition={{ duration: 0.8, delay: 0.2 }}
             >
               <a href="/studio" className="button">
-                Start creating <ArrowUpRight size={18} />
+                Try your first transformation free <ArrowUpRight size={18} />
               </a>
               <a href="#explore" className="hero-secondary">
                 <Play size={14} fill="currentColor" /> See what’s possible
@@ -251,6 +258,16 @@ export default function Landing() {
           <div className="use-case-list">
             {useCases.map((item) => (
               <a key={item.id} href={`/studio?useCase=${item.id}`}>
+                {item.sourceVideo && item.poster ? (
+                  <SceneVideo
+                    scene={{ video: item.sourceVideo, poster: item.poster, title: item.title }}
+                    paused={paused}
+                    className="use-case-poster"
+                    label={`${item.shortLabel} source clip`}
+                  />
+                ) : item.poster ? (
+                  <Image unoptimized className="use-case-poster" src={item.poster} alt={`${item.shortLabel} source clip`} width={item.posterWidth ?? 1280} height={item.posterHeight ?? 720} loading="lazy" />
+                ) : null}
                 <span className="section-label">{item.audience}</span>
                 <h3>{item.title}</h3>
                 <p>{item.description}</p>
@@ -425,7 +442,7 @@ export default function Landing() {
           </div>
           <div>
             <strong>Contact</strong>
-            <a href="mailto:admin@polidori.dev">admin@polidori.dev</a>
+            <a href="mailto:contact@polidori.dev">contact@polidori.dev</a>
           </div>
         </nav>
         <div className="footer-bottom">

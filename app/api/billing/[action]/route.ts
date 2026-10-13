@@ -14,7 +14,7 @@ import {
   releaseSchedule,
 } from "@/lib/commerce/subscriptions";
 import { syncSubscription, reconcileCheckout } from "@/lib/commerce/billing";
-import { PLANS, TOPUPS } from "@/lib/commerce/pricing";
+import { CUSTOM_TOPUP, PLANS, TOPUPS, quoteTopupCredits } from "@/lib/commerce/pricing";
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ action: string }> },
@@ -187,8 +187,23 @@ export async function POST(
       return noStore({ url: session.url });
     }
     if (action === "topup") {
-      const pack = TOPUPS.find((p) => p.id === body.pack);
-      if (!pack) throw new ApiError("Choose a credit pack.");
+      const parsed = z.union([
+        z.object({ pack: z.enum(["small", "medium", "large"]), requestId: z.string().uuid() }).strict(),
+        z.object({
+          credits: z.number().int().min(CUSTOM_TOPUP.min).max(CUSTOM_TOPUP.max).multipleOf(CUSTOM_TOPUP.step),
+          requestId: z.string().uuid(),
+        }).strict(),
+      ]).safeParse(body);
+      if (!parsed.success)
+        throw new ApiError("Choose a credit pack or 900–20,000 credits in steps of 100.");
+      const selection = parsed.data;
+      // Reuse the published Stripe price when the slider lands on a preset.
+      const pack = "pack" in selection
+        ? TOPUPS.find((p) => p.id === selection.pack)!
+        : TOPUPS.find((p) => p.credits === selection.credits);
+      const credits = "credits" in selection ? selection.credits : pack!.credits;
+      const amountCents = quoteTopupCredits(credits);
+      const packId = pack?.id ?? "custom";
       if (!account.stripe_subscription_id)
         throw new ApiError(
           "An active subscription is needed to buy extra credits.",
@@ -206,7 +221,7 @@ export async function POST(
           "An active paid subscription is needed to buy credits.",
           403,
         );
-      const id = z.string().uuid().parse(body.requestId);
+      const id = selection.requestId;
       let { data: order } = await checked(
         admin()
           .from("rf_orders")
@@ -223,9 +238,9 @@ export async function POST(
               id,
               user_id: user.id,
               kind: "topup",
-              pack: pack.id,
-              credits: pack.credits,
-              amount_cents: pack.price * 100,
+              pack: packId,
+              credits,
+              amount_cents: amountCents,
             })
             .select()
             .single(),
@@ -233,26 +248,40 @@ export async function POST(
         order = r.data;
       }
       if (
-        order.pack !== pack.id ||
+        order.pack !== packId ||
+        order.credits !== credits ||
+        order.amount_cents !== amountCents ||
         order.kind !== "topup" ||
         order.status !== "pending"
       )
         throw new ApiError("Start a new credit purchase.");
-      const price = process.env[pack.env];
-      if (!price)
+      const price = pack ? process.env[pack.env] : undefined;
+      if (pack && !price)
         throw new ApiError("This credit pack is being connected.", 503);
-      await validatePrice(price, pack.price);
+      if (price && pack) await validatePrice(price, pack.price);
       const session = await api.checkout.sessions.create(
         {
           mode: "payment",
           customer: account.stripe_customer_id,
-          line_items: [{ price, quantity: 1 }],
+          line_items: [price ? { price, quantity: 1 } : {
+            price_data: {
+              currency: "usd",
+              unit_amount: order.amount_cents,
+              product_data: {
+                name: `Reelform · ${credits.toLocaleString("en-US")} credits`,
+                description: "One-time credit top-up. Credits expire 90 days after they become available.",
+                metadata: { reelform_pack: "custom", credits: String(credits) },
+              },
+            },
+            quantity: 1,
+          }],
           payment_method_types: ["card"],
-          metadata: { reelform_order_id: order.id },
+          metadata: { reelform_order_id: order.id, credits: String(credits) },
           payment_intent_data: {
             metadata: {
               reelform_order_id: order.id,
               reelform_user_id: user.id,
+              credits: String(credits),
             },
           },
           invoice_creation: { enabled: true },

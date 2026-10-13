@@ -11,7 +11,7 @@ export function videoEntitlements(account: PlanAccount | null, isAdmin = false, 
 }
 
 export function validateVideoEntitlements(
-  plan: ReturnType<typeof videoEntitlements>,
+  plan: { name: string; fullHd: boolean; maxSeconds: number; maxImages: number; generatedAudio: boolean },
   input: { resolution: string; duration: number; imageCount: number; generateAudio: boolean },
 ) {
   if (input.resolution === "1080p" && !plan.fullHd)

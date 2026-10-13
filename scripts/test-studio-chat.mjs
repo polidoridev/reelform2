@@ -14,14 +14,14 @@ const context = await browser.newContext({ viewport: { width: 1440, height: 1000
 const page = await context.newPage();
 let balance = 10000, uploadCount = 0, pollCount = 0, quoteCount = 0;
 let failSend = false, failedRecovery = false, quoteDelay = 0, failUpload = false;
-let alreadyCompleted = false;
+let alreadyCompleted = false, savedChat = null;
 const submissions = [], quoteBodies = [], consoleErrors = [];
 page.on("pageerror", e => consoleErrors.push(e.message));
 await context.route(`${base}/api/**`, async route => {
   const path = new URL(route.request().url()).pathname;
   const json = (data, status = 200) => route.fulfill({ status, json: data });
   if (path === "/api/config") return json({ ready: true, authenticated: true });
-  if (path === "/api/account") return json({ balance: { total: balance }, isAdmin: false, account: { plan: "studio", paid_until: "2099-01-01T00:00:00Z" } });
+  if (path === "/api/account") return json({ balance: { total: balance }, isAdmin: false, account: { user_id: "test-owner", plan: "studio", paid_until: "2099-01-01T00:00:00Z" } });
   if (path === "/api/uploads") {
     uploadCount++;
     if (failUpload) { failUpload = false; return json({ error: "Upload temporarily unavailable" }, 503); }
@@ -38,13 +38,20 @@ await context.route(`${base}/api/**`, async route => {
     if (failSend) { failSend = false; return route.abort("failed"); }
     if (failedRecovery) { failedRecovery = false; return json({ error: "Your quote expired" }, 400); }
     pollCount = 0;
+    const payload = route.request().postDataJSON();
+    savedChat = { generation: { id: "test-generation-id", prompt: payload.prompt, model: payload.model, resolution: payload.resolution, trial: false, generateAudio: payload.generateAudio, duration: 5, createdAt: new Date().toISOString(), status: alreadyCompleted ? "completed" : "queued", result: alreadyCompleted ? "/media/alpine.mp4" : null, error: null, assets: [...(payload.videoToken ? [{ slot: "video", name: payload.videoName || "Original.mp4", type: "video/mp4", url: `${base}/__studio-test/video` }] : []), ...payload.imageTokens.map((_, i) => ({ slot: `image-${i+1}`, name: payload.imageNames?.[i] || "Reference.jpg", type: "image/jpeg", url: `${base}/__studio-test/image` }))] }, history: [], token: "test-job", clientId: payload.requestId };
     return json({ token: "test-job", requestId: "test-generation-id", status: alreadyCompleted ? "completed" : "queued", balance: balance - 240 });
+  }
+  if (path.startsWith("/api/generations/")) {
+    const clientLookup = new URL(route.request().url()).searchParams.get("lookup") === "client";
+    if (!savedChat || (clientLookup && !path.endsWith(savedChat.clientId))) return json({error:"Chat not found"},404);
+    return json(savedChat);
   }
   if (path === "/api/jobs") return json(!alreadyCompleted && ++pollCount < 2 ? { status: "in_progress" } : { status: "completed", videoUrl: "/media/alpine.mp4", balance: balance - 240 });
   // Block unexpected API requests rather than passing through to real services.
   return json({ error: `Unexpected test API ${path}` }, 501);
 });
-await context.route(`${base}/__studio-test/**`, route => route.fulfill({ status: 200, body: "" }));
+await context.route(`${base}/__studio-test/**`, route => route.request().url().endsWith("/video") ? route.fulfill({path:resolve("public/media/alpine.mp4"),contentType:"video/mp4"}) : route.request().url().endsWith("/image") ? route.fulfill({path:resolve("public/media/arrival.jpg"),contentType:"image/jpeg"}) : route.fulfill({ status: 200, body: "" }));
 const send = page.getByRole("button", { name: "Send and generate video" });
 async function waitFor(predicate) { await page.waitForFunction(predicate, undefined, { timeout: 20000 }); }
 // The default model needs a reference photo; Seedance 2.5 Edit prices a video on its own.
@@ -94,7 +101,7 @@ try {
   assert.equal(submissions[0].imageTokens.length, 1);
   assert.equal(submissions[0].resolution, "480p");
   assert.equal(submissions[0].consent, true);
-  assert.equal(await page.getByLabel("Describe your video transformation").inputValue(), "");
+  assert.equal(await page.getByLabel("Describe your video transformation").inputValue(), submissions[0].prompt, "sending keeps the prompt in the composer");
   assert(await page.getByRole("link", { name: "Download video" }).isVisible());
   await page.screenshot({ path: "outputs/studio-chat-result.png", fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });

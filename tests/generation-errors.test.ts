@@ -2,6 +2,19 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { generationFailureMessage } from "../lib/commerce/generation-errors";
 
+test("copyright failures explain the restriction and credit refund", () => {
+  for (const status of ["failed", "nsfw"]) {
+    const message = generationFailureMessage(status, "Reference rejected: copyrighted content", 200);
+    assert.match(message, /failed due to a copyright restriction/);
+    assert.match(message, /try a different reference image/);
+    assert.match(message, /Your credits were returned/);
+  }
+  const freeMessage = generationFailureMessage("failed", "COPYRIGHT restriction", 0);
+  assert.match(freeMessage, /No Reelform credits were charged/);
+  assert.doesNotMatch(freeMessage, /credits were returned/);
+  assert.match(generationFailureMessage("canceled", "copyright restriction", 0), /was canceled/);
+});
+
 test("moderation failures explain the block without inventing a trigger or a refund", () => {
   const message = generationFailureMessage("nsfw", undefined, 0);
   assert.match(message, /content filter blocked/);
@@ -28,8 +41,18 @@ test("provider funding failures do not tell customers to purchase more credits",
 test("unknown provider errors are never passed through to customers", () => {
   for (const error of ["secret request details", { message: "private upstream data" }, null]) {
     const message = generationFailureMessage("failed", error, 0);
-    assert.match(message, /contact support/);
+    assert.match(message, /contact Reelform support/);
     assert.doesNotMatch(message, /secret|private upstream/);
   }
   assert.match(generationFailureMessage("canceled", null, 1), /was canceled/);
+});
+
+test("generic failures identify the provider and retain a safe support tracking ID", () => {
+  const id = "8d006e08-882f-4609-b743-274e2adb7155";
+  const message = generationFailureMessage("failed", "Generation failed", 11170, id);
+  assert.match(message, /Higgsfield could not complete/);
+  assert.match(message, /did not provide a specific cause/);
+  assert.ok(message.includes(`Higgsfield request ID: ${id}`));
+  assert.match(message, /Your credits were returned/);
+  assert.doesNotMatch(generationFailureMessage("failed", null, 0, "private upstream data"), /private upstream data/);
 });

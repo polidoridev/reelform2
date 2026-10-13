@@ -23,10 +23,9 @@ export function errorResponse(error: unknown) {
     },
   );
 }
-export async function readJson(request: Request) {
+export async function readJson(request: Request, limit = 70000) {
   if (!request.headers.get("content-type")?.includes("application/json"))
     throw new ApiError("Expected a JSON request.", 415);
-  const limit = 70000;
   if (Number(request.headers.get("content-length") || 0) > limit)
     throw new ApiError("The request is too large.", 413);
   const reader = request.body?.getReader();

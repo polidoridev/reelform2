@@ -1,3 +1,6 @@
+import { archiveGenerationInputs } from "@/lib/commerce/generation-inputs";
+import { trialDevice } from "@/lib/commerce/trial-server";
+import { validateTrialSettings, trialMessage, type TrialStatus } from "@/lib/commerce/trial";
 import { videoEntitlements, validateVideoEntitlements } from "@/lib/commerce/entitlements";
 import { DEFAULT_VIDEO_MODEL, getVideoModel, modelEndpoint, modelRequest } from "@/lib/video-models";
 import { z } from "zod";
@@ -5,7 +8,11 @@ import { verify, provider, sign, isConfigured } from "@/lib/higgsfield";
 import { ApiError, readJson, errorResponse, noStore } from "@/lib/http";
 import { requireUser, accountFor, admin, checked, isReelformAdmin } from "@/lib/supabase/server";
 import { maybeReload, balances } from "@/lib/commerce/billing";
+export const maxDuration = 300;
 const input = z.object({
+  parentJobId: z.string().uuid().optional(),
+  videoName: z.string().min(1).max(200).optional(),
+  imageNames: z.array(z.string().min(1).max(200)).max(4).optional(),
   // Omitted for video-optional models creating from a prompt and photos.
   videoToken: z.string().max(12000).optional(),
   quoteToken: z.string().max(16000),
@@ -37,24 +44,33 @@ export async function POST(request: Request) {
       quote.resolution !== p.resolution ||
       (quote.model || DEFAULT_VIDEO_MODEL) !== p.model ||
       !Number.isSafeInteger(quote.credits) ||
-      (quote.credits === 0 && !isReelformAdmin(user))
+      (quote.credits === 0 && !isReelformAdmin(user) && quote.trial !== true)
     )
       throw new ApiError(
         "Your video quote changed. Get a fresh quote before generating.",
       );
     try {
+      if (quote.trial === true) validateTrialSettings({ ...p, duration: quote.media.duration, imageCount: images.length, hasVideo: !!video }, quote.estimatedProviderUsd);
       validateVideoEntitlements(videoEntitlements(account, isReelformAdmin(user)), { ...p, duration: quote.media.duration, imageCount: images.length });
       modelRequest(getVideoModel(p.model), {prompt:p.prompt,videoUrl:video?.url ?? null,imageUrls:images.map(i=>i.url),resolution:p.resolution,generateAudio:p.generateAudio,media:quote.media,aspectRatio:quote.aspectRatio});
     } catch (error) { throw new ApiError(error instanceof Error ? error.message : "Invalid model settings."); }
     const db = admin();
-    const reserve = await db.rpc("rf_reserve_job", {
+    if (p.parentJobId) {
+      const { data: parent } = await checked(db.from("rf_jobs").select("id").eq("id", p.parentJobId).eq("user_id", user.id).maybeSingle());
+      if (!parent) throw new ApiError("The previous chat could not be found.", 404);
+    }
+    const reservation = {
       p_user: user.id,
       p_client: p.requestId,
-      p_credits: quote.credits,
       p_prompt: p.prompt,
       p_resolution: p.resolution,
       p_input: {
         model: p.model,
+        parentJobId: p.parentJobId,
+        sourceNames: { video: p.videoName, images: p.imageNames },
+        sourceTypes: { video: video?.type, images: images.map(image => image.type) },
+        sourceBytes: { video: video?.bytes, images: images.map(image => image.bytes) },
+        estimatedProviderUsd: quote.estimatedProviderUsd,
         videoUrl: video?.url ?? null,
         imageUrls: images.map((i) => i.url),
         generateAudio: p.generateAudio,
@@ -63,8 +79,17 @@ export async function POST(request: Request) {
         aspectRatio: video ? undefined : quote.aspectRatio,
         media: quote.media,
       },
-    });
+    };
+    const reserve = quote.trial === true
+      ? await db.rpc("rf_reserve_trial_job", { ...reservation, p_device: await trialDevice() })
+      : await db.rpc("rf_reserve_job", { ...reservation, p_credits: quote.credits });
     if (reserve.error) {
+      if (reserve.error.message.includes("TRIAL_UNAVAILABLE:")) {
+        const state = reserve.error.message.split("TRIAL_UNAVAILABLE:")[1]?.trim() as TrialStatus["state"];
+        throw new ApiError(trialMessage(state), 409);
+      }
+      if (reserve.error.message.includes("INVALID_TRIAL_SETTINGS"))
+        throw new ApiError("Your free transformation settings changed. Refresh the quote.", 400);
       if (reserve.error.message.includes("INSUFFICIENT_CREDITS"))
         throw new ApiError(
           "You need more credits for this video. Add credits in your account.",
@@ -93,7 +118,10 @@ export async function POST(request: Request) {
         .maybeSingle(),
     );
     if (claimed) {
+      let submitted = false;
       try {
+        job.input = await archiveGenerationInputs(job);
+        submitted = true;
         const result = await provider<{ request_id: string; status: string }>(
           modelEndpoint(getVideoModel(job.input.model || DEFAULT_VIDEO_MODEL), {
             hasVideo: !!job.input.videoUrl,
@@ -126,12 +154,14 @@ export async function POST(request: Request) {
       } catch (error) {
         // A timeout or server error may have accepted the paid job. Hold the
         // reservation for reconciliation instead of refunding and submitting twice.
-        const rejected = error instanceof ApiError && error.providerRejected;
+        const rejected = !submitted || (error instanceof ApiError && error.providerRejected);
         await checked(
           db.rpc("rf_finish_job", {
             p_job: job.id,
             p_status: rejected ? "failed" : "unknown",
-            p_error: rejected
+            p_error: !submitted
+              ? "Your original uploads could not be saved. No generation was submitted; any reserved credits were returned. Please try again."
+              : rejected
               ? "The provider rejected this video. Credits returned."
               : "The provider response was interrupted. Do not resubmit; contact support with this job ID.",
           }),
@@ -147,7 +177,7 @@ export async function POST(request: Request) {
       id: job.id,
       exp: Date.now() + 30 * 86400000,
     });
-    if (claimed && latest?.status === "queued" && account.auto_reload_enabled && !isReelformAdmin(user)) {
+    if (quote.trial !== true && claimed && latest?.status === "queued" && account.auto_reload_enabled && !isReelformAdmin(user)) {
       try {
         await maybeReload(account);
       } catch {

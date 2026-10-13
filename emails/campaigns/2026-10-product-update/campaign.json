@@ -1,0 +1,29 @@
+{
+  "status": "approved-awaiting-send-configuration",
+  "subject": "New in Reelform: fresh presets and saved chats",
+  "preheader": "Start with a ready-made scene, revisit your creations, and keep experimenting.",
+  "from": "Reelform <admin@polidori.dev>",
+  "replyTo": "contact@polidori.dev",
+  "htmlFile": "email.html",
+  "approval": {
+    "date": "2026-10-12",
+    "userInstruction": "Ok it looks good. send it out"
+  },
+  "audienceSnapshot": {
+    "date": "2026-10-12",
+    "accounts": 582,
+    "verifiedOptedInUnsuppressedUniqueEmails": 20
+  },
+  "blockers": [
+    "Business mailing address missing locally and in production; email footer still contains a placeholder.",
+    "Resend rejected the local API key as invalid. Production has a write-only secret that cannot be retrieved through Vercel."
+  ],
+  "beforeSend": [
+    "Refresh recipient consent, verification and suppression status.",
+    "Confirm custom credit top-ups are live before announcing them.",
+    "Replace the address placeholder and create each recipient's production-valid unsubscribe URL.",
+    "Verify the sender domain using working Resend credentials.",
+    "Use individual sends, one-click unsubscribe headers, and durable rf_email_log deduplication with Resend idempotency keys."
+  ],
+  "sendCount": 0
+}

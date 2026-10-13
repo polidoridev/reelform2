@@ -158,7 +158,7 @@ function PostCard({
             {copied ? "Copied" : "Share link"}
           </button>
           <a
-            href={`mailto:admin@polidori.dev?subject=${encodeURIComponent(`Report community post ${post.id}`)}&body=${encodeURIComponent(`Post: /community/${post.id}\n\nReason for report:\n`)}`}
+            href={`mailto:contact@polidori.dev?subject=${encodeURIComponent(`Report community post ${post.id}`)}&body=${encodeURIComponent(`Post: /community/${post.id}\n\nReason for report:\n`)}`}
             aria-label={`Report ${post.title}`}
           >
             <Flag size={15} />

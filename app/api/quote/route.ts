@@ -1,3 +1,5 @@
+import { trialStatus } from "@/lib/commerce/trial-server";
+import { validateTrialSettings, trialMessage } from "@/lib/commerce/trial";
 import { videoEntitlements, validateVideoEntitlements } from "@/lib/commerce/entitlements";
 import { ASPECT_RATIOS, DEFAULT_VIDEO_MODEL, getVideoModel, validateModel } from "@/lib/video-models";
 import { requireUser, accountFor, isReelformAdmin } from "@/lib/supabase/server";
@@ -13,6 +15,7 @@ export async function POST(request: Request) {
     const body = z
       .object({
         // Omitted when creating from a prompt and photos with a video-optional model.
+        trial: z.boolean().default(false),
         videoToken: z.string().max(12000).optional(),
         duration: z.number().int().min(4).max(30).optional(),
         aspectRatio: z.enum(ASPECT_RATIOS).optional(),
@@ -50,10 +53,20 @@ export async function POST(request: Request) {
         error instanceof Error ? error.message : "This clip cannot be quoted.",
       );
     }
+    if (body.trial) {
+      try {
+        validateTrialSettings({ ...body, duration: media.duration, hasVideo: !!videoUrl }, quote.estimatedProviderUsd);
+      } catch (error) { throw new ApiError((error as Error).message); }
+      const trial = await trialStatus(user);
+      if (trial.state !== "available") throw new ApiError(trialMessage(trial.state), 409);
+      quote.credits = 0;
+    }
     if (isReelformAdmin(authenticatedUser)) quote.credits = 0;
     const token = await sign({
       user,
       kind: "quote",
+      trial: body.trial,
+      estimatedProviderUsd: quote.estimatedProviderUsd,
       url: videoUrl,
       aspectRatio: videoUrl ? undefined : body.aspectRatio,
       credits: quote.credits,

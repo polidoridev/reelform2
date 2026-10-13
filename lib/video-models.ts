@@ -6,8 +6,10 @@ export const ASPECT_RATIOS = ["16:9", "9:16", "1:1", "4:3", "3:4", "21:9"] as co
 export type AspectRatio = (typeof ASPECT_RATIOS)[number];
 export type VideoModel = {
   id: string; name: string; shortName?: string; endpoint: string;
-  kind: "seedance-edit" | "seedance-reference" | "kling-edit" | "kling-reference" | "motion" | "genjutsu";
+  kind: "seedance-edit" | "seedance-reference" | "wan-reference" | "kling-edit" | "kling-reference" | "motion" | "genjutsu";
   resolutions: VideoResolution[]; maxSeconds: number; minImages: number; maxImages: number;
+  /** Supported explicit output shapes when creating without footage. */
+  aspectRatios?: readonly AspectRatio[];
   /** Whether a source video is required. "optional" models can also create from a prompt and photos. */
   video: "required" | "optional";
   /** Used when there is no video and no photo. */
@@ -26,11 +28,15 @@ export type VideoModel = {
 // two featured Genjutsu models first, then the rest ranked. Editorial, not a benchmark.
 // Schemas and undiscounted prices checked against Higgsfield model docs and schema
 // validation on 2026-09-27.
+const WAN_ASPECT_RATIOS = ["16:9", "9:16", "1:1", "4:3", "3:4"] as const;
 export const VIDEO_MODELS: VideoModel[] = [
   {id:"genjutsu-motion",name:"Genjutsu Motion Transfer",shortName:"Motion Transfer",endpoint:"higgsfield/genjutsu/motion-transfer/v1.0",kind:"genjutsu",video:"required",resolutions:["720p","480p","1080p"],maxSeconds:30,minImages:1,maxImages:4,audio:false,secondRate:0.681,rates:{"480p":0.318,"1080p":1.632},featured:true,description:"Recast your footage with characters, places, or styles from your photos while keeping its motion, camera movement, and timing. At least one photo required.",bestFor:"Putting a new character, outfit, or style into your clip while keeping every movement and camera move. Works best with your own footage and photos of yourself or original characters."},
   {id:"genjutsu-object",name:"Genjutsu Object Swap",shortName:"Object Swap",endpoint:"higgsfield/genjutsu/object-swap/v1.0",kind:"genjutsu",video:"required",resolutions:["720p","480p","1080p"],maxSeconds:30,minImages:1,maxImages:4,audio:false,secondRate:0.681,rates:{"480p":0.318,"1080p":1.632},featured:true,description:"Replace cars, clothing, products, or other objects using at least one reference photo. Up to 30 seconds.",bestFor:"Swapping one specific thing, like a car, product, piece of furniture, or outfit, for the one in your photo while the rest of the shot stays the same."},
   {id:"seedance-2.5-reference",name:"Seedance 2.5 Create",endpoint:"bytedance/seedance-2.5/reference-to-video",textEndpoint:"bytedance/seedance-2.5/text-to-video",kind:"seedance-reference",video:"optional",resolutions:["720p","480p","1080p"],maxSeconds:30,minImages:0,maxImages:4,audio:true,tokenRate:0.01284,rates:{"1080p":0.01404},noVideoTokenRate:0.0214,noVideoRates:{"1080p":0.0234},description:"Create a new video from a prompt. Add photos or a clip to guide it, or start from words alone. Up to 30 seconds; duration rounds up to whole seconds.",bestFor:"Making a brand-new video from a description, with or without photos or a clip for inspiration. Up to 30 seconds in 1080p, with generated sound."},
   {id:"seedance-2.5-edit",name:"Seedance 2.5 Edit",endpoint:"bytedance/seedance-2.5/video-edit",kind:"seedance-edit",video:"required",resolutions:["720p","480p","1080p"],maxSeconds:30,minImages:0,maxImages:4,audio:true,tokenRate:0.01284,rates:{"1080p":0.01404},description:"Change scenes, clothes, and surroundings while following your footage. Up to 30 seconds.",bestFor:"Broad changes described in words, like a new location, weather, time of day, or wardrobe, on clips up to 30 seconds. Photos are optional, and it can generate new sound."},
+  // Public REST schemas and standard (undiscounted) output-second rates checked 2026-10-12.
+  {id:"wan-3-reference",name:"Wan 3.0 Create",endpoint:"alibaba/wan-3.0/reference-to-video",textEndpoint:"alibaba/wan-3.0/text-to-video",kind:"wan-reference",video:"optional",resolutions:["720p","480p","1080p"],aspectRatios:WAN_ASPECT_RATIOS,maxSeconds:30,minImages:0,maxImages:4,audio:true,secondRate:0.10,rates:{"480p":0.05,"1080p":0.20},description:"Create a new video from words, photos, or a reference clip, with optional generated sound. Up to 30 seconds at 1080p.",bestFor:"Creating new scenes from your ideas and references at a lower per-second cost. Reference footage guides the result; use an Edit or Motion Transfer model to preserve its movement."},
+  {id:"wan-3-prime-reference",name:"Wan 3.0 Prime Create",endpoint:"alibaba/wan-3.0-prime/reference-to-video",textEndpoint:"alibaba/wan-3.0-prime/text-to-video",kind:"wan-reference",video:"optional",resolutions:["720p","480p","1080p"],aspectRatios:WAN_ASPECT_RATIOS,maxSeconds:30,minImages:0,maxImages:4,audio:true,secondRate:0.14,rates:{"480p":0.068,"1080p":0.28},description:"Wan's Prime option for creating new videos from a prompt, photos, or a clip, with optional generated sound. Up to 30 seconds at 1080p.",bestFor:"Trying an alternative to Wan 3.0 for new scenes guided by your references. Supports the same lengths and shapes at a higher per-second cost."},
   {id:"kling-o3-edit",name:"Kling O3 Edit",endpoint:"kling-video/o3/video-edit",kind:"kling-edit",video:"required",resolutions:["1080p","720p"],maxSeconds:10,minImages:0,maxImages:4,audio:false,secondRate:0.126,description:"Detailed scene editing with optional reference photos. Pro mode for 1080p; use clips up to 10 seconds.",bestFor:"Precise, detailed edits to short clips (up to 10 seconds) in sharp 1080p, such as changing a single element exactly as described."},
   {id:"kling-3-motion-pro",name:"Kling 3.0 Motion Pro",endpoint:"kling-video/v3/motion-control/pro",kind:"motion",video:"required",resolutions:["1080p"],maxSeconds:30,minImages:1,maxImages:1,audio:false,secondRate:0.168,description:"Animate one reference photo with your video's movement in 1080p. This transfers motion rather than editing individual objects.",bestFor:"Making one character photo perform the movement in your video, in 1080p. Everything in the result comes from the photo, not the original scene."},
   {id:"seedance-2-reference",name:"Seedance 2.0 Create",endpoint:"bytedance/seedance-2.0/reference-to-video",textEndpoint:"bytedance/seedance-2.0/text-to-video",kind:"seedance-reference",video:"optional",resolutions:["1080p","720p","480p"],maxSeconds:15,minImages:0,maxImages:4,audio:true,tokenRate:0.0084,noVideoTokenRate:0.014,description:"Create a new video from a prompt, optionally guided by photos or a clip, up to 1080p and 15 seconds. Duration rounds up to whole seconds.",bestFor:"A lower-cost way to make a new video from a description, photos, or a clip, up to 15 seconds in 1080p."},
@@ -42,7 +48,7 @@ export const VIDEO_MODELS: VideoModel[] = [
   {id:"kling-2.6-motion-std",name:"Kling 2.6 Motion Standard",endpoint:"kling-video/motion-control/std",kind:"motion",video:"required",resolutions:["720p"],maxSeconds:30,minImages:1,maxImages:1,audio:false,secondRate:0.07,description:"A lower-cost option for transferring motion to one reference photo at 720p.",bestFor:"The lowest-cost way to animate one photo with your video’s movement, at 720p. Good for quick drafts."},
 ];
 export const FEATURED_VIDEO_MODELS = VIDEO_MODELS.filter((m) => m.featured);
-export const DEFAULT_VIDEO_MODEL = "genjutsu-object";
+export const DEFAULT_VIDEO_MODEL = "genjutsu-motion";
 export function getVideoModel(id: string): VideoModel {
   const model = VIDEO_MODELS.find(m => m.id === id);
   if (!model) throw new Error("Choose a supported video model.");
@@ -57,6 +63,13 @@ export function bestResolution(model: VideoModel, fullHd = true): VideoResolutio
 export function modelRate(model: VideoModel, resolution: VideoResolution, hasVideo = true) {
   if (!hasVideo && model.noVideoTokenRate !== undefined) return model.noVideoRates?.[resolution] ?? model.noVideoTokenRate;
   return model.rates?.[resolution] ?? model.secondRate ?? model.tokenRate!;
+}
+export function modelAspectRatios(model: VideoModel): readonly AspectRatio[] {
+  return model.aspectRatios ?? ASPECT_RATIOS;
+}
+export function validateModelAspectRatio(model: VideoModel, aspectRatio: string) {
+  if (!modelAspectRatios(model).includes(aspectRatio as AspectRatio))
+    throw new Error(`${model.name} does not support ${aspectRatio}. Choose an available video shape.`);
 }
 export function modelEndpoint(model: VideoModel, input: { hasVideo: boolean; imageCount: number }) {
   return !input.hasVideo && !input.imageCount && model.textEndpoint ? model.textEndpoint : model.endpoint;
@@ -75,12 +88,22 @@ export function modelRequest(model: VideoModel, input: {prompt:string;videoUrl:s
   // stored prompt keeps the person's own wording and retries rewrite it the same way.
   const prompt=resolvePromptReferences(input.prompt,imageUrls.length,!!videoUrl);
   const images=imageUrls.length?{image_urls:imageUrls}:{};
+  if (!videoUrl) validateModelAspectRatio(model, input.aspectRatio ?? "16:9");
+  if (model.kind === "wan-reference") {
+    const aspect = media.width / media.height > 1.2 ? "16:9" : media.height / media.width > 1.2 ? "9:16" : "1:1";
+    return {
+      prompt, ...images, ...(videoUrl ? { video_urls: [videoUrl] } : {}),
+      resolution, generate_audio: generateAudio, duration: Math.ceil(media.duration),
+      aspect_ratio: videoUrl ? aspect : input.aspectRatio ?? "16:9",
+      enable_thinking: false,
+    };
+  }
   // Without a video, Seedance creates at the chosen shape and length (text-to-video when
   // there are no photos either; reference-to-video with only photos otherwise).
-  if(!videoUrl)return {prompt,...images,resolution,generate_audio:generateAudio,duration:Math.ceil(media.duration),aspect_ratio:input.aspectRatio??"16:9",...(model.id.startsWith("seedance-2.5")?{bitrate_mode:"standard"}:{})};
+  if(!videoUrl)return {prompt,...images,resolution,generate_audio:generateAudio,duration:Math.ceil(media.duration),aspect_ratio:input.aspectRatio??"16:9",...(model.id.startsWith("seedance-2.5")?{bitrate_mode:"high"}:{})};
   const aspect=media.width/media.height > 1.2 ? "16:9" : media.height/media.width > 1.2 ? "9:16" : "1:1";
   if(model.kind==="motion")return {prompt,video_url:videoUrl,image_url:imageUrls[0],character_orientation:"video",keep_original_sound:"no"};
   if(model.kind==="genjutsu")return {prompt,video_url:videoUrl,image_urls:imageUrls,resolution};
   if(model.kind.startsWith("kling"))return {prompt,video_urls:[videoUrl],...images,mode:resolution==="1080p"?"pro":"std",...(model.kind==="kling-reference"?{duration:Math.ceil(media.duration),aspect_ratio:aspect}:{})};
-  return {prompt,...images,resolution,generate_audio:generateAudio,...(model.kind==="seedance-edit"?{video_url:videoUrl}:{video_urls:[videoUrl],duration:Math.ceil(media.duration),aspect_ratio:aspect}),...(model.id.startsWith("seedance-2.5")?{bitrate_mode:"standard"}:{})};
+  return {prompt,...images,resolution,generate_audio:generateAudio,...(model.kind==="seedance-edit"?{video_url:videoUrl}:{video_urls:[videoUrl],duration:Math.ceil(media.duration),aspect_ratio:aspect}),...(model.id.startsWith("seedance-2.5")?{bitrate_mode:"high"}:{})};
 }

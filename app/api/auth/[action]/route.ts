@@ -90,7 +90,7 @@ export async function POST(
       });
       if (error)
         throw new ApiError(
-          "We couldn’t send a password reset email right now. Please try again later or contact admin@polidori.dev.",
+          "We couldn’t send a password reset email right now. Please try again later or contact contact@polidori.dev.",
           503,
         );
       return noStore({

@@ -1,3 +1,4 @@
+import { maintainInstagram } from "@/lib/instagram/server";
 import { timingSafeEqual } from "node:crypto";
 import { admin, checked } from "@/lib/supabase/server";
 import { stripe, billingEnabled } from "@/lib/commerce/stripe";
@@ -140,6 +141,7 @@ export async function POST(request: Request) {
       }
     }
   }
+  try { await maintainInstagram(); } catch { counts.errors++; }
   try { await cleanCommunityUploads(); } catch { counts.errors++; }
   return Response.json(counts, {
     status: counts.errors ? 207 : 200,

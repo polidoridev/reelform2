@@ -37,10 +37,12 @@ export function SceneVideo({
   scene,
   paused,
   className = "",
+  label,
 }: {
-  scene: Scene;
+  scene: Pick<Scene, "video" | "poster" | "title">;
   paused: boolean;
   className?: string;
+  label?: string;
 }) {
   const ref = useRef<HTMLVideoElement>(null);
   // Posters and clips load only as the gallery approaches the viewport, keeping
@@ -63,7 +65,7 @@ export function SceneVideo({
       playsInline
       preload="none"
       poster={near ? scene.poster : undefined}
-      aria-label={`AI concept: ${scene.title}`}
+      aria-label={label ?? `AI concept: ${scene.title}`}
     />
   );
 }

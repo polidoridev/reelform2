@@ -1,0 +1,72 @@
+{
+  "checkedAt": "2026-10-12",
+  "scope": "Public Higgsfield API additions relevant to Reelform's video studio",
+  "catalog": "https://open.higgsfield.ai/explore",
+  "implemented": [
+    {
+      "model": "Wan 3.0 Create",
+      "id": "wan-3-reference",
+      "referenceDocs": "https://open.higgsfield.ai/models/alibaba/wan-3.0/reference-to-video/api-reference",
+      "textDocs": "https://open.higgsfield.ai/models/alibaba/wan-3.0/text-to-video/api-reference",
+      "pricingSource": "https://open.higgsfield.ai/models/alibaba/wan-3.0/reference-to-video/playground",
+      "standardUsdPerOutputSecond": { "480p": 0.05, "720p": 0.10, "1080p": 0.20 }
+    },
+    {
+      "model": "Wan 3.0 Prime Create",
+      "id": "wan-3-prime-reference",
+      "referenceDocs": "https://open.higgsfield.ai/models/alibaba/wan-3.0-prime/reference-to-video/api-reference",
+      "textDocs": "https://open.higgsfield.ai/models/alibaba/wan-3.0-prime/text-to-video/api-reference",
+      "pricingSource": "https://open.higgsfield.ai/models/alibaba/wan-3.0-prime/reference-to-video/playground",
+      "standardUsdPerOutputSecond": { "480p": 0.068, "720p": 0.14, "1080p": 0.28 }
+    }
+  ],
+  "integration": {
+    "durationSeconds": [4, 30],
+    "maxReferenceImages": 4,
+    "maxReferenceVideos": 1,
+    "aspectRatios": ["16:9", "9:16", "1:1", "4:3", "3:4"],
+    "planLimitsStillApply": true,
+    "generatedAudioOptional": true,
+    "billing": "Round output duration up to whole seconds. Use standard prices; temporary discounts and cashback are not assumed.",
+    "verification": "Documented schemas, local unit tests, and browser contract tests with simulated services. Account access and paid generation output are not verified."
+  },
+  "katana": {
+    "releaseSource": "https://higgsfield.ai/creator-hub/changelog",
+    "releaseDate": "2026-10-08",
+    "publishedAccess": "Preset workflow through MCP and Claude",
+    "publicRestEndpoint": null,
+    "status": "No documented public REST endpoint verified in the current API catalog. Do not infer unavailability solely from the supplementary OpenAPI specification.",
+    "implemented": false,
+    "renamed": false,
+    "templateVideosCopied": false,
+    "templateRedistributionPermission": "Not verified for the Katana gallery assets",
+    "requiredBeforeIntegration": [
+      "Documented developer endpoint and account access, request schema and billing",
+      "Asset-specific permission for external hosting, commercial display, and reuse, including audio and likeness rights",
+      "Branding and attribution requirements for any proposed Reelform feature name"
+    ]
+  },
+  "otherCatalogFindings": [
+    {
+      "model": "Grok Imagine Video 1.5",
+      "source": "https://open.higgsfield.ai/models/xai/grok-imagine-video/v1.5/reference-to-video/api-reference",
+      "status": "Not added: documented request schema has no video input or generated-audio toggle; requires a separate creation-only UI and audio handling."
+    },
+    {
+      "model": "MiniMax H3",
+      "source": "https://open.higgsfield.ai/models/minimax/h3/text-to-video/playground",
+      "status": "Not added: documented 2K output is outside Reelform's existing resolution and plan contracts."
+    }
+  ],
+  "rightsReview": {
+    "legalClearance": false,
+    "apiTerms": "https://open.higgsfield.ai/terms-of-service",
+    "apiTermsSections": ["3.1", "4.1", "4.2"],
+    "apiTermsFinding": "Developer applications must add material functionality. Standalone or substantially similar/competing generation services require prior written consent. Reelform's commercial model needs review against these restrictions; API access is not permission to resell.",
+    "termsOfUse": "https://higgsfield.ai/terms-of-use-agreement",
+    "termsOfUseSections": ["4.1", "4.4", "11.8"],
+    "brandingAndAssetsFinding": "Commercial use of one's own outputs does not establish rights to redistribute gallery examples. Preserve proprietary notices and required attribution; do not imply endorsement. No blanket Katana rebranding permission was verified.",
+    "openWorksLicense": "https://higgsfield.ai/licences/owl-p-1.0",
+    "openWorksFinding": "Applies only to works actually released under that license with their creator notice and asset exclusions. Its existence does not license the whole Katana gallery."
+  }
+}

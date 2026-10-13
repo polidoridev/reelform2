@@ -1,0 +1,23 @@
+{
+  "status": "draft-awaiting-review",
+  "subject": "Your next viral video idea starts here",
+  "preheader": "Recast a performance with Higgsfield Genjutsu. Make it yours.",
+  "from": "Reelform <admin@polidori.dev>",
+  "replyTo": "contact@polidori.dev",
+  "audienceSnapshot": {
+    "date": "2026-10-02",
+    "signups": 243,
+    "optedInUniqueEmails": 8,
+    "subscriptionPitch": 7,
+    "existingSubscriber": 1
+  },
+  "requirements": [
+    "User review before send",
+    "Business mailing address",
+    "Working email provider credentials",
+    "Refresh consent, suppression and subscription status before send",
+    "Replace unsubscribe_url per recipient and add one-click unsubscribe headers",
+    "Send individually with durable deduplication; do not expose recipients"
+  ],
+  "sendCount": 0
+}

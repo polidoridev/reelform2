@@ -175,6 +175,7 @@ export function PlanCards({
                   : `${p.concurrency} videos at a time`}
               </li>
               <li><Check />Up to {p.maxImages} reference photo{p.maxImages === 1 ? "" : "s"} per video</li>
+              {p.id !== "starter" && <li><Check />Instagram scheduling & automatic posting</li>}
               <li><Check />{p.generatedAudio ? "AI-generated audio on supported models" : "Silent video transformations"}</li>
               <li>
                 <Check />
@@ -240,11 +241,12 @@ export default function Pricing() {
             <em>Your kind of plan.</em>
           </h1>
           <p>
-            Start with a subscription. Create at your pace.
+            Try your first transformation free.
             <br />
-            Add extra credits whenever inspiration strikes.
+            One short 480p edit for eligible new users. Limited pilot; no card needed.
           </p>
         </div>
+        <p style={{ textAlign: "center", marginBottom: "2rem" }}><Link prefetch={false} href="/studio" className="account-secondary">Try a free transformation</Link></p>
         {!ready && (
           <div className="account-notice">
             Subscriptions are coming soon. Explore the plans below while
