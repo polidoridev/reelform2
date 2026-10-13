@@ -675,7 +675,7 @@ export function useStudioChat(cinema = false) {
       disposed = true;
       clearTimeout(timer);
     };
-  }, [jobToken, jobFinished, pollAttempt]);
+  }, [jobToken, jobFinished, pollAttempt, ACTIVE_JOB]);
 
   useEffect(() => {
     if (background && userId) saveBackgroundVideos(background, userId);
