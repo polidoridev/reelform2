@@ -264,13 +264,7 @@ export default function Studio({ cinema = false }: { cinema?: boolean }) {
         </button>
         <nav aria-label="Studio navigation">
           <Link prefetch={false} href="/studio" aria-current={cinema ? undefined : "page"}>
-            <AudioLines size={17} /> Video studio
-          </Link>
-          <Link prefetch={false} href="/cinemalab" aria-current={cinema ? "page" : undefined}>
-            <Film size={17} /> CinemaLab
-          </Link>
-          <Link prefetch={false} href="/aura">
-            <Sparkles size={17} /> Aura edits
+            <AudioLines size={17} /> Motion Transfer
           </Link>
           <Link prefetch={false} href="/account?tab=creations">
             <Film size={17} /> My creations
@@ -279,6 +273,14 @@ export default function Studio({ cinema = false }: { cinema?: boolean }) {
             <Users size={17} /> Community
           </Link>
         </nav>
+        <details className="chat-other-tools" open={cinema || undefined}>
+          <summary>More video tools</summary>
+          <nav aria-label="Other video tools">
+            <Link prefetch={false} href="/studio?useCase=product-swap"><SlidersHorizontal size={17} /> Object Swap</Link>
+            <Link prefetch={false} href="/cinemalab" aria-current={cinema ? "page" : undefined}><Film size={17} /> CinemaLab</Link>
+            <Link prefetch={false} href="/aura"><Scissors size={17} /> Aura video editor</Link>
+          </nav>
+        </details>
         {s.backgroundVideos.length > 0 && (
           <div className="chat-sidebar-ideas chat-background-list">
             <span>YOUR OTHER VIDEOS</span>
@@ -307,8 +309,8 @@ export default function Studio({ cinema = false }: { cinema?: boolean }) {
           </div>
         )}
         {!cinema && <div className="chat-sidebar-ideas">
-          <span>START WITH AN IDEA</span>
-          {(s.trialMode ? TRIAL_PROMPTS : useCases).map((scene) => (
+          <span>{s.trialMode ? "FREE EDIT IDEAS" : "MOTION PRESETS"}</span>
+          {(s.trialMode ? TRIAL_PROMPTS : useCases.filter(item => item.model === "genjutsu-motion" && item.sourceVideo)).map((scene) => (
             <button
               key={scene.id}
               disabled={s.busy}
@@ -373,7 +375,7 @@ export default function Studio({ cinema = false }: { cinema?: boolean }) {
             >
               <Menu size={21} />
             </button>
-            <span>{cinema ? "CinemaLab" : "Video studio"}</span>
+            <span>{cinema ? "CinemaLab" : s.trialMode ? "Free Seedance edit" : s.selectedModel.shortName ?? s.selectedModel.name}</span>
             <span className="chat-header-separator">/</span>
             <small>
               {hasConversation ? "Your conversation" : "New creation"}
@@ -387,7 +389,7 @@ export default function Studio({ cinema = false }: { cinema?: boolean }) {
             <Sparkles size={14} />
             {s.isAdmin
               ? "Admin access"
-              : !cinema && s.trial?.state === "available" ? "Free transformation"
+              : !cinema && s.trialMode && s.trial?.state === "available" ? "Free transformation"
               : s.creditBalance === null
                 ? "My credits"
                 : `${s.creditBalance.toLocaleString()} credits`}
@@ -427,6 +429,7 @@ export default function Studio({ cinema = false }: { cinema?: boolean }) {
         >
           {!hasConversation && (
             <section className="chat-welcome">
+              {cinema ? <>
               <span className="chat-welcome-icon">
                 <AudioLines size={30} strokeWidth={1.7} />
               </span>
@@ -437,6 +440,10 @@ export default function Studio({ cinema = false }: { cinema?: boolean }) {
               <p>
                 {cinema ? "Plan your shots, then bring them to life with words, photos, or a reference clip." : <>Start with your video. Add a little inspiration.<br />Tell us what you want to change.</>}
               </p>
+              </> : <>
+              <h1>{s.trialMode ? "Try a free edit." : s.selectedModel.id === "genjutsu-motion" ? <>Motion <span>Transfer</span></> : s.selectedModel.shortName ?? s.selectedModel.name}</h1>
+              <p>{s.trialMode ? "Upload a 4–5 second clip and choose a look to try." : s.selectedModel.id === "genjutsu-motion" ? <>Upload your movement. Add your character photo.<br />Review the cost and generate.</> : s.selectedModel.description}</p>
+              </>}
             </section>
           )}
           {hasConversation && (
@@ -553,16 +560,23 @@ export default function Studio({ cinema = false }: { cinema?: boolean }) {
             {cinema && <CinemaLab disabled={s.busy} prompt={s.prompt} onApply={(prompt) => { s.setPrompt(prompt); promptRef.current?.focus(); }} />}
             {s.restoring && <div className="chat-notice" role="status"><RefreshCw size={16} /><p>Opening your saved chat and original uploads…</p></div>}
             {s.restoreError && <div className="chat-notice" role="alert"><Info size={16} /><p>{s.restoreError}</p><button type="button" onClick={s.retryRestore}>Retry opening chat</button></div>}
-            {cinema && s.trial?.state === "available" && !s.isAdmin && <div className="chat-notice"><Info size={16} /><p>CinemaLab uses your credit balance. Your free video transformation is available in <Link prefetch={false} href="/studio">Video studio</Link>.</p></div>}
-            {!cinema && s.trial && s.trial.state !== "ineligible" && !s.isAdmin && (
+            {cinema && s.trial?.state === "available" && !s.isAdmin && <div className="chat-notice"><Info size={16} /><p>CinemaLab uses your credit balance. Your free video transformation is available in <Link prefetch={false} href="/studio?trial=1">the free edit trial</Link>.</p></div>}
+            {!cinema && s.trialMode && s.trial && s.trial.state !== "ineligible" && !s.isAdmin && (
               <div className="chat-notice" role="status">
                 <Sparkles size={16} />
                 <p>{trialMessage(s.trial.state)}{" "}
                   {s.trial.state === "available" && <>Seedance 2.5 Edit · Up to one reference photo. {s.trial.attemptsRemaining < 3 && `${s.trial.attemptsRemaining} attempts remaining.`} </>}
                   <Link prefetch={false} href="/pricing">{s.trial.state === "completed" ? "Keep creating" : "Explore plans"}</Link>
-                  {s.trialMode && s.trial.state !== "available" && s.trial.state !== "active" && <> · <button type="button" className="chat-inline-button" onClick={s.usePaidSettings}>Use paid settings</button></>}
+                  {!s.busy && <> · <button type="button" className="chat-inline-button" onClick={s.usePaidSettings}>Back to Motion Transfer</button></>}
                 </p>
               </div>
+            )}
+            {!cinema && !s.trialMode && s.trial?.state === "available" && !s.isAdmin && (
+              <details className="chat-trial-option">
+                <summary>Want to try a free edit first?</summary>
+                <p>The free trial uses Seedance 2.5 Edit for a 4–5 second 480p edit. Genjutsu Motion Transfer uses paid credits.</p>
+                <button type="button" className="chat-inline-button" disabled={s.busy} onClick={s.startFreeTrial}>Try a free Seedance edit</button>
+              </details>
             )}
             {s.authenticated === false && (
               <div className="chat-notice">
@@ -900,7 +914,7 @@ export default function Studio({ cinema = false }: { cinema?: boolean }) {
                     aria-label="Send and generate video"
                     disabled={!canSend}
                   >
-                    <span>{s.busy ? "Generating" : "Send"}</span>
+                    <span>{s.busy ? "Generating" : cinema ? "Send" : "Generate video"}</span>
                     <ArrowUp size={19} />
                   </button>
                 </div>
@@ -1094,7 +1108,7 @@ export default function Studio({ cinema = false }: { cinema?: boolean }) {
                   ? "One successful transformation is free. Failed attempts can be retried, up to three attempts total while the pilot is available."
                   : s.isAdmin
                   ? "No Reelform credits charged. Provider usage is billed to your Higgsfield account."
-                  : "Credits are used when you press Send. Failed generations return your credits."}
+                  : `Credits are used when you press ${cinema ? "Send" : "Generate video"}. Failed generations return your credits.`}
               </p>
             )}
             <p className="chat-credit-explanation">

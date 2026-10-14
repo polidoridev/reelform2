@@ -30,7 +30,7 @@ test("all catalog models have a valid adapter and a positive, model-specific quo
   const payload=modelRequest(model,{...base,resolution});
   assert.equal(payload.prompt,base.prompt);
  }
- assert.deepEqual(FEATURED_VIDEO_MODELS.map(m=>m.id),["genjutsu-motion","genjutsu-object"]);
+ assert.deepEqual(FEATURED_VIDEO_MODELS.map(m=>m.id),["genjutsu-motion"]);
  assert.ok(FEATURED_VIDEO_MODELS.some(m=>m.id===DEFAULT_VIDEO_MODEL));
  assert.ok(VIDEO_MODELS.every(m=>m.bestFor.length>20),"every model explains what it is best at");
 });

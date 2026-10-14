@@ -1,15 +1,15 @@
 export const faqs = [
   [
-    "Can I try Reelform for free?",
-    "Eligible new users can try one successful transformation with a verified email and no credit card. Upload a 4–5 second clip for Seedance 2.5 Edit at 480p, with original audio and up to one reference photo. Failed attempts can be retried up to three attempts total. The pilot is limited to 100 users and a shared budget, so availability may end sooner. One trial per person; creating duplicate accounts does not grant more trials. Other models and settings require credits.",
-  ],
-  [
     "What is Reelform?",
     "Reelform is an AI video studio for motion transfer and object swaps. Upload footage and reference images to create character remixes, product variations, site concepts, and other edits using Genjutsu and additional video models.",
   ],
   [
     "Which Genjutsu tool should I use?",
-    "Choose Motion Transfer when a source performance should guide a character from your reference image. Choose Object Swap when you want to replace an object in an existing shot. Both need a source video and at least one reference image; the studio shows the available settings and cost. More models are ranked in the studio, with a note on what each is best at.",
+    "Choose Motion Transfer when a source performance should guide a character from your reference image. Choose Object Swap when you want to replace an object in an existing shot. Motion Transfer is selected when you open the studio. Find Object Swap and other models under Other tools & models. Both Genjutsu tools need a source video and at least one reference image; the studio shows the available settings and cost.",
+  ],
+  [
+    "Is Motion Transfer included in the free trial?",
+    "Genjutsu Motion Transfer requires paid credits. The optional free trial uses Seedance 2.5 Edit, a different tool. Eligible new users can try one successful transformation with a verified email and no credit card. Upload a 4–5 second clip for Seedance 2.5 Edit at 480p, with original audio and up to one reference photo. Failed attempts can be retried up to three attempts total. The pilot is limited to 100 users and a shared budget, so availability may end sooner. One trial per person; creating duplicate accounts does not grant more trials. Other models and settings require credits.",
   ],
   [
     "Do I keep the rights to my videos?",
@@ -17,7 +17,7 @@ export const faqs = [
   ],
   [
     "Can I make a video without uploading one?",
-    "Yes. Choose Seedance 2.5 Create or Seedance 2.0 Create under More models and describe the video you want. You can add photos to guide it, or a clip for inspiration, but neither is required. Pick the length and shape (landscape, vertical, square, and more) in the settings. Genjutsu Motion Transfer and Object Swap always need your video and at least one photo, and editing models need a video to edit.",
+    "Yes. Open CinemaLab to create a new video, or choose a Create model under Other tools & models in the studio. You can add photos to guide it, or a clip for inspiration, but neither is required. Pick the length and shape (landscape, vertical, square, and more) in the settings. Genjutsu Motion Transfer and Object Swap always need your video and at least one photo, and editing models need a video to edit.",
   ],
   [
     "What video can I upload?",
@@ -57,6 +57,6 @@ export const faqs = [
   ],
   [
     "Are the examples real transformations?",
-    "The landing-page clips are original AI-generated concept scenes created with Higgsfield. They are visual inspiration, not before-and-after edits or demonstrations of Genjutsu Motion Transfer or Object Swap.",
+    "The homepage shows source clips you can use with the motion presets. They are starting footage, not generated results or before-and-after demonstrations. Add your own reference photos in the studio to recast them.",
   ],
 ];

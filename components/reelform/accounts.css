@@ -1500,3 +1500,10 @@
 
 .creation-card > a { display: block; }
 .creation-card > a:focus-visible { outline: 3px solid var(--accent, #4569ee); outline-offset: 3px; }
+
+.motion-cost-table { margin: 24px 0 14px; overflow-x: auto; }
+.motion-cost-table table { width: 100%; border-collapse: collapse; font-size: 12px; font-variant-numeric: tabular-nums; }
+.motion-cost-table caption { text-align: left; font-weight: 650; padding-bottom: 12px; color: #26334f; }
+.motion-cost-table th, .motion-cost-table td { padding: 12px 8px; text-align: right; border-bottom: 1px solid #e1e5ef; }
+.motion-cost-table th:first-child { text-align: left; }
+.motion-cost-table thead { color: #576079; background: #f5f7fc; }

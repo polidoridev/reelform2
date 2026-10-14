@@ -1557,3 +1557,12 @@
 }
 
 .chat-preset-hint { margin: 12px 0; color: var(--chat-muted, #59647a); font-size: 13px; line-height: 1.6; }
+
+/* Secondary tools and the optional trial stay out of the main upload flow. */
+.chat-other-tools { margin: 10px 0 20px; }
+.chat-other-tools > summary { cursor: pointer; color: #59627a; font-size: 12px; padding: 10px 12px; }
+.chat-other-tools[open] > summary { margin-bottom: 4px; }
+.chat-trial-option { font-size: 12px; line-height: 1.7; color: #59627a; margin: 0 0 15px; }
+.chat-trial-option > summary { cursor: pointer; padding: 10px 0; }
+.chat-trial-option p { margin: 0 0 8px; }
+.chat-other-tools summary:focus-visible, .chat-trial-option summary:focus-visible { outline: 2px solid #4169e1; outline-offset: 3px; border-radius: 6px; }

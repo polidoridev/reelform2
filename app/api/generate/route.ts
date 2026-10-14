@@ -1,3 +1,5 @@
+import { quoteVideo, quoteCreation } from "@/lib/commerce/pricing";
+import { validateQuotedCredits } from "@/lib/commerce/economics";
 import { archiveGenerationInputs } from "@/lib/commerce/generation-inputs";
 import { trialDevice } from "@/lib/commerce/trial-server";
 import { validateTrialSettings, trialMessage, type TrialStatus } from "@/lib/commerce/trial";
@@ -49,8 +51,17 @@ export async function POST(request: Request) {
       throw new ApiError(
         "Your video quote changed. Get a fresh quote before generating.",
       );
+    // Reprice on the server before reserving any credits or submitting a paid job.
+    // A signed quote can outlive a deployment that changes provider rates.
+    let currentQuote;
     try {
-      if (quote.trial === true) validateTrialSettings({ ...p, duration: quote.media.duration, imageCount: images.length, hasVideo: !!video }, quote.estimatedProviderUsd);
+      currentQuote = video
+        ? quoteVideo(quote.media, p.resolution, p.model)
+        : quoteCreation(quote.media.duration, p.resolution, quote.aspectRatio, p.model);
+      validateQuotedCredits(quote.credits, currentQuote.credits, isReelformAdmin(user) || quote.trial === true);
+    } catch (error) { throw new ApiError(error instanceof Error ? error.message : "Refresh your generation quote.", 409); }
+    try {
+      if (quote.trial === true) validateTrialSettings({ ...p, duration: quote.media.duration, imageCount: images.length, hasVideo: !!video }, currentQuote.estimatedProviderUsd);
       validateVideoEntitlements(videoEntitlements(account, isReelformAdmin(user)), { ...p, duration: quote.media.duration, imageCount: images.length });
       modelRequest(getVideoModel(p.model), {prompt:p.prompt,videoUrl:video?.url ?? null,imageUrls:images.map(i=>i.url),resolution:p.resolution,generateAudio:p.generateAudio,media:quote.media,aspectRatio:quote.aspectRatio});
     } catch (error) { throw new ApiError(error instanceof Error ? error.message : "Invalid model settings."); }
@@ -70,7 +81,7 @@ export async function POST(request: Request) {
         sourceNames: { video: p.videoName, images: p.imageNames },
         sourceTypes: { video: video?.type, images: images.map(image => image.type) },
         sourceBytes: { video: video?.bytes, images: images.map(image => image.bytes) },
-        estimatedProviderUsd: quote.estimatedProviderUsd,
+        estimatedProviderUsd: currentQuote.estimatedProviderUsd,
         videoUrl: video?.url ?? null,
         imageUrls: images.map((i) => i.url),
         generateAudio: p.generateAudio,

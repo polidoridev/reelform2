@@ -85,7 +85,8 @@ try {
   assert.equal(await page.getByRole("combobox", { name: "Output quality" }).innerText(), "1080p Full HD");
   await waitFor(() => !document.querySelector('[aria-label="Send and generate video"]').disabled);
   assert.equal(uploadCount, beforeSettings, "switching to Full HD reuses uploaded video");
-  await page.getByRole("radio", { name: "Object Swap" }).click();
+  await page.locator(".chat-more-models").click();
+  await page.getByRole("button", { name: /^Genjutsu Object Swap Up to/ }).click();
   quoteDelay = 800;
   await page.getByRole("combobox", { name: "Output quality" }).click();
   await page.getByRole("option", { name: "480p", exact: true }).click();

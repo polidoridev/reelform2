@@ -1,454 +1,113 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
-import {
-  motion,
-  useReducedMotion,
-  useScroll,
-  useTransform,
-} from "motion/react";
-import {
-  ArrowUpRight,
-  ArrowRight,
-  Sparkles,
-  Play,
-  Pause,
-  Upload,
-  ImagePlus,
-  WandSparkles,
-  Plus,
-  Minus,
-  Menu,
-  X,
-  Check,
-  Aperture,
-} from "lucide-react";
-import Brand from "./brand";
+
+import { useState } from "react";
 import Link from "next/link";
-import { scenes } from "@/lib/scenes";
+import { ArrowUpRight, ArrowRight, Film, ImagePlus, Menu, Minus, Plus, Replace, Scissors, Upload, WandSparkles, X } from "lucide-react";
+import Brand from "./brand";
 import { useCases } from "@/lib/use-cases";
 import { faqs } from "./faqs";
-import {
-  WorldGallery,
-  Reveal,
-  SceneVideo,
-  ParallaxFrame,
-} from "./motion-scenes";
 import { CookieSettingsButton } from "./cookie-consent";
 import "./cinema.css";
+import "./motion-home.css";
 
-// FAQ rich results. Answers are static strings from faqs.ts.
+const presets = useCases.filter(item => item.model === "genjutsu-motion" && item.sourceVideo);
 const faqSchema = {
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  mainEntity: faqs.map(([question, answer]) => ({
-    "@type": "Question",
-    name: question,
-    acceptedAnswer: { "@type": "Answer", text: answer },
-  })),
+  "@context": "https://schema.org", "@type": "FAQPage",
+  mainEntity: faqs.map(([question, answer]) => ({ "@type": "Question", name: question, acceptedAnswer: { "@type": "Answer", text: answer } })),
 };
-
-const examplePrompt =
-  "“Transfer this dancer’s movement to the character in my reference photo.”";
-
 const steps = [
-  {
-    icon: Upload,
-    title: "Start with your footage.",
-    description:
-      "A dance clip, a site walkthrough, or a product shot. Upload a short video with a clear subject and steady motion.",
-    detail: "Your clip is the starting point",
-  },
-  {
-    icon: ImagePlus,
-    title: "Choose what to change.",
-    description:
-      "Choose Motion Transfer for a new character or Object Swap for a replacement object. Add reference photos and describe the edit.",
-    detail: "A reference image + your direction",
-  },
-  {
-    icon: WandSparkles,
-    title: "Generate your next edit.",
-    description:
-      "Review the credit cost, generate your video, and check the result. Refine your references or prompt, then download the version you like.",
-    detail: "Preview, refine, download",
-  },
+  { icon: Upload, title: "Upload the movement", description: "Start with a clip of the performance you want to keep. Trim it in the studio if needed." },
+  { icon: ImagePlus, title: "Add your character", description: "Upload a clear reference photo. Describe who to replace and what should stay the same." },
+  { icon: WandSparkles, title: "Review and generate", description: "Choose your quality, check the exact credit cost, then generate and download your video." },
 ];
+
 export default function Landing() {
   const [menu, setMenu] = useState(false);
-  const [paused, setPaused] = useState(true);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
-  const reduced = useReducedMotion();
-  const hero = useRef<HTMLElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: hero,
-    offset: ["start start", "end start"],
-  });
-  const heroY = useTransform(scrollYProgress, [0, 0.65], [0, 100]);
-  const heroOpacity = useTransform(scrollYProgress, [0, 0.38], [1, 0]);
-  useEffect(() => {
-    // Read the browser preference after hydration to keep SSR deterministic.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setPaused(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
-  }, []);
   return (
-    <div className="cinema-page">
-      <a className="skip-link" href="#main">
-        Skip to content
-      </a>
+    <div className="cinema-page motion-home">
+      <a className="skip-link" href="#main">Skip to content</a>
       <header className="header">
         <div className="nav-wrap">
           <Brand />
-          <nav
-            className={menu ? "nav-links is-open" : "nav-links"}
-            aria-label="Main navigation"
-          >
-            <a href="#explore" onClick={() => setMenu(false)}>
-              Explore
-            </a>
-            <Link prefetch={false} href="/cinemalab" onClick={() => setMenu(false)}>
-              CinemaLab
-            </Link>
-            <Link prefetch={false} href="/aura" onClick={() => setMenu(false)}>
-              Aura edits
-            </Link>
-            <a href="#how-it-works" onClick={() => setMenu(false)}>
-              How it works
-            </a>
-            <a href="#faq" onClick={() => setMenu(false)}>
-              FAQ
-            </a>
-            <a href="/pricing">Pricing</a>
-            <Link prefetch={false} href="/community">Community</Link>
-            <a href="/account">My account</a>
+          <nav className={menu ? "nav-links is-open" : "nav-links"} aria-label="Main navigation">
+            <a href="#how-it-works" onClick={() => setMenu(false)}>How it works</a>
+            <a href="#explore" onClick={() => setMenu(false)}>Motion presets</a>
+            <Link prefetch={false} href="/pricing">Pricing</Link>
+            <a href="#more-tools" onClick={() => setMenu(false)}>More tools</a>
+            <Link prefetch={false} href="/account">My account</Link>
           </nav>
-          <a href="/studio" className="button button-small">
-            Start creating <ArrowUpRight size={16} />
-          </a>
-          <button
-            className="menu-toggle icon-button"
-            aria-label={menu ? "Close menu" : "Open menu"}
-            aria-expanded={menu}
-            onClick={() => setMenu(!menu)}
-          >
+          <Link prefetch={false} href="/studio" className="button button-small">Motion Transfer <ArrowUpRight size={16} /></Link>
+          <button className="menu-toggle icon-button" aria-label={menu ? "Close menu" : "Open menu"} aria-expanded={menu} onClick={() => setMenu(!menu)}>
             {menu ? <X /> : <Menu />}
           </button>
         </div>
       </header>
       <main id="main">
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
-        />
-        <section ref={hero} className="cinema-hero">
-          <div className="hero-gradient" aria-hidden="true" />
-          <motion.div
-            className="hero-copy"
-            style={reduced ? {} : { y: heroY, opacity: heroOpacity }}
-          >
-            <motion.div
-              className="eyebrow"
-              initial={false}
-              animate={{ opacity: 1 }}
-            >
-              <Sparkles size={14} /> AI MOTION TRANSFER & OBJECT SWAP
-            </motion.div>
-            {/* Visible in the server HTML so it paints before scripts load (it is the LCP element). */}
-            <h1 className="hero-rise">
-              Your footage.
-              <br className="mobile-break" /> <span>New possibilities.</span>
-            </h1>
-            <p className="hero-rise hero-rise-late">
-              Transfer motion to a character. Swap objects in a scene.
-              <br />
-              Create something for your audience, your clients, or just for fun.
-            </p>
-            <div className="director-prompt hero-prompt">
-              <span>
-                <Sparkles size={14} /> TRY THIS
-              </span>
-              <p>
-                <span className="sr-only">{examplePrompt}</span>
-                <span aria-hidden="true">
-                  {Array.from(examplePrompt.matchAll(/\S+/g), (match) => (
-                    <span key={match.index}>
-                      <span className="prompt-word">
-                        {Array.from(match[0], (letter, index) => (
-                          <span
-                            className="prompt-letter"
-                            key={index}
-                            style={{
-                              animationDelay: `${-(match.index + index) * 0.055}s`,
-                            }}
-                          >
-                            {letter}
-                          </span>
-                        ))}
-                      </span>{" "}
-                    </span>
-                  ))}
-                </span>
-              </p>
-              <a
-                href="/studio?useCase=character-remix"
-                aria-label="Try character motion transfer"
-              >
-                <ArrowUpRight size={20} />
-              </a>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
+        <section className="motion-hero" aria-labelledby="motion-heading">
+          <div className="motion-hero-copy">
+            <span className="section-label">GENJUTSU MOTION TRANSFER</span>
+            <h1 id="motion-heading">Your character.<br /><span>The same moves.</span></h1>
+            <p>Transfer a video’s movement to your character. Bring a clip, add a reference photo, and make it yours.</p>
+            <div className="motion-hero-actions">
+              <Link prefetch={false} href="/studio" className="button">Start motion transfer <ArrowUpRight size={18} /></Link>
+              <a href="#how-it-works" className="text-link">How it works <ArrowRight size={17} /></a>
             </div>
-            <motion.div
-              className="hero-buttons"
-              initial={reduced ? false : { opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-            >
-              <a href="/studio" className="button">
-                Try your first transformation free <ArrowUpRight size={18} />
-              </a>
-              <a href="#explore" className="hero-secondary">
-                <Play size={14} fill="currentColor" /> See what’s possible
-              </a>
-            </motion.div>
-            <p className="hero-reassurance">Plans from $19/month · Cancel anytime · You keep the rights to your videos</p>
-          </motion.div>
-          <div className="transfer-choices" aria-label="Choose your video tool">
-            <a href="/studio?useCase=character-remix">
-              <span className="section-label">GENJUTSU MOTION TRANSFER</span>
-              <h2>New character.<br />Same starting moves.</h2>
-              <p>Use a performance to guide a character from your reference photo. Film your own dance or performance, then recast it as an original character or a new look.</p>
-              <span className="text-link">Transfer motion <ArrowUpRight size={18} /></span>
-            </a>
-            <a href="/studio?useCase=product-swap">
-              <span className="section-label">GENJUTSU OBJECT SWAP</span>
-              <h2>Same shot.<br />Something new in it.</h2>
-              <p>Use reference photos to replace an object in your footage. Explore product variations, equipment concepts, and fresh looks.</p>
-              <span className="text-link">Swap an object <ArrowUpRight size={18} /></span>
-            </a>
-          </div>
-          <div className="cinema-credit">
-            <span>
-              <Aperture size={16} /> Directed by you. Powered by{" "}
-              <strong>Higgsfield.</strong>
-            </span>
-            <button onClick={() => setPaused(!paused)}>
-              {paused ? <Play size={12} /> : <Pause size={12} />}{" "}
-              {paused ? "Play previews" : "Pause previews"}
-            </button>
           </div>
         </section>
-        <section className="possibility-section">
-          <Reveal>
-            <span className="section-label">
-              ONE STUDIO. MANY WAYS TO CREATE.
-            </span>
-            <h2>
-              For the work you do.
-              <br />
-              <span>And the things you make.</span>
-            </h2>
-            <p>
-              A character remix for your feed. A visual concept for your next project.
-              <br />
-              Start with footage you already have and explore what it could become.
-            </p>
-          </Reveal>
+        <section className="motion-how" id="how-it-works" aria-labelledby="how-heading">
+          <div className="motion-section-heading">
+            <h2 id="how-heading">One clip. One photo. A new performance.</h2>
+            <p>Motion Transfer is ready when you open the studio.</p>
+          </div>
+          <ol className="motion-steps">
+            {steps.map((step, i) => <li key={step.title}><div><span>{i + 1}</span><step.icon size={22} strokeWidth={1.6} /></div><h3>{step.title}</h3><p>{step.description}</p></li>)}
+          </ol>
         </section>
-        <section className="use-case-section" aria-labelledby="use-case-title">
-          <h2 id="use-case-title">What will you make?</h2>
-          <div className="use-case-list">
-            {useCases.map((item) => (
-              <a key={item.id} href={`/studio?useCase=${item.id}`}>
-                {item.sourceVideo && item.poster ? (
-                  <SceneVideo
-                    scene={{ video: item.sourceVideo, poster: item.poster, title: item.title }}
-                    paused={paused}
-                    className="use-case-poster"
-                    label={`${item.shortLabel} source clip`}
-                  />
-                ) : item.poster ? (
-                  <Image unoptimized className="use-case-poster" src={item.poster} alt={`${item.shortLabel} source clip`} width={item.posterWidth ?? 1280} height={item.posterHeight ?? 720} loading="lazy" />
-                ) : null}
-                <span className="section-label">{item.audience}</span>
-                <h3>{item.title}</h3>
-                <p>{item.description}</p>
-                <span className="text-link">Try this idea <ArrowUpRight size={16} /></span>
-              </a>
-            ))}
+        <section className="motion-presets" id="explore" aria-labelledby="preset-heading">
+          <div className="motion-section-heading">
+            <h2 id="preset-heading">Need a starting clip?</h2>
+            <p>Pick a motion preset, then add your reference photos. These are source clips for you to recast.</p>
+          </div>
+          <div className="motion-preset-grid">
+            {presets.map(item => <article key={item.id}>
+              <Link prefetch={false} href={`/studio?useCase=${item.id}`} className="motion-preset-image" aria-label={`Use ${item.shortLabel} preset`}>
+                {/* Local preset posters retain their source framing without a remote image service. */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={item.poster} alt={`${item.shortLabel} source video`} width={item.posterWidth ?? 1280} height={item.posterHeight ?? 720} loading="lazy" />
+              </Link>
+              <div className="motion-preset-info"><h3>{item.shortLabel}</h3><span>{item.referenceCount} reference photos</span></div>
+              <Link prefetch={false} href={`/studio?useCase=${item.id}`} className="text-link">Use preset <ArrowUpRight size={16} /></Link>
+            </article>)}
           </div>
         </section>
-        <WorldGallery paused={paused} onToggle={() => setPaused(!paused)} />
-        <section className="workflow-section" id="how-it-works">
-          <div className="workflow-intro">
-            <Reveal>
-              <span className="section-label">
-                BRING A CLIP. GIVE IT DIRECTION.
-              </span>
-              <h2>
-                From source clip
-                <br />
-                to <span>your next edit.</span>
-              </h2>
-              <p>
-                Choose your tool, upload your references,
-                <br />
-                and tell Reelform what you want to change.
-              </p>
-              <a className="text-link" href="/studio">
-                Meet your creative studio <ArrowUpRight size={18} />
-              </a>
-            </Reveal>
-            <ParallaxFrame className="workflow-photo">
-              <img
-                src={scenes[3].poster}
-                alt="AI concept of a private overwater villa in the Maldives"
-                loading="lazy"
-              />
-              <span className="photo-caption">
-                AI concept scene. Your footage comes next.
-              </span>
-            </ParallaxFrame>
+        <section className="motion-other-tools" id="more-tools" aria-labelledby="tools-heading">
+          <div className="motion-section-heading"><h2 id="tools-heading">More ways to work with video.</h2><p>Looking for something beyond motion transfer? Start here.</p></div>
+          <div className="motion-tool-list">
+            <Link prefetch={false} href="/studio?useCase=product-swap"><Replace size={22} /><span><strong>Object Swap</strong><small>Replace a product, prop, or object in your footage.</small></span><ArrowUpRight size={20} /></Link>
+            <Link prefetch={false} href="/cinemalab"><Film size={22} /><span><strong>CinemaLab</strong><small>Create a new scene from a prompt and optional references.</small></span><ArrowUpRight size={20} /></Link>
+            <Link prefetch={false} href="/aura"><Scissors size={22} /><span><strong>Aura video editor</strong><small>Cut, arrange, and finish your footage.</small></span><ArrowUpRight size={20} /></Link>
           </div>
-          <div className="workflow-steps">
-            {steps.map((step, i) => (
-              <Reveal
-                key={step.title}
-                className="workflow-step"
-                delay={i * 0.04}
-              >
-                <div className="workflow-step-top">
-                  <span className="step-number">0{i + 1}</span>
-                  <step.icon size={25} strokeWidth={1.5} />
-                </div>
-                <h3>{step.title}</h3>
-                <p>{step.description}</p>
-                <span className="workflow-detail">
-                  <Check size={14} />
-                  {step.detail}
-                </span>
-              </Reveal>
-            ))}
-          </div>
-        </section>
-        <section className="director-section">
-          <div className="director-wash" aria-hidden="true" />
-          <ParallaxFrame className="director-film">
-            <SceneVideo scene={scenes[0]} paused={paused} />
-            <span className="director-play">
-              <Play size={14} fill="currentColor" /> AI concept preview
-            </span>
-          </ParallaxFrame>
-          <Reveal className="director-copy">
-            <span className="section-label">YOU’RE THE DIRECTOR</span>
-            <h2>
-              Give your footage
-              <br />
-              <span>a new role.</span>
-            </h2>
-            <p>
-              Turn a performance into a character edit, or try a new object in an existing shot. Genjutsu Motion Transfer and Object Swap give you two ways to start.
-            </p>
-
-            <a className="text-link" href="/studio?useCase=character-remix">
-              Try motion transfer <ArrowRight size={18} />
-            </a>
-          </Reveal>
         </section>
         <section className="faq-section" id="faq">
-          <Reveal className="section-heading">
-            <h2>
-              A little curious?
-              <br />
-              <span>Good. So are we.</span>
-            </h2>
-            <p>A few things before your first edit.</p>
-          </Reveal>
-          <div className="faq-list">
-            {faqs.map(([q, a], i) => (
-              <Reveal key={q} delay={i * 0.03}>
-                <article
-                  className={`faq-item ${openFaq === i ? "expanded" : ""}`}
-                >
-                  <h3>
-                    <button
-                      aria-expanded={openFaq === i}
-                      aria-controls={`faq-${i}`}
-                      onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                    >
-                      {q}
-                      {openFaq === i ? <Minus size={18} /> : <Plus size={18} />}
-                    </button>
-                  </h3>
-                  <div id={`faq-${i}`} hidden={openFaq !== i}>
-                    <p>{a}</p>
-                  </div>
-                </article>
-              </Reveal>
-            ))}
-          </div>
+          <div className="motion-section-heading"><h2>Before your first motion transfer.</h2></div>
+          <div className="faq-list">{faqs.map(([question, answer], i) => <article className={`faq-item ${openFaq === i ? "expanded" : ""}`} key={question}>
+            <h3><button aria-expanded={openFaq === i} aria-controls={`faq-${i}`} onClick={() => setOpenFaq(openFaq === i ? null : i)}>{question}{openFaq === i ? <Minus size={18} /> : <Plus size={18} />}</button></h3>
+            <div id={`faq-${i}`} hidden={openFaq !== i}><p>{answer}</p></div>
+          </article>)}</div>
         </section>
-        <section className="cinematic-cta">
-          <div className="cta-gradient" aria-hidden="true" />
-          <div className="cta-orbit cta-orbit-left">
-            <ParallaxFrame>
-              <SceneVideo scene={scenes[4]} paused={paused} />
-            </ParallaxFrame>
-          </div>
-          <div className="cta-orbit cta-orbit-right">
-            <ParallaxFrame>
-              <SceneVideo scene={scenes[2]} paused={paused} />
-            </ParallaxFrame>
-          </div>
-          <Reveal className="cta-copy">
-            <span className="section-label">THE NEXT SCENE IS YOURS</span>
-            <h2>
-              Start with a clip.
-              <br />
-              See what <span>you can make.</span>
-            </h2>
-            <p>For your next post, pitch, project, or experiment.</p>
-            <a className="button" href="/studio">
-              Start creating <ArrowUpRight size={19} />
-            </a>
-          </Reveal>
-        </section>
+        <section className="motion-start"><h2>Give your character the next move.</h2><Link prefetch={false} href="/studio" className="button">Start motion transfer <ArrowUpRight size={18} /></Link><p>Exact credits shown before generation. <Link prefetch={false} href="/pricing">See plans and costs</Link>.</p></section>
       </main>
       <footer className="footer">
-        <div className="footer-top">
-          <Brand />
-          <span>Your footage. New possibilities.</span>
-          <a href="/studio">
-            Start creating <ArrowUpRight size={16} />
-          </a>
-        </div>
+        <div className="footer-top"><Brand /><span>Your character. The same moves.</span></div>
         <nav className="footer-links" aria-label="Footer">
-          <div>
-            <strong>Product</strong>
-            <a href="/studio">Video studio</a>
-            <a href="/pricing">Pricing</a>
-            <Link prefetch={false} href="/community">Community</Link>
-            <a href="#faq">FAQ</a>
-          </div>
-          <div>
-            <strong>Account</strong>
-            <a href="/login">Sign in</a>
-            <a href="/account">My account</a>
-            <a href="/account?tab=creations">My creations</a>
-          </div>
-          <div>
-            <strong>Legal</strong>
-            <a href="/privacy">Privacy policy</a>
-            <a href="/terms">Terms of use</a>
-            <CookieSettingsButton className="footer-link-button" />
-          </div>
-          <div>
-            <strong>Contact</strong>
-            <a href="mailto:contact@polidori.dev">contact@polidori.dev</a>
-          </div>
+          <div><strong>Create</strong><Link prefetch={false} href="/studio">Motion Transfer</Link><Link prefetch={false} href="/studio?useCase=product-swap">Object Swap</Link><Link prefetch={false} href="/cinemalab">CinemaLab</Link><Link prefetch={false} href="/aura">Aura video editor</Link></div>
+          <div><strong>Explore</strong><Link prefetch={false} href="/pricing">Pricing</Link><Link prefetch={false} href="/community">Community</Link><a href="#faq">FAQ</a><Link prefetch={false} href="/studio?trial=1">Try a free Seedance edit</Link></div>
+          <div><strong>Account</strong><Link prefetch={false} href="/login">Sign in</Link><Link prefetch={false} href="/account">My account</Link><Link prefetch={false} href="/account?tab=creations">My creations</Link></div>
+          <div><strong>Legal & contact</strong><Link prefetch={false} href="/privacy">Privacy policy</Link><Link prefetch={false} href="/terms">Terms of use</Link><CookieSettingsButton className="footer-link-button" /><a href="mailto:contact@polidori.dev">contact@polidori.dev</a></div>
         </nav>
-        <div className="footer-bottom">
-          <span>© {new Date().getFullYear()} Reelform</span>
-          <span>Made for people who make things.</span>
-        </div>
+        <div className="footer-bottom"><span>© {new Date().getFullYear()} Reelform</span><span>Powered by Higgsfield.</span></div>
       </footer>
     </div>
   );

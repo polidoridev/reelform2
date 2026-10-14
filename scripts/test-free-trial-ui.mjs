@@ -46,7 +46,7 @@ await context.route(`${base}/api/**`,async route=>{
 await context.route(`${base}/__trial-test/**`,route=>route.fulfill({status:200,body:''}));
 const send=page.getByRole('button',{name:'Send and generate video'});
 try {
- await page.goto(`${base}/studio`);
+ await page.goto(`${base}/studio?trial=1`);
  await page.getByText(/Your first transformation is free/).waitFor();
  assert(await page.locator('.chat-more-models').isDisabled());
  await page.locator('#studio-main').getByRole('button',{name:'Golden hour',exact:true}).click();

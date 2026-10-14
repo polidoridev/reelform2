@@ -20,6 +20,7 @@ import { videoEntitlements, validateVideoEntitlements, type PlanAccount } from "
 import { TRIAL_MODEL, TRIAL_RESOLUTION, TRIAL_PROMPTS, validateTrialSettings, type TrialStatus } from "@/lib/commerce/trial";
 import { type GenerationChat, type SavedGeneration } from "@/lib/commerce/generation-chat";
 import { scenes } from "@/lib/scenes";
+import { authDestination } from "@/lib/auth-destination";
 import { useCases, type UseCase } from "@/lib/use-cases";
 import { editDuration, MAX_EDITABLE_SECONDS, type Edit } from "@/lib/video-edit";
 import { referenceProblem, renumberAfterRemoval } from "@/lib/prompt-references";
@@ -194,10 +195,11 @@ export function useStudioChat(cinema = false) {
   const [video, setVideo] = useState<Video | null>(null);
   const [selectedPreset, setSelectedPreset] = useState<UseCase | null>(null);
   const [images, setImages] = useState<Media[]>([]);
-  const [prompt, setPrompt] = useState("");
+  const motionPrompt = useCases.find(item => item.id === "character-remix")!.prompt;
+  const [prompt, setPrompt] = useState(cinema ? "" : motionPrompt);
   const [model, setModel] = useState(cinema ? "seedance-2.5-reference" : DEFAULT_VIDEO_MODEL);
-  // null follows the model's best quality for the plan; set once the user picks one.
-  const [chosenResolution, setResolution] = useState<string | null>(null);
+  // Motion transfer starts at 720p so Full HD is an explicit cost choice.
+  const [chosenResolution, setResolution] = useState<string | null>(cinema ? null : "720p");
   const [audio, setAudio] = useState(false);
   // Length and shape for videos created without a source video.
   const [createSeconds, setCreateSeconds] = useState(5);
@@ -291,7 +293,7 @@ export function useStudioChat(cinema = false) {
   })();
 
   function setChatLocation(id?: string, lookup = false) {
-    const url = id ? chatUrl(id, lookup) : basePath;
+    const url = id ? chatUrl(id, lookup) : !cinema && trialMode ? "/studio?trial=1" : basePath;
     window.history.replaceState(window.history.state, "", url);
     setChatDestination(url);
   }
@@ -391,6 +393,7 @@ export function useStudioChat(cinema = false) {
     void jsonRequest<{ ready: boolean; authenticated: boolean }>("/api/config")
       .then((data) => {
         if (!mounted.current) return;
+        setChatDestination(authDestination(location.pathname + location.search, basePath));
         setReady(data.ready);
         setAuthenticated(data.authenticated);
         // Signed-out visitors have no account to load (and would get a 401).
@@ -406,12 +409,12 @@ export function useStudioChat(cinema = false) {
               setIsAdmin(account.isAdmin);
               setPlanAccount(account.account);
               setTrial(account.trial ?? null);
-              if (!cinema && !restoringSavedChat.current && (account.trial?.state === "available" || account.trial?.state === "active")) {
+              if (!cinema && !restoringSavedChat.current && new URLSearchParams(location.search).get("trial") === "1" && (account.trial?.state === "available" || account.trial?.state === "active")) {
                 setTrialMode(true);
                 setModel(TRIAL_MODEL);
                 setResolution(TRIAL_RESOLUTION);
                 setAudio(false);
-                if (new URLSearchParams(location.search).has("useCase") || new URLSearchParams(location.search).has("scene")) setPrompt(TRIAL_PROMPTS[0].prompt);
+                setPrompt(TRIAL_PROMPTS[0].prompt);
               }
             }
           })
@@ -422,7 +425,7 @@ export function useStudioChat(cinema = false) {
       });
     const query = new URLSearchParams(location.search);
     const generationId = query.get("generation") || query.get("request");
-    const explicitStart = !!(query.get("edit") || query.get("scene") || query.get("useCase"));
+    const explicitStart = !!(query.get("edit") || query.get("scene") || query.get("useCase") || query.get("trial"));
     const scene = scenes.find(
       (s) => s.id === new URLSearchParams(location.search).get("scene"),
     );
@@ -757,7 +760,7 @@ export function useStudioChat(cinema = false) {
     const sequence = ++selection.current;
     setPrompt(preset.prompt);
     setModel(preset.model);
-    setResolution(null);
+    setResolution(preset.model.startsWith("genjutsu-") ? "720p" : null);
     setAudio(false);
     setSelectedPreset(null);
     setError("");
@@ -1009,6 +1012,7 @@ export function useStudioChat(cinema = false) {
       if (recovering) void restoreGeneration(active.requestId);
     } catch (e) {
       if (!recovering && e instanceof RequestError && e.status < 500) {
+        if (e.status === 409) { setQuote(null); setQuoteAttempt(attempt => attempt + 1); }
         setPending(null);
         saveSession(PENDING_SEND, null);
         if (payload.parentJobId) setChatLocation(payload.parentJobId);
@@ -1055,7 +1059,7 @@ export function useStudioChat(cinema = false) {
     if (Date.now() - currentQuote.created > 14 * 60000) {
       setQuote(null);
       setQuoteAttempt((n) => n + 1);
-      setError("Refreshing your credit cost. Press Send when it’s ready.");
+      setError(`Refreshing your credit cost. Review it, then press ${cinema ? "Generate shot" : "Generate video"}.`);
       return;
     }
     if (creditBalance !== null && creditBalance < currentQuote.credits) {
@@ -1145,6 +1149,12 @@ export function useStudioChat(cinema = false) {
     clearChat();
     restoreTarget.current = null;
     restoringSavedChat.current = false;
+    if (!cinema && !trialMode) {
+      setModel(DEFAULT_VIDEO_MODEL);
+      setResolution("720p");
+      setAudio(false);
+      setPrompt(motionPrompt);
+    }
     setChatLocation();
     saveSession(ACTIVE_JOB, null);
   }
@@ -1239,7 +1249,20 @@ export function useStudioChat(cinema = false) {
     choosePreset,
     trial,
     trialMode,
-    usePaidSettings: () => { setTrialMode(false); setQuote(null); setResolution(null); },
+    usePaidSettings: () => {
+      if (busy || submitLock.current) return;
+      setTrialMode(false); setSelectedPreset(null); setModel(DEFAULT_VIDEO_MODEL); setPrompt(motionPrompt);
+      setQuote(null); setResolution("720p"); setAudio(false); setError("");
+      window.history.replaceState(window.history.state, "", basePath);
+      setChatDestination(basePath);
+    },
+    startFreeTrial: () => {
+      if (busy || submitLock.current || trial?.state !== "available") return;
+      setTrialMode(true); setSelectedPreset(null); setModel(TRIAL_MODEL); setResolution(TRIAL_RESOLUTION);
+      setAudio(false); setPrompt(TRIAL_PROMPTS[0].prompt); setQuote(null); setError("");
+      window.history.replaceState(window.history.state, "", "/studio?trial=1");
+      setChatDestination("/studio?trial=1");
+    },
     video,
     images,
     prompt,

@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 export const SITE_NAME = "Reelform";
 export const SHARE_IMAGE = { url: "/og-image.jpg", width: 1200, height: 630, alt: "Reelform: your footage, new possibilities. AI motion transfer and object swap." };
 export const DEFAULT_DESCRIPTION =
-  "Recast your own footage with AI. Transfer motion to a new character or swap objects in a shot with Genjutsu, then trim, edit, and download in one studio.";
+  "Transfer your video’s motion to a new character with Genjutsu. Upload a clip, add a reference photo, and review the credit cost. Object swaps and video editing are available too.";
 
 // Page metadata with a canonical URL and matching social previews. The title is
 // completed by the root template ("… | Reelform").

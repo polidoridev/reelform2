@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { Check, ChevronDown, CircleHelp, Replace, Sparkles, X } from "lucide-react";
 import { FEATURED_VIDEO_MODELS, VIDEO_MODELS, type VideoModel } from "@/lib/video-models";
+import { quoteCreation, quoteVideo } from "@/lib/commerce/pricing";
 import "./composer.css";
 
 const icons: Record<string, typeof Sparkles> = { "genjutsu-motion": Sparkles, "genjutsu-object": Replace };
@@ -10,6 +11,13 @@ const bestQuality = (model: VideoModel) => {
   const top = [...model.resolutions].sort((a, b) => parseInt(b) - parseInt(a))[0];
   return model.resolutions.length > 1 ? `Up to ${top}` : top;
 };
+function sampleCost(model: VideoModel) {
+  const resolution = model.resolutions.includes("720p") ? "720p" : model.resolutions[0];
+  const quote = model.video === "optional"
+    ? quoteCreation(5, resolution, "16:9", model.id)
+    : quoteVideo({ duration: 5, width: 1280, height: 720, bytes: 0 }, resolution, model.id);
+  return `${quote.credits.toLocaleString()} credits / 5s at ${resolution}`;
+}
 const photos = (model: VideoModel) =>
   model.minImages === model.maxImages
     ? `${model.minImages} photo`
@@ -68,7 +76,7 @@ export default function ModelPicker({
   return (
     <div className="chat-model-picker">
       <div className="chat-model-row">
-        <div className="chat-model-choices" role="radiogroup" aria-label="Recommended AI models">
+        <div className="chat-model-choices" role="radiogroup" aria-label="Primary video tool">
           {FEATURED_VIDEO_MODELS.map((m) => {
             const Icon = icons[m.id] ?? Sparkles;
             return (
@@ -94,7 +102,7 @@ export default function ModelPicker({
           disabled={disabled}
           onClick={() => setOpen(!open)}
         >
-          <span>{featured ? "More models" : selected?.name}</span>
+          <span>{featured ? "Other tools & models" : selected?.name}</span>
           <ChevronDown size={13} />
         </button>
       </div>
@@ -106,25 +114,26 @@ export default function ModelPicker({
           onKeyDown={(e) => { if (e.key === "Escape") { e.stopPropagation(); setOpen(false); } }}
         >
           <div className="chat-settings-title">
-            <strong>All models, ranked for your footage</strong>
+            <strong>Choose another tool or model</strong>
             <button type="button" onClick={() => setOpen(false)} aria-label="Close model list">
               <X size={16} />
             </button>
           </div>
           <ol className="chat-model-list">
-            {VIDEO_MODELS.map((m, i) => {
+            {VIDEO_MODELS.map((m) => {
               const tooLong = videoSeconds !== null && videoSeconds > m.maxSeconds;
               return (
                 <li key={m.id}>
                   <button type="button" aria-pressed={m.id === model} disabled={disabled} onClick={() => choose(m.id)}>
-                    <span className="chat-model-rank" aria-hidden="true">{i + 1}</span>
+
                     <span className="chat-model-name">
                       {m.name}
-                      {m.featured && <em>Recommended</em>}
+                      {m.featured && <em>Start here</em>}
                       <small className={tooLong ? "is-warning" : ""}>
                         {m.video === "optional" && "No video needed · "}
                         {tooLong ? `Trim your clip to ${m.maxSeconds}s` : `Up to ${m.maxSeconds}s`} · {bestQuality(m)} · {photos(m)}
                       </small>
+                      <small>{sampleCost(m)}</small>
                     </span>
                     {m.id === model && <Check size={15} className="chat-model-check" aria-hidden="true" />}
                   </button>

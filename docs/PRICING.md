@@ -1,6 +1,6 @@
 # Reelform pricing and unit economics
 
-Prices are USD. Economics reviewed October 1, 2026. Keep the existing prices and credit conversion for now; positive contribution is modeled, not verified net profit.
+Prices are USD. Economics and Genjutsu API list prices reviewed October 14, 2026. Keep the existing prices and credit conversion for now; positive contribution is modeled, not verified net profit.
 
 | Plan | Monthly | Annual upfront | Credits released each month | 5s Genjutsu 720p clips / monthly grant |
 | --- | ---: | ---: | ---: | ---: |
@@ -14,7 +14,7 @@ Annual billing saves two monthly payments (16.67%). It does not unlock a year's 
 
 [Higgsfield Seedance 2.5 Edit](https://open.higgsfield.ai/models/bytedance/seedance-2.5/video-edit/playground) publishes a token formula that bills source and output durations: `ceil((input seconds + output seconds) × width × height × 24 / 1024) × $0.01284 / 1000`. Use that formula, rather than the lower marketing “from” rate or assuming a negotiated API discount. References do not count as additional video duration.
 
-A 5-second 1280×720 edit with a 5-second source has an estimated undiscounted provider cost of $2.77344. The app charges 360 credits per provider dollar, rounded up to 10 credits: 1,000 credits in this example. A 5-second 16:9 Seedance 2.5 Edit at 480p is 450 credits. The featured Genjutsu models instead cost 1,230 credits at 720p or 580 at 480p for five seconds; 1080p costs 2,940. Clip counts depend on the model, resolution, shape, and duration, not just the plan. Source MP4 duration and dimensions are inspected on the server. Quoted credits are confirmed by the customer before generation.
+A 5-second 1280×720 edit with a 5-second source has an estimated undiscounted provider cost of $2.77344. The app currently charges 360 credits per provider dollar, rounded up to 10 credits: 1,000 credits in this example. A 5-second 16:9 Seedance 2.5 Edit at 480p is 450 credits. The featured Genjutsu models instead cost 1,230 credits at 720p or 580 at 480p for five seconds; 1080p costs 2,940. Clip counts depend on the model, resolution, shape, and duration, not just the plan. Source MP4 duration and dimensions are inspected on the server. Quoted credits are confirmed by the customer before generation.
 
 At full allowance use, ignoring quote-rounding benefits, the provider-cost ceiling is credits / 360:
 
@@ -79,8 +79,28 @@ The free-trial pilot has a separate $150 modeled provider budget, with up to $3.
 
 ### Verification and repeatable check
 
-Run `node --import tsx scripts/audit-pricing.ts 770`. This offline audit reads the actual plan constants and fails if any offer drops below a 45% contribution margin under the stated reserves. It also checks quote coverage across every video model and supported edit resolution. It does not automatically run in CI or block checkout. Run it whenever prices, credit allowances, discounts, or provider rates change. Existing video-model tests also cover creation quotes.
+Run `node --import tsx scripts/audit-pricing.ts 770`. This offline audit reads the actual plan constants and fails if any offer drops below a 45% contribution margin under the stated reserves. It also checks quote coverage across every video model, supported edit resolution, and supported creation shape. It does not automatically run in CI or block checkout. Run it whenever prices, credit allowances, discounts, or provider rates change. Existing video-model tests also cover creation quotes.
 
-Higgsfield's public Genjutsu overview still lists undiscounted 480p/720p rates matching the configured values ($0.318/$0.681 per second): https://console.higgsfield.ai/models/workflows%2Fgenjutsu/playground. The model-specific documentation endpoints returned HTTP 403 during this review; the full catalog and 1080p rates were not independently reverified. Use the repository's September 27 rates provisionally, with no promotional discount assumed. Before expanding spend, reconcile representative real provider debits against estimates and compare Stripe net receipts with modeled fees. The 15% reserve is not a cap on actual overruns.
+### Genjutsu rate verification and safeguards — October 14, 2026
+
+The owner reports 600 **Higgsfield website credits** for a 30-second 1080p Motion Transfer. Those credits are separate from the API's USD billing and from Reelform credits. No website-credit-to-dollar conversion is assumed.
+
+Verified the public pricing descriptions for [Motion Transfer](https://open.higgsfield.ai/models/higgsfield/genjutsu/motion-transfer/v1.0/playground) and [Object Swap](https://open.higgsfield.ai/models/higgsfield/genjutsu/object-swap/v1.0/playground): input seconds round up to whole seconds, at the undiscounted rates below. The [API pricing page](https://open.higgsfield.ai/pricing) distinguishes list prices from account-dependent discounts. Reelform uses list prices, without relying on discounts.
+
+| Quality | API USD / input second | API estimate for 30 seconds | Reelform credits for 30 seconds |
+| --- | ---: | ---: | ---: |
+| 480p | $0.318 | $9.54 | 3,440 |
+| 720p | $0.681 | $20.43 | 7,360 |
+| 1080p | $1.632 | $48.96 | 17,630 |
+
+These rates already matched the configured values; no increase to subscription prices, credit packs, or generation charges was necessary. Motion Transfer now starts at 720p; Full HD is an explicit user choice. The public pricing table shows 5-, 10-, 20-, and 30-second quotes at all three qualities. It explicitly explains that a 30-second 1080p generation exceeds Studio's 15,000-credit monthly grant and requires extra or previously saved credits.
+
+`lib/commerce/economics.ts` centralizes the existing reserves and 45% contribution floor. `CREDITS_PER_PROVIDER_DOLLAR` is now the greater of the existing 360 conversion and the amount needed to protect the cheapest configured offer, rounded upward to 10. It includes all annual allowances, preset packs, and every custom top-up increment. Future changes to the configured prices or allowances cannot silently push generation contribution below the planning floor. Promotions or credits granted outside these configured offers still need a separate review.
+
+Invalid or missing provider costs fail closed. `/api/generate` recalculates the quote before reserving credits or submitting to Higgsfield; a changed charge returns a review-required error, and the studio obtains a fresh quote without auto-submitting. Free-trial limits are checked against the recalculated provider estimate too. Trials remain explicit Seedance edits, separate from paid Motion Transfer.
+
+The offline audit now covers 201 offers and 297 edit/creation quote combinations. Regression tests in `tests/generation-pricing.test.ts` verify the 30-second rates, fractional-second rounding, the margin floor, cheaper-offer scenarios, and stale/invalid quotes. Run `node --import tsx --test tests/generation-pricing.test.ts tests/topup-pricing.test.ts` and `node --import tsx scripts/audit-pricing.ts 770`.
+
+These are modeled contribution margins: 45.4%–58.2% across current offers under the stated reserves, before overhead and excluded expenses. Actual provider invoices, discounts, payment fees, paid retention, and net business profit were not reconciled in this review. The provider-overrun reserve does not automatically discover or cap future API price increases.
 
 No live Stripe prices, subscriptions, ad budgets, or deployments were changed in this review.

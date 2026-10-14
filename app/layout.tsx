@@ -4,7 +4,7 @@ import { CANONICAL_ORIGIN } from "@/lib/site-url";
 import { DEFAULT_DESCRIPTION, SHARE_IMAGE, SITE_NAME } from "@/lib/seo";
 import "./globals.css";
 
-const title = "Reelform | AI Motion Transfer & Object Swap";
+const title = "Reelform | AI Motion Transfer";
 export const metadata: Metadata = {
   metadataBase: new URL(CANONICAL_ORIGIN),
   title: { default: title, template: `%s | ${SITE_NAME}` },

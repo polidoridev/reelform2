@@ -1,0 +1,75 @@
+/* Preserve Reelform's Manrope type and royal blue; focus the page on one task.
+   Design variance 5, motion intensity 2, visual density 3. */
+.motion-home { --accent-hover: #294fbd; }
+.motion-home .nav-links { gap: 24px; margin-left: 20px; }
+.motion-home section[id] { scroll-margin-top: 110px; }
+.motion-hero { max-width: 1240px; margin: auto; padding: 150px 32px 80px; text-align: center; }
+.motion-hero-copy { max-width: 720px; margin: auto; }
+.motion-hero h1 { font-size: clamp(40px, 4.8vw, 68px); line-height: 1.08; letter-spacing: -.055em; font-weight: 800; margin: 22px 0; }
+.motion-hero h1 span { color: #394e8f; }
+.motion-hero-copy > p { color: #4a526c; font-size: 17px; line-height: 1.7; max-width: 520px; margin-inline: auto; }
+.motion-hero-actions { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 22px; margin-top: 30px; }
+.motion-hero-actions .button { padding: 15px 22px; white-space: nowrap; }
+.motion-hero-actions .text-link { font-size: 13px; }
+.motion-how, .motion-presets, .motion-other-tools { max-width: 1240px; padding: 64px 32px; margin: auto; }
+.motion-section-heading { max-width: 680px; margin-bottom: 32px; }
+.motion-section-heading h2 { font-size: clamp(27px, 3vw, 38px); line-height: 1.2; letter-spacing: -.035em; font-weight: 750; }
+.motion-section-heading p { color: #576079; font-size: 15px; line-height: 1.7; margin-top: 13px; }
+.motion-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 36px; list-style: none; padding: 0; margin: 0; }
+.motion-steps li { border-top: 1px solid #dfe3ee; padding-top: 22px; }
+.motion-steps li > div { display: flex; justify-content: space-between; align-items: center; color: #294fbd; }
+.motion-steps li > div span { font-size: 13px; font-weight: 750; }
+.motion-steps h3 { font-size: 18px; font-weight: 750; margin: 20px 0 10px; }
+.motion-steps p { font-size: 14px; line-height: 1.8; color: #576079; max-width: 330px; }
+.motion-preset-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+.motion-preset-grid article { min-width: 0; }
+.motion-preset-image { display: block; overflow: hidden; border-radius: 14px; background: #e8ebf3; }
+.motion-preset-image img { width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; transition: transform .2s; }
+.motion-preset-image:hover img { transform: scale(1.025); }
+.motion-preset-info { margin: 18px 0 12px; }
+.motion-preset-info h3 { font-size: 16px; font-weight: 750; }
+.motion-preset-info span { display: block; margin-top: 7px; color: #576079; font-size: 12px; }
+.motion-preset-grid .text-link { font-size: 13px; }
+.motion-tool-list { border-top: 1px solid #dfe3ee; }
+.motion-tool-list > a { display: flex; align-items: center; gap: 22px; border-bottom: 1px solid #dfe3ee; padding: 24px 8px; transition: background .2s; }
+.motion-tool-list > a:hover { background: #f0f3fb; }
+.motion-tool-list > a > svg:first-child { color: #294fbd; flex-shrink: 0; }
+.motion-tool-list > a > svg:last-child { margin-left: auto; flex-shrink: 0; }
+.motion-tool-list strong { display: block; font-size: 17px; font-weight: 750; }
+.motion-tool-list small { display: block; color: #576079; font-size: 14px; line-height: 1.6; margin-top: 6px; }
+.motion-home .faq-section { max-width: 1240px; margin: auto; padding: 64px 32px; }
+.motion-home .faq-list { max-width: 850px; margin: 0; }
+.motion-start { text-align: center; padding: 70px 24px 90px; }
+.motion-start h2 { font-size: clamp(28px, 3.5vw, 44px); letter-spacing: -.04em; margin-bottom: 28px; font-weight: 750; }
+.motion-start p { font-size: 13px; line-height: 1.7; color: #576079; margin-top: 20px; }
+.motion-start p a { color: #294fbd; text-decoration: underline; }
+.motion-home .footer { background: #f0f3fa; color: #13192d; padding-top: 45px; }
+.motion-home .footer a, .motion-home .footer-link-button { color: #4a526c; }
+.motion-home .footer .brand { color: #13192d; }
+.motion-home .footer .brand-mark { color: white; background: #4169e1; }
+.motion-home .footer-top, .motion-home .footer-bottom { border-color: #dfe3ee; }
+.motion-home .footer-top > span, .motion-home .footer-bottom { color: #576079; }
+.motion-home .footer-links strong { color: #13192d; }
+@media (max-width: 1100px) { .motion-home .nav-links { gap: 17px; margin-left: 0; } }
+@media (max-width: 900px) {
+  .motion-hero { padding-top: 125px; }
+  .motion-hero-copy { max-width: 600px; }
+  .motion-hero h1 { font-size: clamp(42px, 7vw, 64px); }
+  .motion-preset-grid { grid-template-columns: repeat(2, 1fr); gap: 28px 22px; }
+}
+@media (max-width: 600px) {
+  .motion-hero { padding: 114px 22px 28px; }
+  .motion-hero-copy > p { font-size: 15px; }
+  .motion-hero-actions { gap: 18px; }
+  .motion-how, .motion-presets, .motion-other-tools, .motion-home .faq-section { padding: 42px 22px; }
+  .motion-steps { grid-template-columns: 1fr; gap: 25px; }
+  .motion-steps h3 { margin-top: 12px; }
+  .motion-steps p { max-width: none; }
+  .motion-preset-grid { gap: 26px 16px; }
+  .motion-preset-info h3 { font-size: 14px; }
+  .motion-preset-info span { font-size: 11px; }
+  .motion-tool-list > a { gap: 15px; }
+  .motion-tool-list small { font-size: 13px; }
+  .motion-start { padding: 44px 22px 65px; }
+}
+@media (prefers-reduced-motion: reduce) { .motion-preset-image img { transition: none; } .motion-preset-image:hover img { transform: none; } }

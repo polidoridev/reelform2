@@ -7,8 +7,7 @@ import Brand from "./brand";
 import { PLANS, TOPUPS, money, quoteVideo } from "@/lib/commerce/pricing";
 import "./accounts.css";
 const exampleMedia = { duration: 5, width: 1280, height: 720, bytes: 0 };
-const featured720Credits = quoteVideo(exampleMedia, "720p", "genjutsu-object").credits;
-const featured480Credits = quoteVideo(exampleMedia, "480p", "genjutsu-object").credits;
+const featured720Credits = quoteVideo(exampleMedia, "720p", "genjutsu-motion").credits;
 export function PlanCards({
   compact = false,
   subscribed = false,
@@ -155,7 +154,7 @@ export function PlanCards({
               <strong>{p.credits.toLocaleString()}</strong> credits / month
             </div>
             <p className="billing-caption">
-              Enough for {Math.floor(p.credits / featured720Credits)} five-second Genjutsu
+              Enough for {Math.floor(p.credits / featured720Credits)} five-second Motion Transfer
               {" "}720p video{Math.floor(p.credits / featured720Credits) === 1 ? "" : "s"} per monthly allowance.
               Other models and settings use different amounts.
             </p>
@@ -223,8 +222,7 @@ export default function Pricing() {
       <header className="account-header">
         <Brand />
         <nav>
-          <Link prefetch={false} href="/">Home</Link>
-          <Link prefetch={false} href="/studio">Studio</Link>
+          <Link prefetch={false} href="/studio">Motion Transfer</Link>
           <Link prefetch={false} href="/account" className="account-nav-button">
             My account <ArrowUpRight size={15} />
           </Link>
@@ -233,20 +231,20 @@ export default function Pricing() {
       <main className="pricing-page">
         <div className="pricing-intro">
           <span className="account-eyebrow">
-            ROOM FOR YOUR NEXT PROJECT
+            MOTION TRANSFER PLANS
           </span>
           <h1>
-            Your next video.
+            Your next performance.
             <br />
             <em>Your kind of plan.</em>
           </h1>
           <p>
-            Try your first transformation free.
+            Choose a plan for Genjutsu Motion Transfer.
             <br />
-            One short 480p edit for eligible new users. Limited pilot; no card needed.
+            Every generation shows its credit cost before you start.
           </p>
         </div>
-        <p style={{ textAlign: "center", marginBottom: "2rem" }}><Link prefetch={false} href="/studio" className="account-secondary">Try a free transformation</Link></p>
+        <p style={{ textAlign: "center", marginBottom: "2rem" }}><Link prefetch={false} href="/studio?trial=1" className="account-secondary">Try a free Seedance edit</Link></p>
         {!ready && (
           <div className="account-notice">
             Subscriptions are coming soon. Explore the plans below while
@@ -267,12 +265,15 @@ export default function Pricing() {
               quote depends on the AI model, clip length, resolution, and shape. Failed
               generations automatically return their reserved credits.
             </p>
-            <p>
-              A 5-second Genjutsu Object Swap or Motion Transfer uses {featured720Credits.toLocaleString()} credits
-              {" "}at 720p or {featured480Credits.toLocaleString()} at 480p. A 5-second
-              {" "}16:9 Seedance 2.5 Edit uses {quoteVideo(exampleMedia, "720p", "seedance-2.5-edit").credits.toLocaleString()} credits
-              {" "}at 720p. Your quote shows the cost for your settings.
-            </p>
+            <p>Motion Transfer and Object Swap use the same credits. Longer clips and Full HD use more. These are Reelform credits; Higgsfield website credits are separate.</p>
+            <div className="motion-cost-table">
+              <table>
+                <caption>Genjutsu Motion Transfer credits per video</caption>
+                <thead><tr><th scope="col">Length</th>{["480p", "720p", "1080p"].map(quality => <th scope="col" key={quality}>{quality}</th>)}</tr></thead>
+                <tbody>{[5, 10, 20, 30].map(duration => <tr key={duration}><th scope="row">{duration}s</th>{(["480p", "720p", "1080p"] as const).map(quality => <td key={quality}>{quoteVideo({ ...exampleMedia, duration }, quality, "genjutsu-motion").credits.toLocaleString()}</td>)}</tr>)}</tbody>
+              </table>
+            </div>
+            <p className="billing-caption">1080p requires Pro or Studio. 30-second clips require Studio. One 30-second 1080p video uses {quoteVideo({ ...exampleMedia, duration: 30 }, "1080p", "genjutsu-motion").credits.toLocaleString()} credits, more than Studio’s monthly allowance; add a credit pack or use credits saved from earlier months.</p>
           </div>
           <div className="pack-grid">
             {TOPUPS.map((p) => (

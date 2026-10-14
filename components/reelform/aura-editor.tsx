@@ -224,7 +224,7 @@ export default function AuraEditor() {
       <a className="skip-link" href="#aura-main">Skip to editor</a>
       <header className="aura-header">
         <Brand />
-        <nav aria-label="Aura navigation"><Link href="/studio"><ArrowLeft size={15} /> Video studio</Link><span><Sparkles size={14} /> Aura edits</span></nav>
+        <nav aria-label="Aura navigation"><Link href="/studio"><ArrowLeft size={15} /> Motion Transfer</Link><span><Sparkles size={14} /> Aura edits</span></nav>
       </header>
       <main id="aura-main" className="aura-main">
         <div className="aura-intro"><div><span className="aura-eyebrow">YOUR CLIPS. YOUR MAIN CHARACTER MOMENT.</span><h1>Make an <em>aura edit.</em></h1><p>Drop your clips. Pick the energy. Let the beat do the cutting.</p></div><span className="aura-local"><Check size={14} /> Free export · On your device</span></div>

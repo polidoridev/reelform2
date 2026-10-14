@@ -21,17 +21,22 @@ export type VideoModel = {
   bestFor: string;
   /** Per-1,000-token or per-second provider rate; `rates` overrides it for specific resolutions. */
   tokenRate?: number; secondRate?: number; rates?: Partial<Record<VideoResolution, number>>;
-  /** One of the two one-click choices in the studio. */
+  /** Primary choice in the studio. Other tools remain in the model list. */
   featured?: boolean;
 };
 // Ordered by how well each fits Reelform's footage-transformation use case: the
-// two featured Genjutsu models first, then the rest ranked. Editorial, not a benchmark.
+// primary Motion Transfer tool first, then Object Swap and the other models.
 // Schemas and undiscounted prices checked against Higgsfield model docs and schema
 // validation on 2026-09-27.
+// Genjutsu API list prices reverified 2026-10-14 against the pricing_description
+// on https://open.higgsfield.ai/models/higgsfield/genjutsu/motion-transfer/v1.0/playground
+// and the Object Swap equivalent. The API bills USD per rounded-up input second;
+// consumer website credits (e.g. 600 for 30s/1080p) are a separate currency.
+export const GENJUTSU_API_RATES = { "480p": 0.318, "720p": 0.681, "1080p": 1.632 } as const;
 const WAN_ASPECT_RATIOS = ["16:9", "9:16", "1:1", "4:3", "3:4"] as const;
 export const VIDEO_MODELS: VideoModel[] = [
-  {id:"genjutsu-motion",name:"Genjutsu Motion Transfer",shortName:"Motion Transfer",endpoint:"higgsfield/genjutsu/motion-transfer/v1.0",kind:"genjutsu",video:"required",resolutions:["720p","480p","1080p"],maxSeconds:30,minImages:1,maxImages:4,audio:false,secondRate:0.681,rates:{"480p":0.318,"1080p":1.632},featured:true,description:"Recast your footage with characters, places, or styles from your photos while keeping its motion, camera movement, and timing. At least one photo required.",bestFor:"Putting a new character, outfit, or style into your clip while keeping every movement and camera move. Works best with your own footage and photos of yourself or original characters."},
-  {id:"genjutsu-object",name:"Genjutsu Object Swap",shortName:"Object Swap",endpoint:"higgsfield/genjutsu/object-swap/v1.0",kind:"genjutsu",video:"required",resolutions:["720p","480p","1080p"],maxSeconds:30,minImages:1,maxImages:4,audio:false,secondRate:0.681,rates:{"480p":0.318,"1080p":1.632},featured:true,description:"Replace cars, clothing, products, or other objects using at least one reference photo. Up to 30 seconds.",bestFor:"Swapping one specific thing, like a car, product, piece of furniture, or outfit, for the one in your photo while the rest of the shot stays the same."},
+  {id:"genjutsu-motion",name:"Genjutsu Motion Transfer",shortName:"Motion Transfer",endpoint:"higgsfield/genjutsu/motion-transfer/v1.0",kind:"genjutsu",video:"required",resolutions:["720p","480p","1080p"],maxSeconds:30,minImages:1,maxImages:4,audio:false,secondRate:GENJUTSU_API_RATES["720p"],rates:GENJUTSU_API_RATES,featured:true,description:"Recast your footage with characters, places, or styles from your photos while keeping its motion, camera movement, and timing. At least one photo required.",bestFor:"Putting a new character, outfit, or style into your clip while keeping every movement and camera move. Works best with your own footage and photos of yourself or original characters."},
+  {id:"genjutsu-object",name:"Genjutsu Object Swap",shortName:"Object Swap",endpoint:"higgsfield/genjutsu/object-swap/v1.0",kind:"genjutsu",video:"required",resolutions:["720p","480p","1080p"],maxSeconds:30,minImages:1,maxImages:4,audio:false,secondRate:GENJUTSU_API_RATES["720p"],rates:GENJUTSU_API_RATES,description:"Replace cars, clothing, products, or other objects using at least one reference photo. Up to 30 seconds.",bestFor:"Swapping one specific thing, like a car, product, piece of furniture, or outfit, for the one in your photo while the rest of the shot stays the same."},
   {id:"seedance-2.5-reference",name:"Seedance 2.5 Create",endpoint:"bytedance/seedance-2.5/reference-to-video",textEndpoint:"bytedance/seedance-2.5/text-to-video",kind:"seedance-reference",video:"optional",resolutions:["720p","480p","1080p"],maxSeconds:30,minImages:0,maxImages:4,audio:true,tokenRate:0.01284,rates:{"1080p":0.01404},noVideoTokenRate:0.0214,noVideoRates:{"1080p":0.0234},description:"Create a new video from a prompt. Add photos or a clip to guide it, or start from words alone. Up to 30 seconds; duration rounds up to whole seconds.",bestFor:"Making a brand-new video from a description, with or without photos or a clip for inspiration. Up to 30 seconds in 1080p, with generated sound."},
   {id:"seedance-2.5-edit",name:"Seedance 2.5 Edit",endpoint:"bytedance/seedance-2.5/video-edit",kind:"seedance-edit",video:"required",resolutions:["720p","480p","1080p"],maxSeconds:30,minImages:0,maxImages:4,audio:true,tokenRate:0.01284,rates:{"1080p":0.01404},description:"Change scenes, clothes, and surroundings while following your footage. Up to 30 seconds.",bestFor:"Broad changes described in words, like a new location, weather, time of day, or wardrobe, on clips up to 30 seconds. Photos are optional, and it can generate new sound."},
   // Public REST schemas and standard (undiscounted) output-second rates checked 2026-10-12.

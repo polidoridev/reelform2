@@ -1,3 +1,4 @@
+import { creditConversionForOffers, creditsForProviderCost, type CreditOffer } from "./economics";
 import { DEFAULT_VIDEO_MODEL, getVideoModel, validateModelAspectRatio, modelRate, validateModel, type AspectRatio, type VideoResolution } from "../video-models";
 import { MIN_VIDEO_SECONDS, MAX_VIDEO_SECONDS } from "../video-limits";
 export const PLANS = [
@@ -99,7 +100,18 @@ export type MediaInfo = {
 // Published undiscounted Seedance 2.5 Edit formula, verified 2026-09-20.
 // Both source and output seconds are billed; no account discount is assumed.
 export const VIDEO_TOKEN_USD = 0.01284 / 1000;
-export const CREDITS_PER_PROVIDER_DOLLAR = 360;
+export const CREDIT_OFFERS: CreditOffer[] = [
+  ...PLANS.flatMap(p => [
+    { name: `${p.name} monthly`, revenue: p.monthly, credits: p.credits, months: 1 },
+    { name: `${p.name} annual`, revenue: p.yearly, credits: p.credits * 12, months: 12 },
+  ]),
+  ...TOPUPS.map(p => ({ name: `Pack ${p.id}`, revenue: p.price, credits: p.credits, months: 0 })),
+  ...Array.from({ length: (CUSTOM_TOPUP.max - CUSTOM_TOPUP.min) / CUSTOM_TOPUP.step + 1 }, (_, i) => {
+    const credits = CUSTOM_TOPUP.min + i * CUSTOM_TOPUP.step;
+    return { name: `Custom ${credits}`, revenue: quoteTopupCredits(credits) / 100, credits, months: 0 };
+  }),
+];
+export const CREDITS_PER_PROVIDER_DOLLAR = creditConversionForOffers(CREDIT_OFFERS);
 // Output size for a chosen shape: the short side matches the quality setting.
 export function aspectDimensions(resolution: VideoResolution, aspectRatio: AspectRatio) {
   const short = resolution === "1080p" ? 1080 : resolution === "720p" ? 720 : 480;
@@ -123,7 +135,7 @@ export function quoteCreation(seconds: number, resolution: VideoResolution, aspe
     ? duration * rate
     : tokens * (rate / 1000);
   return {
-    credits: Math.ceil((providerUsd * CREDITS_PER_PROVIDER_DOLLAR) / 10) * 10,
+    credits: creditsForProviderCost(providerUsd, CREDITS_PER_PROVIDER_DOLLAR),
     duration,
     model: model.id,
     resolution,
@@ -158,7 +170,7 @@ export function quoteVideo(media: MediaInfo, resolution: VideoResolution, modelI
     ? Math.ceil(duration) * rate
     : tokens * (rate / 1000);
   return {
-    credits: Math.ceil((providerUsd * CREDITS_PER_PROVIDER_DOLLAR) / 10) * 10,
+    credits: creditsForProviderCost(providerUsd, CREDITS_PER_PROVIDER_DOLLAR),
     duration: outputDuration,
     model: model.id,
     resolution,

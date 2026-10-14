@@ -195,7 +195,7 @@ export default function Account({
           <Link prefetch={false} href="/community">Community</Link>
           <a href="/pricing">Plans</a>
           <a href="/login?next=%2Fstudio" className="account-nav-button">
-            Open studio <ArrowUpRight size={16} />
+            Motion Transfer <ArrowUpRight size={16} />
           </a>
           <button
             className="account-avatar"
@@ -1230,7 +1230,7 @@ function Empty({
       <h3>{title}</h3>
       <p>{detail}</p>
       <a href="/login?next=%2Fstudio" className="quiet-link">
-        Open studio <ArrowRight size={16} />
+        Motion Transfer <ArrowRight size={16} />
       </a>
     </div>
   );
