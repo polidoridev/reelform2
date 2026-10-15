@@ -18,7 +18,7 @@ export default async function InstagramPage({
     <main className="account-shell instagram-page">
       <header className="instagram-nav">
         <Brand />
-        <Link href="/account?tab=creations">Back to my creations</Link>
+        <nav aria-label="Publishing navigation"><Link href="/studio" className="quick-access-tab">TransferLab</Link><Link href="/account?tab=creations">Back to my creations</Link></nav>
       </header>
       <div className="instagram-page-body">
         <span className="instagram-eyebrow">

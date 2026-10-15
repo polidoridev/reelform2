@@ -54,8 +54,8 @@ function CommunityShell({ children }: { children: React.ReactNode }) {
           <Link prefetch={false} href="/account">
             My account
           </Link>
-          <Link prefetch={false} className="community-button" href="/login?next=%2Fstudio">
-            Motion Transfer <ArrowUpRight size={15} />
+          <Link prefetch={false} className="community-button" href="/studio">
+            TransferLab <ArrowUpRight size={15} />
           </Link>
         </nav>
       </header>

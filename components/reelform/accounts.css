@@ -1,9 +1,9 @@
 .account-shell,
 .auth-page {
-  --ink: #141e3c;
-  --muted: #6c7282;
+  --ink: var(--foreground);
+  --muted: var(--text-muted);
   min-height: 100vh;
-  background: #f7f8fa;
+  background: var(--background);
   color: var(--ink);
   font-size: 14px;
 }
@@ -13,8 +13,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid #e0e2ea;
-  background: #fff;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
   gap: 24px;
 }
 .account-header nav {
@@ -44,7 +44,7 @@
 .account-primary,
 .account-nav-button {
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   border: 1px solid var(--accent);
 }
 .account-primary:hover,
@@ -52,12 +52,12 @@
   background: var(--accent-hover);
 }
 .account-secondary {
-  background: #fff;
-  color: #1b2649;
-  border: 1px solid #d8dbe6;
+  background: var(--surface);
+  color: var(--accent-dark);
+  border: 1px solid var(--border);
 }
 .account-secondary:hover {
-  background: #edf0f7;
+  background: var(--background);
 }
 .account-shell button:disabled,
 .auth-page button:disabled {
@@ -68,14 +68,14 @@
 .account-shell button:focus-visible,
 .auth-page a:focus-visible,
 .auth-page button:focus-visible {
-  outline: 3px solid #29469e;
+  outline: 3px solid var(--accent);
   outline-offset: 4px;
 }
 .account-avatar {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: #d3daee;
+  background: var(--soft);
   display: grid;
   place-items: center;
   border: 0;
@@ -90,8 +90,8 @@
 }
 .account-sidebar {
   padding: 34px 20px;
-  border-right: 1px solid #e0e2ea;
-  background: #fff;
+  border-right: 1px solid var(--border);
+  background: var(--surface);
   position: sticky;
   top: 0;
   height: calc(100vh - 88px);
@@ -118,7 +118,7 @@
   letter-spacing: 1.8px;
   font-weight: 800;
   text-transform: uppercase;
-  color: #50608f;
+  color: var(--muted);
   display: block;
 }
 .account-sidebar nav {
@@ -133,7 +133,7 @@
   text-align: left;
   border: 0;
   background: none;
-  color: #62687b;
+  color: var(--muted);
   border-radius: 9px;
   font-size: 12px;
   font-weight: 600;
@@ -142,18 +142,18 @@
   margin-left: auto;
 }
 .account-sidebar nav button:hover {
-  background: #f4f5f9;
+  background: var(--background);
 }
 .account-sidebar nav button.selected {
-  background: #dee4f4;
-  color: #17244d;
+  background: var(--soft);
+  color: var(--accent-dark);
 }
 .sidebar-help,
 .sidebar-logout {
   display: flex;
   align-items: center;
   gap: 12px;
-  color: #666c80;
+  color: var(--muted);
   font-size: 12px;
   padding: 15px 12px;
 }
@@ -184,8 +184,8 @@
   font-weight: 750;
 }
 .refresh-button {
-  border: 1px solid #dcdfe9;
-  background: white;
+  border: 1px solid var(--border);
+  background: var(--surface);
   border-radius: 50%;
   width: 36px;
   height: 36px;
@@ -220,13 +220,13 @@
   line-height: 1.7;
 }
 .account-notice {
-  background: #e5e9f4;
-  color: #28355e;
-  border: 1px solid #ccd3e7;
+  background: var(--soft);
+  color: var(--foreground);
+  border: 1px solid var(--border);
 }
 .account-error {
-  background: #fff1ed;
-  color: #923f29;
+  background: var(--danger-soft);
+  color: var(--danger);
   border: 1px solid #f0d7cb;
 }
 .account-welcome {
@@ -234,8 +234,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 38px 44px;
-  background: linear-gradient(120deg, #d6dcf0, #e7ebf5 50%, #f3f5fa);
-  border: 1px solid #d8dce9;
+  background: linear-gradient(120deg, var(--soft), var(--soft) 50%, var(--background));
+  border: 1px solid var(--border);
   border-radius: 18px;
   position: relative;
   overflow: hidden;
@@ -248,7 +248,7 @@
   margin: 15px 0;
 }
 .account-welcome p {
-  color: #5f667c;
+  color: var(--muted);
   margin: 0 0 24px;
 }
 .account-welcome > div {
@@ -260,7 +260,7 @@
   width: 205px;
   object-fit: cover;
   transform: rotate(9deg) translateY(28px);
-  border: 6px solid white;
+  border: 6px solid var(--border);
   border-radius: 17px;
   margin-right: 3%;
   box-shadow: 0 15px 30px #353e5720;
@@ -273,8 +273,8 @@
 }
 .account-stat-grid > button {
   text-align: left;
-  background: white;
-  border: 1px solid #dfe2eb;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 13px;
   padding: 23px;
   display: grid;
@@ -285,7 +285,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  color: #616677;
+  color: var(--muted);
   font-size: 12px;
 }
 .account-stat-grid strong {
@@ -295,12 +295,12 @@
 }
 .account-stat-grid small {
   font-size: 12px;
-  color: #707585;
+  color: var(--muted);
   line-height: 1.5;
 }
 .account-card {
-  background: #fff;
-  border: 1px solid #dfe2eb;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 14px;
   padding: 28px;
   margin: 22px 0;
@@ -324,7 +324,7 @@
 }
 .card-heading > span {
   font-size: 12px;
-  color: #626672;
+  color: var(--muted);
 }
 .card-heading button {
   display: flex;
@@ -332,26 +332,26 @@
   gap: 7px;
   border: 0;
   background: none;
-  color: #3c4c7c;
+  color: var(--muted);
   font-size: 12px;
   font-weight: 650;
 }
 .account-muted {
   font-size: 12px;
-  color: #626675;
+  color: var(--muted);
   line-height: 1.8;
   margin-top: 15px;
 }
 .credit-meter {
   height: 8px;
-  background: #e8ebf3;
+  background: var(--soft);
   border-radius: 10px;
   overflow: hidden;
   margin: 26px 0 14px;
 }
 .credit-meter > div {
   height: 100%;
-  background: #758aca;
+  background: var(--accent);
   border-radius: 10px;
 }
 .meter-caption {
@@ -359,14 +359,14 @@
   justify-content: space-between;
   gap: 16px;
   font-size: 12px;
-  color: #545b71;
+  color: var(--muted);
 }
 .current-plan {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 20px;
-  background: linear-gradient(130deg, #fff, #edf0f9);
+  background: linear-gradient(130deg, var(--surface), var(--background));
 }
 .current-plan h2 {
   font-size: 30px;
@@ -374,7 +374,7 @@
 }
 .current-plan p {
   font-size: 12px;
-  color: #6b7183;
+  color: var(--muted);
   margin: 12px 0 20px;
 }
 .current-plan > div:last-child {
@@ -386,16 +386,16 @@
 }
 .current-plan strong small {
   font-size: 12px;
-  color: #626775;
+  color: var(--muted);
   letter-spacing: 0;
   font-weight: 500;
 }
 .status-pill {
   display: inline-flex;
   padding: 5px 9px;
-  background: #eaecf4;
+  background: var(--soft);
   border-radius: 5px;
-  color: #4c5778;
+  color: var(--muted);
   font-size: 12px;
   text-transform: capitalize;
   font-weight: 650;
@@ -419,15 +419,15 @@
   font-size: 12px;
   letter-spacing: 0.5px;
   text-transform: uppercase;
-  color: #646774;
-  border-bottom: 1px solid #e0e3eb;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
   padding: 12px 12px 12px 0;
   white-space: nowrap;
 }
 .account-card td {
   padding: 17px 12px 17px 0;
-  border-bottom: 1px solid #edeef3;
-  color: #525a70;
+  border-bottom: 1px solid var(--border);
+  color: var(--muted);
 }
 .account-card tr:last-child td {
   border-bottom: 0;
@@ -441,11 +441,11 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
-  color: #636672;
+  color: var(--muted);
 }
 .account-empty h3 {
   font-size: 20px;
-  color: #37415f;
+  color: var(--foreground);
   letter-spacing: -0.6px;
   margin: 18px 0 8px;
 }
@@ -457,7 +457,7 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  color: #38466e;
+  color: var(--muted);
   font-weight: 650;
   font-size: 12px;
   background: none;
@@ -468,8 +468,8 @@
 .balance-banner {
   padding: 35px;
   border-radius: 17px;
-  background: linear-gradient(120deg, #c6d0ee, #e5e9f5);
-  border: 1px solid #c2cbe5;
+  background: linear-gradient(120deg, var(--soft), var(--soft));
+  border: 1px solid var(--border);
   margin-bottom: 38px;
 }
 .balance-banner h2 {
@@ -482,7 +482,7 @@
   font-size: 17px;
   letter-spacing: 0;
   font-weight: 500;
-  color: #626e91;
+  color: var(--muted);
 }
 .balance-banner > div {
   display: flex;
@@ -492,11 +492,11 @@
   display: grid;
   gap: 8px;
   font-size: 12px;
-  color: #566284;
+  color: var(--muted);
 }
 .balance-banner strong {
   font-size: 15px;
-  color: #323d5d;
+  color: var(--foreground);
 }
 .pack-grid {
   display: grid;
@@ -504,15 +504,15 @@
 }
 .pack-card {
   padding: 22px;
-  border: 1px solid #dcdfe9;
+  border: 1px solid var(--border);
   border-radius: 12px;
-  background: #fff;
+  background: var(--surface);
   display: grid;
   gap: 15px;
 }
 .pack-card > span {
   font-size: 12px;
-  color: #626778;
+  color: var(--muted);
 }
 .pack-card strong {
   font-size: 28px;
@@ -525,7 +525,7 @@
 }
 .pack-card p {
   font-size: 12px;
-  color: #626778;
+  color: var(--muted);
   margin: 0;
 }
 .account-packs {
@@ -534,9 +534,9 @@
 .custom-topup {
   margin-top: 20px;
   padding: clamp(20px, 3vw, 30px);
-  border: 1px solid #d6dae6;
+  border: 1px solid var(--border);
   border-radius: 14px;
-  background: #fcfcfe;
+  background: var(--surface);
 }
 .custom-topup-heading,
 .custom-topup-footer {
@@ -555,15 +555,15 @@
   margin: 6px 0 0;
   font-size: 12px;
   line-height: 1.6;
-  color: #626778;
+  color: var(--muted);
 }
 .custom-topup output {
-  color: #535b72;
+  color: var(--muted);
   font-size: 13px;
   white-space: nowrap;
 }
 .custom-topup output strong {
-  color: #192445;
+  color: var(--accent-dark);
   font-size: 30px;
   font-weight: 550;
   font-variant-numeric: tabular-nums;
@@ -577,7 +577,7 @@
   cursor: pointer;
 }
 .custom-topup input[type="range"]:focus-visible {
-  outline: 2px solid #526aa7;
+  outline: 2px solid var(--border);
   outline-offset: 4px;
   border-radius: 4px;
 }
@@ -588,13 +588,13 @@
 .custom-topup-limits {
   display: flex;
   justify-content: space-between;
-  color: #626778;
+  color: var(--muted);
   font-size: 11px;
 }
 .custom-topup-footer {
   margin-top: 24px;
   padding-top: 20px;
-  border-top: 1px solid #e3e6ee;
+  border-top: 1px solid var(--border);
 }
 .custom-topup-footer > div {
   flex: 1 1 240px;
@@ -608,7 +608,7 @@
   display: inline-block;
   font-size: 11px;
   font-weight: 400;
-  color: #626778;
+  color: var(--muted);
 }
 .custom-topup-footer button {
   flex: 1 1 180px;
@@ -620,7 +620,7 @@
 .auth-panel label {
   display: grid;
   gap: 8px;
-  color: #535b72;
+  color: var(--muted);
   font-size: 12px;
   font-weight: 600;
   margin: 20px 0;
@@ -631,9 +631,9 @@
   font-family: inherit;
   width: 100%;
   padding: 12px 14px;
-  color: #192445;
-  background: #fcfcfe;
-  border: 1px solid #d6dae6;
+  color: var(--accent-dark);
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 8px;
   outline: none;
   font-size: 13px;
@@ -643,12 +643,12 @@
 .account-card input:focus,
 .account-card .reelform-select-trigger:focus,
 .auth-panel input:focus {
-  border-color: #6479b9;
+  border-color: var(--border);
   box-shadow: 0 0 0 3px #d4daee80;
 }
 .account-card input:disabled {
-  background: #f3f4f7;
-  color: #808594;
+  background: var(--background);
+  color: var(--muted);
 }
 .account-card .toggle-row {
   display: flex;
@@ -664,7 +664,7 @@
 }
 .toggle-row small {
   font-size: 12px;
-  color: #636774;
+  color: var(--muted);
   font-weight: 400;
 }
 .toggle-row input {
@@ -674,7 +674,7 @@
   min-width: 42px;
   border-radius: 20px;
   border: 0;
-  background: #d5d8e1;
+  background: var(--soft);
   position: relative;
   cursor: pointer;
   transition: background 0.2s;
@@ -687,7 +687,7 @@
   width: 19px;
   height: 19px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--surface);
   transition: transform 0.2s;
 }
 .toggle-row input:checked {
@@ -718,12 +718,12 @@
   margin: 2px 0 0;
 }
 .credit-positive {
-  color: #293f81 !important;
+  color: var(--accent-dark) !important;
   font-weight: 700;
 }
 .row-error {
   display: block;
-  color: #ad573f;
+  color: var(--danger);
   max-width: 250px;
   margin-top: 5px;
 }
@@ -736,8 +736,8 @@
 .creation-card {
   overflow: hidden;
   border-radius: 14px;
-  border: 1px solid #dfe2eb;
-  background: #fff;
+  border: 1px solid var(--border);
+  background: var(--surface);
 }
 .creation-card > video,
 .creation-card > a > video,
@@ -745,7 +745,7 @@
   height: 250px;
   width: 100%;
   object-fit: contain;
-  background: #12182b;
+  background: var(--accent);
 }
 .creation-pending {
   display: flex;
@@ -753,7 +753,7 @@
   align-items: center;
   justify-content: center;
   gap: 15px;
-  color: #5b6686;
+  color: var(--muted);
 }
 .creation-card > div:last-child {
   padding: 18px;
@@ -761,18 +761,18 @@
 .creation-card p {
   font-size: 12px;
   line-height: 1.8;
-  color: #535b72;
+  color: var(--muted);
 }
 .creation-card small {
   font-size: 12px;
-  color: #646770;
+  color: var(--muted);
   display: block;
   margin-bottom: 18px;
 }
 .creation-card details {
   font-size: 12px;
   margin-top: 15px;
-  color: #646770;
+  color: var(--muted);
 }
 .creation-card code {
   word-break: break-all;
@@ -788,12 +788,12 @@
 .danger-card p {
   font-size: 12px;
   line-height: 1.8;
-  color: #887164;
+  color: var(--muted);
   max-width: 700px;
 }
 .danger-button {
-  background: #fff5f0;
-  color: #a34b2f;
+  background: var(--danger-soft);
+  color: var(--danger);
   border: 1px solid #edcdbc;
   border-radius: 8px;
   padding: 12px 18px;
@@ -818,20 +818,20 @@
 }
 .pricing-intro h1 em {
   font-style: normal;
-  color: #57699f;
+  color: var(--muted);
 }
 .pricing-intro p {
   font-size: 15px;
   line-height: 1.85;
-  color: #626777;
+  color: var(--muted);
 }
 .billing-toggle {
   display: flex;
   justify-content: center;
   gap: 5px;
-  background: #eaecf3;
+  background: var(--soft);
   padding: 5px;
-  border: 1px solid #dcdfe9;
+  border: 1px solid var(--border);
   border-radius: 12px;
   max-width: 340px;
   margin: 25px auto 40px;
@@ -841,20 +841,20 @@
   border: 0;
   background: none;
   font-size: 12px;
-  color: #555b6d;
+  color: var(--muted);
   font-weight: 650;
   border-radius: 8px;
   white-space: nowrap;
 }
 .billing-toggle button[aria-pressed="true"] {
-  background: #fff;
-  color: #283458;
+  background: var(--surface);
+  color: var(--foreground);
   box-shadow: 0 2px 5px #21283b10;
 }
 .billing-toggle span {
   font-size: 11px;
   margin-left: 6px;
-  color: #4d609a;
+  color: var(--muted);
 }
 .plan-grid {
   display: grid;
@@ -864,16 +864,16 @@
 }
 .plan-card {
   position: relative;
-  background: #fff;
-  border: 1px solid #dfe2ea;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 16px;
   padding: 32px 27px;
   display: flex;
   flex-direction: column;
 }
 .plan-card.recommended {
-  border: 2px solid #6b81c4;
-  background: linear-gradient(150deg, #f5f7fe, #fff 65%);
+  border: 2px solid var(--border);
+  background: linear-gradient(150deg, var(--surface), var(--surface) 65%);
   padding: 31px 26px;
 }
 .plan-badge {
@@ -882,8 +882,8 @@
   left: 50%;
   transform: translateX(-50%);
   white-space: nowrap;
-  background: #2d4079;
-  color: #fff;
+  background: var(--accent);
+  color: var(--on-accent);
   font-size: 11px;
   letter-spacing: 1.2px;
   padding: 7px 15px;
@@ -899,13 +899,13 @@
 .plan-card h3 small {
   font-size: 12px;
   letter-spacing: 0;
-  color: #636771;
+  color: var(--muted);
   font-weight: 500;
   margin-left: 4px;
 }
 .plan-card p {
   font-size: 12px;
-  color: #626777;
+  color: var(--muted);
   line-height: 1.8;
   margin: 14px 0 24px;
 }
@@ -917,16 +917,16 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #5e6887;
+  color: var(--muted);
   font-size: 12px;
   padding: 20px 0;
-  border-top: 1px solid #e5e7ee;
-  border-bottom: 1px solid #e5e7ee;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
 }
 .plan-credit strong {
   font-size: 19px;
   letter-spacing: -0.5px;
-  color: #2d3a61;
+  color: var(--foreground);
 }
 .plan-card ul {
   list-style: none;
@@ -934,7 +934,7 @@
   display: grid;
   gap: 15px;
   margin: 24px 0 32px;
-  color: #717686;
+  color: var(--muted);
   font-size: 12px;
 }
 .plan-card li {
@@ -946,7 +946,7 @@
 .plan-card li svg {
   width: 13px;
   height: 13px;
-  color: #58668d;
+  color: var(--muted);
   flex-shrink: 0;
 }
 .plan-card > button {
@@ -955,7 +955,7 @@
 }
 .pricing-fine {
   font-size: 12px;
-  color: #646770;
+  color: var(--muted);
   line-height: 1.85;
   text-align: center;
   max-width: 830px;
@@ -979,7 +979,7 @@
 .reload-explainer p {
   font-size: 13px;
   line-height: 1.9;
-  color: #626674;
+  color: var(--muted);
 }
 .credit-explainer .pack-card {
   grid-template-columns: 1fr auto;
@@ -994,14 +994,14 @@
 }
 .reload-explainer {
   text-align: center;
-  background: linear-gradient(120deg, #d5dcf0, #eaedf7);
+  background: linear-gradient(120deg, var(--soft), var(--background));
   border-radius: 20px;
   padding: 45px 35px 50px;
   max-width: 860px;
   margin: 0 auto 85px;
 }
 .reload-explainer > svg {
-  color: #5c6da1;
+  color: var(--muted);
 }
 .reload-explainer p {
   max-width: 550px;
@@ -1017,7 +1017,7 @@
   font-size: 12px;
 }
 .auth-page {
-  background: #fff;
+  background: var(--surface);
 }
 .auth-layout {
   display: grid;
@@ -1086,7 +1086,7 @@
 }
 .auth-panel > p {
   font-size: 13px;
-  color: #646771;
+  color: var(--muted);
   line-height: 1.8;
   margin-bottom: 30px;
 }
@@ -1098,19 +1098,19 @@
   text-align: center;
   margin-top: 25px;
   font-size: 12px;
-  color: #636672;
+  color: var(--muted);
   line-height: 2;
 }
 .auth-switch button {
   font-size: 12px;
-  color: #394873;
+  color: var(--muted);
   background: none;
   border: 0;
   font-weight: 650;
 }
 .form-fine {
   font-size: 12px;
-  color: #646771;
+  color: var(--muted);
   text-align: center;
   line-height: 1.8;
   margin-top: 20px;
@@ -1216,7 +1216,7 @@
     height: auto;
     padding: 12px 16px;
     border-right: 0;
-    border-bottom: 1px solid #e0e2ea;
+    border-bottom: 1px solid var(--border);
   }
   .sidebar-person,
   .sidebar-help,
@@ -1472,18 +1472,18 @@
   gap: 12px;
   width: 100%;
   min-height: 48px;
-  border: 1px solid #d6d9e3;
+  border: 1px solid var(--border);
   border-radius: 12px;
-  background: white;
-  color: #171f36;
+  background: var(--surface);
+  color: var(--foreground);
   font: inherit;
   font-weight: 600;
   cursor: pointer;
 }
-.auth-google:hover { background: #f3f5fb; }
-.auth-google:focus-visible { outline: 3px solid #4169e1; outline-offset: 3px; }
+.auth-google:hover { background: var(--background); }
+.auth-google:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
 .auth-google:disabled { opacity: .6; cursor: wait; }
-.auth-divider { text-align: center; color: #686e7e; font-size: 12px; margin: 4px 0; }
+.auth-divider { text-align: center; color: var(--muted); font-size: 12px; margin: 4px 0; }
 /* Narrow phones: keep the header on one line after the larger text sizes. */
 @media (max-width: 420px) {
   .account-header {
@@ -1499,11 +1499,11 @@
 }
 
 .creation-card > a { display: block; }
-.creation-card > a:focus-visible { outline: 3px solid var(--accent, #4569ee); outline-offset: 3px; }
+.creation-card > a:focus-visible { outline: 3px solid var(--accent, var(--accent)); outline-offset: 3px; }
 
 .motion-cost-table { margin: 24px 0 14px; overflow-x: auto; }
 .motion-cost-table table { width: 100%; border-collapse: collapse; font-size: 12px; font-variant-numeric: tabular-nums; }
-.motion-cost-table caption { text-align: left; font-weight: 650; padding-bottom: 12px; color: #26334f; }
-.motion-cost-table th, .motion-cost-table td { padding: 12px 8px; text-align: right; border-bottom: 1px solid #e1e5ef; }
+.motion-cost-table caption { text-align: left; font-weight: 650; padding-bottom: 12px; color: var(--foreground); }
+.motion-cost-table th, .motion-cost-table td { padding: 12px 8px; text-align: right; border-bottom: 1px solid var(--border); }
 .motion-cost-table th:first-child { text-align: left; }
-.motion-cost-table thead { color: #576079; background: #f5f7fc; }
+.motion-cost-table thead { color: var(--muted); background: var(--background); }

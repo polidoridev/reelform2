@@ -1,8 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import CookieConsent from "@/components/reelform/cookie-consent";
+import ThemeSwitch from "@/components/reelform/theme-switch";
 import { CANONICAL_ORIGIN } from "@/lib/site-url";
 import { DEFAULT_DESCRIPTION, SHARE_IMAGE, SITE_NAME } from "@/lib/seo";
 import "./globals.css";
+import "./redesign.css";
 
 const title = "Reelform | AI Motion Transfer";
 export const metadata: Metadata = {
@@ -26,7 +28,10 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#fcfcfd",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f7f8fa" },
+    { media: "(prefers-color-scheme: dark)", color: "#10151f" },
+  ],
 };
 
 const organization = {
@@ -66,6 +71,7 @@ export default function RootLayout({
       <body>
         {children}
         <CookieConsent />
+        <ThemeSwitch />
       </body>
     </html>
   );

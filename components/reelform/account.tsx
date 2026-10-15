@@ -194,8 +194,8 @@ export default function Account({
         <nav>
           <Link prefetch={false} href="/community">Community</Link>
           <a href="/pricing">Plans</a>
-          <a href="/login?next=%2Fstudio" className="account-nav-button">
-            Motion Transfer <ArrowUpRight size={16} />
+          <a href="/studio" className="account-nav-button">
+            TransferLab <ArrowUpRight size={16} />
           </a>
           <button
             className="account-avatar"

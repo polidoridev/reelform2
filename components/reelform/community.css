@@ -1,7 +1,7 @@
 .community-page {
   min-height: 100dvh;
-  background: #fbfbfd;
-  color: #13192d;
+  background: var(--surface);
+  color: var(--foreground);
 }
 .community-page a {
   color: inherit;
@@ -24,7 +24,7 @@
   opacity: 0.5;
 }
 .community-page :focus-visible {
-  outline: 3px solid #294fbd;
+  outline: 3px solid var(--accent);
   outline-offset: 4px;
 }
 .community-header {
@@ -36,7 +36,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-  border-bottom: 1px solid #dee1eb;
+  border-bottom: 1px solid var(--border);
 }
 .community-header .brand {
   font-size: 27px;
@@ -49,7 +49,7 @@
   font-weight: 600;
 }
 .community-header nav > a[aria-current] {
-  color: #294fbd;
+  color: var(--accent-dark);
 }
 .community-page .community-button {
   display: inline-flex;
@@ -61,7 +61,7 @@
   padding: 13px 22px;
   min-height: 46px;
   background: var(--accent);
-  color: white;
+  color: var(--on-accent);
   font-size: 13px;
   font-weight: 700;
   transition: background 0.2s;
@@ -86,7 +86,7 @@
   font-size: 10px;
   letter-spacing: 2px;
   font-weight: 800;
-  color: #32416e;
+  color: var(--foreground);
   margin-bottom: 18px;
 }
 .community-intro h1,
@@ -99,21 +99,21 @@
 }
 .community-intro h1 span,
 .community-share-heading h1 span {
-  color: #294fbd;
+  color: var(--accent-dark);
 }
 .community-intro > div > p,
 .community-share-heading > p {
-  color: #52596e;
+  color: var(--muted);
   font-size: 15px;
   line-height: 1.8;
   margin: 22px 0 26px;
 }
 .community-ownership {
-  border-left: 1px solid #d3d8e6;
+  border-left: 1px solid var(--border);
   padding: 10px 0 10px 32px;
 }
 .community-ownership > svg {
-  color: #294fbd;
+  color: var(--accent-dark);
   margin-bottom: 16px;
 }
 .community-ownership h2 {
@@ -125,7 +125,7 @@
 .community-ownership p {
   font-size: 12px;
   line-height: 1.9;
-  color: #52596e;
+  color: var(--muted);
   margin: 0 0 17px;
 }
 .community-ownership a {
@@ -141,7 +141,7 @@
   justify-content: space-between;
   gap: 20px;
   padding: 26px 0;
-  border-top: 1px solid #dcdfe9;
+  border-top: 1px solid var(--border);
 }
 .community-feed-heading .community-eyebrow {
   margin-bottom: 8px;
@@ -156,21 +156,21 @@
   display: flex;
   gap: 5px;
   border-radius: 100px;
-  background: #edeff4;
+  background: var(--background);
   padding: 4px;
 }
 .community-tabs button {
   border: 0;
   background: transparent;
-  color: #474f66;
+  color: var(--muted);
   border-radius: 100px;
   padding: 10px 16px;
   font-size: 12px;
   font-weight: 700;
 }
 .community-tabs button[aria-pressed="true"] {
-  background: #fff;
-  color: #121d3e;
+  background: var(--surface);
+  color: var(--accent-dark);
   box-shadow: 0 1px 4px #141e3d10;
 }
 .community-grid {
@@ -185,7 +185,7 @@
   position: relative;
   border-radius: 18px;
   overflow: hidden;
-  background: #101628;
+  background: var(--accent);
   aspect-ratio: 4 / 5;
 }
 .community-player video {
@@ -198,8 +198,8 @@
   position: absolute;
   top: 12px;
   left: 12px;
-  background: #fff;
-  color: #162143;
+  background: var(--surface);
+  color: var(--accent-dark);
   padding: 5px 9px;
   border-radius: 100px;
   font-size: 9px;
@@ -221,7 +221,7 @@
 }
 .community-byline small {
   display: block;
-  color: #646a7d;
+  color: var(--muted);
   font-size: 10px;
   font-weight: 400;
 }
@@ -231,9 +231,9 @@
   height: 33px;
   display: grid;
   place-items: center;
-  background: #dee3f1;
+  background: var(--soft);
   border-radius: 50%;
-  color: #253564;
+  color: var(--accent-dark);
   font-weight: 800;
 }
 .community-post h2 {
@@ -244,7 +244,7 @@
   overflow-wrap: anywhere;
 }
 .community-caption {
-  color: #535a6e;
+  color: var(--muted);
   font-size: 12px;
   line-height: 1.8;
   white-space: pre-wrap;
@@ -254,7 +254,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 16px;
-  border-top: 1px solid #e1e3eb;
+  border-top: 1px solid var(--border);
   padding: 13px 0;
   margin-top: 16px;
 }
@@ -266,11 +266,11 @@
   border: 0;
   background: none;
   padding: 4px 0;
-  color: #4b536d;
+  color: var(--muted);
   font-size: 10px;
 }
 .community-remove {
-  background: #f0f1f5;
+  background: var(--background);
   padding: 16px;
   border-radius: 12px;
   font-size: 12px;
@@ -285,9 +285,9 @@
   padding: 9px 14px;
 }
 .community-empty {
-  border: 1px solid #dcdfe9;
+  border: 1px solid var(--border);
   border-radius: 18px;
-  background: linear-gradient(130deg, #f0f2f8, #fbfbfd);
+  background: linear-gradient(130deg, var(--background), var(--surface));
   padding: 62px 24px;
   display: flex;
   flex-direction: column;
@@ -299,8 +299,8 @@
   place-items: center;
   height: 66px;
   width: 66px;
-  background: #dce1ef;
-  color: #324274;
+  background: var(--soft);
+  color: var(--muted);
   border-radius: 18px;
   margin-bottom: 24px;
   transform: rotate(-5deg);
@@ -317,7 +317,7 @@
 }
 .community-empty p {
   font-size: 13px;
-  color: #5a6176;
+  color: var(--muted);
   max-width: 400px;
   line-height: 1.9;
   margin: 0 0 23px;
@@ -330,7 +330,7 @@
 .community-skeletons > div {
   height: 330px;
   border-radius: 18px;
-  background: #e7e9f0;
+  background: var(--soft);
 }
 .community-pagination {
   display: flex;
@@ -343,11 +343,11 @@
 .community-pagination button {
   padding: 10px 18px;
   border-radius: 100px;
-  background: #edeff5;
-  border: 1px solid #c7cdde;
+  background: var(--background);
+  border: 1px solid var(--border);
 }
 .community-footer {
-  border-top: 1px solid #dcdfe9;
+  border-top: 1px solid var(--border);
   max-width: 1240px;
   margin: auto;
   padding: 25px 32px;
@@ -355,7 +355,7 @@
   justify-content: space-between;
   gap: 25px;
   font-size: 11px;
-  color: #565d73;
+  color: var(--muted);
 }
 .community-footer > span {
   font-weight: 700;
@@ -372,7 +372,7 @@
   gap: 20px;
   align-items: center;
   font-size: 12px;
-  color: #52596e;
+  color: var(--muted);
 }
 .community-single-heading > a,
 .community-share-heading > a {
@@ -429,7 +429,7 @@
 .community-file-label span {
   display: block;
   flex-basis: 100%;
-  color: #535a6f;
+  color: var(--muted);
   font-size: 11px;
 }
 .community-upload-column > input {
@@ -438,23 +438,23 @@
   margin-bottom: 20px;
 }
 .community-upload-column > input::file-selector-button {
-  border: 1px solid #c9cedf;
+  border: 1px solid var(--border);
   border-radius: 100px;
-  background: #edeff6;
+  background: var(--background);
   padding: 8px 14px;
   margin-right: 10px;
-  color: #172347;
+  color: var(--accent-dark);
 }
 .community-upload-preview video {
   display: block;
   width: 100%;
   max-height: 420px;
-  background: #101628;
+  background: var(--accent);
   border-radius: 18px;
 }
 .community-upload-preview > p {
   font-size: 11px;
-  color: #535a6f;
+  color: var(--muted);
   overflow-wrap: anywhere;
 }
 .community-preview-placeholder {
@@ -463,10 +463,10 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  border: 1px dashed #b5bdd4;
+  border: 1px dashed var(--border);
   border-radius: 18px;
-  background: #f1f3f8;
-  color: #546187;
+  background: var(--background);
+  color: var(--muted);
   text-align: center;
   padding: 25px;
 }
@@ -482,22 +482,22 @@
   display: flex;
   gap: 14px;
   padding: 24px 0;
-  border-bottom: 1px solid #dcdfe9;
+  border-bottom: 1px solid var(--border);
 }
 .community-upload-promise svg {
   flex-shrink: 0;
-  color: #294fbd;
+  color: var(--accent-dark);
   margin-top: 3px;
 }
 .community-upload-promise p {
   margin: 0;
   font-size: 12px;
   line-height: 1.85;
-  color: #535a6f;
+  color: var(--muted);
 }
 .community-upload-promise strong {
   display: block;
-  color: #18254c;
+  color: var(--accent-dark);
 }
 .community-details {
   border: 0;
@@ -515,10 +515,10 @@
 .community-details textarea {
   display: block;
   width: 100%;
-  border: 1px solid #cbd0de;
+  border: 1px solid var(--border);
   border-radius: 10px;
-  background: white;
-  color: #13192d;
+  background: var(--surface);
+  color: var(--foreground);
   padding: 12px 14px;
   margin-top: 8px;
   font-size: 13px;
@@ -529,7 +529,7 @@
 }
 .community-details small {
   display: block;
-  color: #565e75;
+  color: var(--muted);
   font-size: 10px;
   line-height: 1.65;
   margin-top: 7px;
@@ -537,7 +537,7 @@
 }
 .community-optional {
   font-weight: 400;
-  color: #565e75;
+  color: var(--muted);
 }
 .community-check {
   display: flex;
@@ -559,7 +559,7 @@
   margin-top: 2px;
 }
 .community-consent {
-  border-top: 1px solid #dcdfe9;
+  border-top: 1px solid var(--border);
   padding-top: 22px;
 }
 .community-consent a {
@@ -569,22 +569,22 @@
 .community-public-note {
   font-size: 11px;
   line-height: 1.8;
-  color: #596074;
+  color: var(--muted);
   margin: 18px 0 24px;
 }
 .community-error {
   font-size: 12px;
   line-height: 1.75;
-  color: #9b342d;
-  background: #fff2ee;
+  color: var(--danger);
+  background: var(--danger-soft);
   padding: 12px 16px;
   border-radius: 10px;
   margin: 14px 0;
 }
 .community-notice {
   padding: 14px 18px;
-  background: #dfe3f1;
-  color: #24325c;
+  background: var(--soft);
+  color: var(--foreground);
   border-radius: 10px;
   font-size: 12px;
 }
@@ -655,7 +655,7 @@
     margin-top: 32px;
     padding: 20px 0 0;
     border-left: 0;
-    border-top: 1px solid #d3d8e6;
+    border-top: 1px solid var(--border);
   }
   .community-ownership > svg {
     margin: 0;

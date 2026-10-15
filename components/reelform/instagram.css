@@ -1,6 +1,6 @@
 .instagram-page {
   min-height: 100vh;
-  background: #f6f7fb;
+  background: var(--background);
 }
 .instagram-nav {
   max-width: 1160px;
@@ -13,7 +13,7 @@
 }
 .instagram-nav > a:last-child {
   font-size: 13px;
-  color: #535c73;
+  color: var(--muted);
 }
 .instagram-page-body {
   max-width: 1000px;
@@ -21,7 +21,7 @@
   padding: 0 32px 72px;
 }
 .instagram-eyebrow {
-  color: #4169e1;
+  color: var(--accent-dark);
   font-size: 11px;
   letter-spacing: 0.15em;
   font-weight: 800;
@@ -33,7 +33,7 @@
   letter-spacing: -0.045em;
 }
 .instagram-intro {
-  color: #697187;
+  color: var(--muted);
   margin: 12px 0 30px;
 }
 .instagram-panel {
@@ -42,8 +42,8 @@
   min-width: 0;
 }
 .instagram-card {
-  background: white;
-  border: 1px solid #e2e6f0;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 18px;
   padding: 25px;
   min-width: 0;
@@ -61,7 +61,7 @@
 .instagram-connection-heading p {
   margin: 0;
   font-size: 13px;
-  color: #687087;
+  color: var(--muted);
 }
 .instagram-icon {
   width: 48px;
@@ -70,8 +70,8 @@
   display: grid;
   place-items: center;
   border-radius: 14px;
-  background: #edf2ff;
-  color: #4169e1;
+  background: var(--background);
+  color: var(--accent-dark);
 }
 .instagram-actions {
   display: flex;
@@ -79,7 +79,7 @@
   margin-top: 20px;
 }
 .instagram-connect-guide {
-  border-top: 1px solid #e2e6f0;
+  border-top: 1px solid var(--border);
   margin-top: 22px;
   padding-top: 22px;
   margin-bottom: 20px;
@@ -102,18 +102,18 @@
   padding-left: 6px;
 }
 .instagram-connect-steps li::marker {
-  color: #294fbd;
+  color: var(--accent-dark);
   font-weight: 700;
 }
 .instagram-connect-steps p {
   margin: 3px 0 0;
-  color: #596177;
+  color: var(--muted);
 }
 .instagram-connect-help {
   margin: 20px 0 12px;
   padding: 14px 16px;
   border-radius: 10px;
-  background: #f6f7fb;
+  background: var(--background);
   font-size: 13px;
   line-height: 1.7;
 }
@@ -122,20 +122,20 @@
   font-weight: 600;
 }
 .instagram-connect-help p {
-  color: #596177;
+  color: var(--muted);
   margin: 10px 0;
 }
 .instagram-connect-help a {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  color: #294fbd;
+  color: var(--accent-dark);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
 .instagram-connect-help summary:focus-visible,
 .instagram-connect-help a:focus-visible {
-  outline: 3px solid #4169e1;
+  outline: 3px solid var(--accent);
   outline-offset: 3px;
 }
 .instagram-compose {
@@ -162,21 +162,21 @@
   width: 100%;
   resize: vertical;
   min-height: 150px;
-  border: 1px solid #d9deeb;
+  border: 1px solid var(--border);
   border-radius: 10px;
   padding: 12px;
-  background: #fcfcfe;
+  background: var(--surface);
   font-size: 14px;
 }
 .instagram-compose textarea:focus-visible,
 .instagram-checkbox input:focus-visible {
-  outline: 3px solid #4169e1;
+  outline: 3px solid var(--accent);
   outline-offset: 3px;
 }
 .instagram-count {
   text-align: right;
   font-size: 11px;
-  color: #747b8d;
+  color: var(--muted);
   margin-top: -7px;
 }
 .instagram-checkbox {
@@ -195,12 +195,12 @@
 }
 .instagram-help {
   font-size: 12px;
-  color: #697187;
+  color: var(--muted);
   line-height: 1.7;
   margin: 8px 0 0;
 }
 .instagram-help a {
-  color: #294fbd;
+  color: var(--accent-dark);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
@@ -210,16 +210,16 @@
   padding: 15px 18px;
   border-radius: 12px;
   margin: 0;
-  background: #edf3ff;
-  color: #2b477f;
+  background: var(--background);
+  color: var(--accent-dark);
 }
 .instagram-notice svg {
   vertical-align: middle;
   margin-right: 7px;
 }
 .instagram-error {
-  background: #fff0ee;
-  color: #922e25;
+  background: var(--danger-soft);
+  color: var(--danger);
 }
 .instagram-error p {
   margin: 0 0 8px;
@@ -230,7 +230,7 @@
   font-weight: 700;
 }
 .instagram-disconnect {
-  border-top: 1px solid #e2e6f0;
+  border-top: 1px solid var(--border);
   margin-top: 18px;
   padding-top: 8px;
   font-size: 13px;
@@ -243,7 +243,7 @@
   margin-bottom: 18px;
 }
 .instagram-post {
-  border-top: 1px solid #e6e9f0;
+  border-top: 1px solid var(--border);
   padding: 18px 0;
   font-size: 13px;
   overflow-wrap: anywhere;
@@ -258,25 +258,25 @@
   justify-content: space-between;
 }
 .instagram-post-heading span {
-  color: #697187;
+  color: var(--muted);
 }
 .instagram-post-published strong {
-  color: #247044;
+  color: var(--success);
 }
 .instagram-post-unknown strong,
 .instagram-post-failed strong {
-  color: #922e25;
+  color: var(--danger);
 }
 .instagram-post a {
   display: inline-flex;
   gap: 6px;
   align-items: center;
-  color: #294fbd;
+  color: var(--accent-dark);
   font-weight: 700;
 }
 .instagram-caption {
   white-space: pre-wrap;
-  color: #596177;
+  color: var(--muted);
 }
 .instagram-spin {
   display: inline-block;
@@ -323,16 +323,16 @@
   width: 100%;
   min-width: 0;
   min-height: 44px;
-  border: 1px solid #d9deeb;
+  border: 1px solid var(--border);
   border-radius: 10px;
   padding: 10px 12px;
-  background: #fcfcfe;
-  color: #101423;
+  background: var(--surface);
+  color: var(--foreground);
   font: inherit;
 }
 .instagram-compose select:focus-visible,
 .instagram-compose input[type="datetime-local"]:focus-visible {
-  outline: 3px solid #4169e1;
+  outline: 3px solid var(--accent);
   outline-offset: 3px;
 }
 .instagram-post .account-secondary { margin-top: 10px; }

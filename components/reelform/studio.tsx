@@ -264,7 +264,13 @@ export default function Studio({ cinema = false }: { cinema?: boolean }) {
         </button>
         <nav aria-label="Studio navigation">
           <Link prefetch={false} href="/studio" aria-current={cinema ? undefined : "page"}>
-            <AudioLines size={17} /> Motion Transfer
+            <AudioLines size={17} /> TransferLab
+          </Link>
+          <Link prefetch={false} href="/cinemalab" aria-current={cinema ? "page" : undefined}>
+            <Film size={17} /> CinemaLab
+          </Link>
+          <Link prefetch={false} href="/aura">
+            <Scissors size={17} /> Aura editor
           </Link>
           <Link prefetch={false} href="/account?tab=creations">
             <Film size={17} /> My creations
@@ -277,8 +283,6 @@ export default function Studio({ cinema = false }: { cinema?: boolean }) {
           <summary>More video tools</summary>
           <nav aria-label="Other video tools">
             <Link prefetch={false} href="/studio?useCase=product-swap"><SlidersHorizontal size={17} /> Object Swap</Link>
-            <Link prefetch={false} href="/cinemalab" aria-current={cinema ? "page" : undefined}><Film size={17} /> CinemaLab</Link>
-            <Link prefetch={false} href="/aura"><Scissors size={17} /> Aura video editor</Link>
           </nav>
         </details>
         {s.backgroundVideos.length > 0 && (
@@ -375,7 +379,7 @@ export default function Studio({ cinema = false }: { cinema?: boolean }) {
             >
               <Menu size={21} />
             </button>
-            <span>{cinema ? "CinemaLab" : s.trialMode ? "Free Seedance edit" : s.selectedModel.shortName ?? s.selectedModel.name}</span>
+            <span>{cinema ? "CinemaLab" : s.trialMode ? "Free Seedance edit" : "TransferLab"}</span>
             <span className="chat-header-separator">/</span>
             <small>
               {hasConversation ? "Your conversation" : "New creation"}
@@ -429,6 +433,7 @@ export default function Studio({ cinema = false }: { cinema?: boolean }) {
         >
           {!hasConversation && (
             <section className="chat-welcome">
+              {!cinema && <span className="workspace-kicker">{s.trialMode ? "YOUR FIRST CREATION" : "YOUR CREATIVE WORKSPACE"}</span>}
               {cinema ? <>
               <span className="chat-welcome-icon">
                 <AudioLines size={30} strokeWidth={1.7} />

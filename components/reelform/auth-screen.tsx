@@ -95,9 +95,12 @@ export default function AuthScreen({
     <div className="auth-page">
       <header className="account-header">
         <Brand />
+        <nav aria-label="Account navigation">
+        <Link prefetch={false} href="/studio" className="quick-access-tab">TransferLab</Link>
         <Link prefetch={false} href="/" className="quiet-link">
           <ArrowLeft size={16} /> Back to Reelform
         </Link>
+        </nav>
       </header>
       <main className="auth-layout">
         <div className="auth-art">

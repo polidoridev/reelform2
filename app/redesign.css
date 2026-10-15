@@ -1,0 +1,103 @@
+/* Shared visual rhythm for every Reelform surface. Component layouts and
+   generation state are kept in their own stylesheets. */
+body { -webkit-font-smoothing: antialiased; }
+body :is(.account-shell, .auth-page, .community-page, .aura-page, .instagram-page, .studio-chat-layout) { background: var(--background); color: var(--foreground); }
+body :is(.account-header, .community-header, .aura-header) { min-height: 78px; height: auto; padding-block: 18px; background: var(--surface); border-color: var(--border); }
+body .community-header { max-width: none; padding-inline: max(32px, calc((100vw - 1280px) / 2)); }
+body .brand { letter-spacing: -.065em; }
+body .brand-mark { border-radius: 9px; background: var(--accent); color: var(--on-accent); }
+body :is(.button, .account-primary, .account-nav-button, .community-button, .aura-primary, .cinemalab-primary) { border-radius: 8px; box-shadow: none; }
+body :is(.button, .account-primary, .account-nav-button, .community-button, .aura-primary, .cinemalab-primary):hover { transform: none; }
+body :is(.account-header, .community-header, .aura-header) nav { gap: 22px; }
+body .quick-access-tab { color: var(--accent-dark); font-weight: 750; }
+body :is(.account-card, .plan-card, .community-post, .aura-output, .cinemalab-workspace) { border-radius: 12px; box-shadow: 0 5px 20px var(--shadow); }
+body :is(.account-eyebrow, .community-eyebrow, .aura-eyebrow) { color: var(--accent-dark); font-size: 10px; letter-spacing: .14em; }
+body :is(.pricing-intro h1, .community-intro h1, .aura-intro h1, .account-main h1) { letter-spacing: -.055em; font-weight: 800; }
+body .pricing-intro { text-align: left; margin-bottom: 30px; }
+body .pricing-intro h1 { font-size: clamp(36px, 4.8vw, 64px); margin-top: 18px; }
+body .pricing-page { padding-top: 55px; }
+body .pricing-page > p { text-align: left !important; }
+body .billing-toggle { margin-left: 0; }
+body .plan-card { padding: 32px; }
+body .plan-card.is-featured { border: 2px solid var(--accent); }
+body .account-sidebar { background: var(--surface); }
+body .account-sidebar nav button.selected { background: var(--accent-soft); color: var(--accent-dark); }
+body .auth-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 40px; }
+body .auth-layout { gap: 30px; }
+body .auth-art { border-radius: 14px; }
+body .studio-chat-layout { grid-template-columns: 240px minmax(0, 1fr); }
+body .studio-chat-sidebar { padding: 27px 18px 20px; background: var(--surface); border-color: var(--border); }
+body .chat-sidebar-brand { margin-bottom: 28px; }
+body .chat-new-button { padding: 13px 14px; background: var(--accent); color: var(--on-accent); border: 1px solid var(--accent); border-radius: 8px; box-shadow: none; }
+body .chat-new-button > span { color: inherit; }
+body .studio-chat-sidebar nav { margin: 22px 0; gap: 5px; }
+body .studio-chat-sidebar nav a { min-height: 43px; padding: 11px 12px; font-size: 12px; border: 1px solid transparent; border-radius: 8px; }
+body .studio-chat-sidebar nav a[aria-current="page"] { background: var(--accent-soft); color: var(--accent-dark); border-color: var(--border); }
+body .studio-chat-sidebar nav a:hover { background: var(--soft); }
+body .chat-other-tools { margin-bottom: 24px; }
+body .chat-other-tools nav { margin-bottom: 0; }
+body .chat-creator-note { background: var(--soft); border: 0; border-radius: 10px; }
+body .studio-chat-header { min-height: 78px; border-color: var(--border); background: var(--background); padding-inline: 36px; }
+body .chat-credit-balance { border-radius: 7px; background: var(--surface); border-color: var(--border); }
+body .chat-welcome { padding-top: 8px; }
+.workspace-kicker { display: block; margin-bottom: 18px; color: var(--accent-dark); letter-spacing: .15em; font-size: 10px; font-weight: 750; }
+body .chat-welcome h1 { font-size: clamp(36px, 4.2vw, 57px); letter-spacing: -.055em; font-weight: 800; }
+body .chat-welcome h1 span { color: var(--accent-dark); }
+body .chat-welcome p { color: var(--muted); font-size: 14px; line-height: 1.8; }
+body .chat-composer { border: 1px solid var(--border-strong); box-shadow: 0 10px 35px var(--shadow); border-radius: 12px; }
+body .chat-upload-slot { border-radius: 10px; }
+body .cinemalab-heading h1 { font-weight: 800; letter-spacing: -.05em; }
+body .cinemalab-panel { padding: 26px; }
+body .cinemalab-navigation { background: var(--soft); }
+body .aura-main { padding-top: 45px; }
+body .aura-intro { padding-bottom: 30px; border-bottom: 1px solid var(--border); }
+body .community-intro { padding-block: 55px; }
+body .community-post { overflow: hidden; }
+body .community-footer { border-color: var(--border); color: var(--muted); }
+body .cookie-consent { border: 1px solid var(--border-strong); border-radius: 12px; background: var(--surface); color: var(--muted); box-shadow: 0 10px 40px var(--shadow); }
+body .cookie-consent :is(strong, a) { color: var(--foreground); }
+body .cookie-consent button { background: var(--soft); border-color: var(--border); color: var(--foreground); border-radius: 7px; }
+body .cookie-consent button:hover { background: var(--accent-soft); }
+body .cookie-consent button.is-primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+body .cookie-consent button.is-primary:hover { background: var(--accent-hover); }
+body :is(button, a, input, textarea, select):focus-visible { outline-color: var(--accent-dark); }
+@media (max-width: 900px) {
+  body .studio-chat-layout { grid-template-columns: 205px minmax(0, 1fr); }
+  body .studio-chat-sidebar { padding-inline: 12px; }
+  body :is(.account-header, .community-header, .aura-header) nav { gap: 14px; }
+}
+@media (max-width: 760px) {
+  body .studio-chat-layout { grid-template-columns: 1fr; }
+  body .studio-chat-sidebar { width: 260px; }
+  body .studio-chat-header { padding-inline: 20px; min-height: 68px; }
+  body :is(.account-header, .community-header, .aura-header) { min-height: 70px; padding: 16px 20px; }
+  body :is(.account-header, .community-header, .aura-header) .brand { font-size: 23px; }
+  body :is(.account-header, .community-header) nav { flex-wrap: wrap; justify-content: end; gap: 10px 14px; }
+  body .account-header nav > a, body .community-header nav > a { font-size: 11px; }
+  body .plan-card { padding: 26px 22px; }
+  body .auth-panel { padding: 26px 22px; }
+  body .cinemalab-panel { padding: 20px 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  body *, body *::before, body *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
+/* A compact, keyboard-accessible appearance control on every route. */
+.theme-switch { position: fixed; z-index: 35; right: 18px; bottom: 18px; width: 40px; height: 40px; display: grid; place-items: center; border: 1px solid var(--border-strong); border-radius: 50%; background: var(--surface); color: var(--foreground); box-shadow: 0 4px 15px var(--shadow); }
+.theme-switch:hover { background: var(--soft); }
+.theme-switch .theme-sun { display: none; }
+:root[data-theme="dark"] .theme-switch .theme-sun { display: block; }
+:root[data-theme="dark"] .theme-switch .theme-moon { display: none; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .theme-switch .theme-sun { display: block; }
+  :root:not([data-theme="light"]) .theme-switch .theme-moon { display: none; }
+}
+@media (max-width: 480px) {
+  /* Keep the control clear of the cookie choices on narrow screens. */
+  body:has(.cookie-consent) .theme-switch { bottom: auto; top: 86px; }
+}
+body .instagram-nav { background: var(--surface); border-bottom: 1px solid var(--border); }
+.instagram-nav nav { display: flex; align-items: center; gap: 22px; }
+@media (max-width: 600px) { .instagram-nav nav { flex-direction: column; align-items: end; gap: 8px; } }
+body .aura-header .brand { gap: 0; }
+input::placeholder, textarea::placeholder { color: var(--muted); opacity: 1; }

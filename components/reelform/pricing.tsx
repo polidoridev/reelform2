@@ -222,7 +222,8 @@ export default function Pricing() {
       <header className="account-header">
         <Brand />
         <nav>
-          <Link prefetch={false} href="/studio">Motion Transfer</Link>
+          <Link prefetch={false} href="/studio" className="quick-access-tab">TransferLab</Link>
+          <Link prefetch={false} href="/cinemalab">CinemaLab</Link>
           <Link prefetch={false} href="/account" className="account-nav-button">
             My account <ArrowUpRight size={15} />
           </Link>

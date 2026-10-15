@@ -2,12 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowUpRight, ArrowRight, Film, ImagePlus, Menu, Minus, Plus, Replace, Scissors, Upload, WandSparkles, X } from "lucide-react";
+import { ArrowUpRight, ArrowRight, AudioLines, Film, ImagePlus, Menu, Minus, Plus, Play, Replace, Scissors, Upload, WandSparkles, X } from "lucide-react";
 import Brand from "./brand";
 import { useCases } from "@/lib/use-cases";
 import { faqs } from "./faqs";
 import { CookieSettingsButton } from "./cookie-consent";
-import "./cinema.css";
 import "./motion-home.css";
 
 const presets = useCases.filter(item => item.model === "genjutsu-motion" && item.sourceVideo);
@@ -24,21 +23,23 @@ const steps = [
 export default function Landing() {
   const [menu, setMenu] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+  const [previewPlaying, setPreviewPlaying] = useState(false);
+  const [previewError, setPreviewError] = useState(false);
   return (
-    <div className="cinema-page motion-home">
+    <div className="motion-home">
       <a className="skip-link" href="#main">Skip to content</a>
       <header className="header">
         <div className="nav-wrap">
           <Brand />
-          <nav className={menu ? "nav-links is-open" : "nav-links"} aria-label="Main navigation">
+          <nav id="home-navigation" className={menu ? "nav-links is-open" : "nav-links"} aria-label="Main navigation" onKeyDown={event => { if (event.key === "Escape") { setMenu(false); document.getElementById("home-menu-toggle")?.focus(); } }}>
             <a href="#how-it-works" onClick={() => setMenu(false)}>How it works</a>
             <a href="#explore" onClick={() => setMenu(false)}>Motion presets</a>
             <Link prefetch={false} href="/pricing">Pricing</Link>
             <a href="#more-tools" onClick={() => setMenu(false)}>More tools</a>
             <Link prefetch={false} href="/account">My account</Link>
           </nav>
-          <Link prefetch={false} href="/studio" className="button button-small">Motion Transfer <ArrowUpRight size={16} /></Link>
-          <button className="menu-toggle icon-button" aria-label={menu ? "Close menu" : "Open menu"} aria-expanded={menu} onClick={() => setMenu(!menu)}>
+          <Link prefetch={false} href="/studio" className="button button-small transferlab-tab"><AudioLines size={17} /> TransferLab <ArrowUpRight size={16} /></Link>
+          <button id="home-menu-toggle" className="menu-toggle icon-button" aria-label={menu ? "Close menu" : "Open menu"} aria-expanded={menu} aria-controls="home-navigation" onClick={() => setMenu(!menu)}>
             {menu ? <X /> : <Menu />}
           </button>
         </div>
@@ -47,19 +48,38 @@ export default function Landing() {
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
         <section className="motion-hero" aria-labelledby="motion-heading">
           <div className="motion-hero-copy">
-            <span className="section-label">GENJUTSU MOTION TRANSFER</span>
+            <span className="section-label">A NEW TAKE ON YOUR FOOTAGE</span>
             <h1 id="motion-heading">Your character.<br /><span>The same moves.</span></h1>
-            <p>Transfer a video’s movement to your character. Bring a clip, add a reference photo, and make it yours.</p>
+            <p>Bring a performance. Add your character. Turn the movement you love into a video that’s yours.</p>
             <div className="motion-hero-actions">
-              <Link prefetch={false} href="/studio" className="button">Start motion transfer <ArrowUpRight size={18} /></Link>
+              <Link prefetch={false} href="/studio" className="button">Open TransferLab <ArrowUpRight size={18} /></Link>
               <a href="#how-it-works" className="text-link">How it works <ArrowRight size={17} /></a>
             </div>
           </div>
+          <figure className="motion-hero-film">
+            {previewPlaying ? <video controls autoPlay muted playsInline preload="metadata" poster="/media/presets/car-crew-swap.jpg" aria-label="Car crew motion-transfer source clip" onError={() => setPreviewError(true)}>
+              <source src="/media/presets/car-crew-swap.mp4" type="video/mp4" />
+              Your browser does not support video playback.
+            </video> : <button className="motion-preview-play" aria-label="Play the motion-transfer source clip" onClick={() => { setPreviewError(false); setPreviewPlaying(true); }}>
+              {/* Existing local media is served directly without an image service. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/media/presets/car-crew-swap.jpg" width={1280} height={720} fetchPriority="high" alt="The car crew performance, ready to recast with your characters" />
+              <span aria-hidden="true"><Play size={24} fill="currentColor" /></span>
+            </button>}
+            {previewError && <p className="motion-preview-error" role="alert">The preview could not load. <button onClick={() => { setPreviewPlaying(false); setPreviewError(false); }}>Try again</button></p>}
+            <figcaption><span><Play size={14} /> A performance to make your own</span><Link prefetch={false} href="/studio?useCase=car-crew-swap">Use this source clip <ArrowUpRight size={15} /></Link></figcaption>
+          </figure>
         </section>
+        <nav className="motion-quick-access" aria-label="Quick access">
+          <span className="quick-access-label">Your creative workspace</span>
+          <Link prefetch={false} href="/studio"><AudioLines size={22} /><span><strong>TransferLab</strong><small>New character. Same movement.</small></span><ArrowUpRight size={18} /></Link>
+          <Link prefetch={false} href="/cinemalab"><Film size={22} /><span><strong>CinemaLab</strong><small>Direct a scene from an idea.</small></span><ArrowUpRight size={18} /></Link>
+          <Link prefetch={false} href="/aura"><Scissors size={22} /><span><strong>Aura editor</strong><small>Cut, arrange, and finish.</small></span><ArrowUpRight size={18} /></Link>
+        </nav>
         <section className="motion-how" id="how-it-works" aria-labelledby="how-heading">
           <div className="motion-section-heading">
             <h2 id="how-heading">One clip. One photo. A new performance.</h2>
-            <p>Motion Transfer is ready when you open the studio.</p>
+            <p>From a reference to your next creation, all in TransferLab.</p>
           </div>
           <ol className="motion-steps">
             {steps.map((step, i) => <li key={step.title}><div><span>{i + 1}</span><step.icon size={22} strokeWidth={1.6} /></div><h3>{step.title}</h3><p>{step.description}</p></li>)}
@@ -77,7 +97,7 @@ export default function Landing() {
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={item.poster} alt={`${item.shortLabel} source video`} width={item.posterWidth ?? 1280} height={item.posterHeight ?? 720} loading="lazy" />
               </Link>
-              <div className="motion-preset-info"><h3>{item.shortLabel}</h3><span>{item.referenceCount} reference photos</span></div>
+              <div className="motion-preset-info"><h3>{item.shortLabel}</h3><span>{item.referenceCount} reference photos · Source clip</span></div>
               <Link prefetch={false} href={`/studio?useCase=${item.id}`} className="text-link">Use preset <ArrowUpRight size={16} /></Link>
             </article>)}
           </div>
@@ -97,12 +117,12 @@ export default function Landing() {
             <div id={`faq-${i}`} hidden={openFaq !== i}><p>{answer}</p></div>
           </article>)}</div>
         </section>
-        <section className="motion-start"><h2>Give your character the next move.</h2><Link prefetch={false} href="/studio" className="button">Start motion transfer <ArrowUpRight size={18} /></Link><p>Exact credits shown before generation. <Link prefetch={false} href="/pricing">See plans and costs</Link>.</p></section>
+        <section className="motion-start"><AudioLines size={36} strokeWidth={1.5} /><h2>Give your character<br />the next move.</h2><Link prefetch={false} href="/studio" className="button">Start motion transfer <ArrowUpRight size={18} /></Link><p>Exact credits shown before generation. <Link prefetch={false} href="/pricing">See plans and costs</Link>.</p></section>
       </main>
       <footer className="footer">
         <div className="footer-top"><Brand /><span>Your character. The same moves.</span></div>
         <nav className="footer-links" aria-label="Footer">
-          <div><strong>Create</strong><Link prefetch={false} href="/studio">Motion Transfer</Link><Link prefetch={false} href="/studio?useCase=product-swap">Object Swap</Link><Link prefetch={false} href="/cinemalab">CinemaLab</Link><Link prefetch={false} href="/aura">Aura video editor</Link></div>
+          <div><strong>Create</strong><Link prefetch={false} href="/studio">TransferLab</Link><Link prefetch={false} href="/studio?useCase=product-swap">Object Swap</Link><Link prefetch={false} href="/cinemalab">CinemaLab</Link><Link prefetch={false} href="/aura">Aura video editor</Link></div>
           <div><strong>Explore</strong><Link prefetch={false} href="/pricing">Pricing</Link><Link prefetch={false} href="/community">Community</Link><a href="#faq">FAQ</a><Link prefetch={false} href="/studio?trial=1">Try a free Seedance edit</Link></div>
           <div><strong>Account</strong><Link prefetch={false} href="/login">Sign in</Link><Link prefetch={false} href="/account">My account</Link><Link prefetch={false} href="/account?tab=creations">My creations</Link></div>
           <div><strong>Legal & contact</strong><Link prefetch={false} href="/privacy">Privacy policy</Link><Link prefetch={false} href="/terms">Terms of use</Link><CookieSettingsButton className="footer-link-button" /><a href="mailto:contact@polidori.dev">contact@polidori.dev</a></div>
