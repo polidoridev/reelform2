@@ -73,6 +73,8 @@ Account and Studio show an accessible in-app notification when total available c
 
 Finished, privately saved videos can be published as Instagram Reels from the studio or My creations. Account → Instagram connects a Creator/Business account and shows publishing history. The feature stays disabled until its server credentials are configured. See [Instagram setup and verification](docs/INSTAGRAM.md) for Meta permissions, callback URLs, encryption, maintenance scheduling, and testing.
 
+The Vercel Instagram cron is currently removed because the Hobby plan rejects every-minute schedules. Automatic scheduled posting requires a replacement scheduler calling `GET /api/cron/instagram` with `Authorization: Bearer CRON_SECRET`, or restoring the every-minute cron after upgrading Vercel. The endpoint remains available; this deployment does not provide a background scheduler.
+
 ## Higgsfield API review — October 12, 2026
 
 Studio now includes Wan 3.0 Create and Wan 3.0 Prime Create for text, photo, and video-reference generation. Both use output-second pricing and model-specific shape validation. Existing plan limits remain enforced. See [the API audit](docs/higgsfield-api-audit.json) for verified schemas, standard rates, other catalog findings, and Katana's unresolved API/asset licensing status. No Katana gallery videos were imported or renamed.
@@ -97,7 +99,6 @@ The existing Supabase URL, anon key, and service role key are reused. Migration 
 `POST /api/aura/plan` requires verified sign-in and a same-origin request. It accepts at most 1.8 MB, eight clips with three 320px JPEG frames each, and 1,500 prompt characters. It calls the OpenAI Responses API with strict structured output and `store: false`, a 50-second timeout, and a 6,000-token output cap. Only validated clip bounds and complete timelines reach the renderer. Sparse frame analysis can miss actions between samples; the plan remains reviewable and can be revised in plain language. Rendering and audio stay local. The beat estimator uses local onset analysis and can be wrong for syncopated or changing-tempo music; its result remains adjustable.
 
 Verification: `npx --no-install tsx --test tests/aura-ai.test.ts tests/aura-edit.test.ts tests/auth-destination.test.ts`. With the dev server running, `node scripts/test-aura-ai.mjs` mocks OpenAI's planner boundary while extracting real JPEGs and exporting a real MP4; it verifies that the AI-selected clip actually appears first, follow-up context, invalid responses, limits, manual fallback, and mobile layout. It uses the same Playwright environment variables as the other browser tests. Live OpenAI output has not been verified without a configured key.
-
 
 ## Motion Transfer entry and pricing review (October 14, 2026)
 

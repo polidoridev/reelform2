@@ -33,7 +33,7 @@ import AppSelect from "./app-select";
 import GenerationProgress from "./generation-progress";
 import VideoEditor from "./video-editor";
 import ModelPicker from "./model-picker";
-import CinemaLab from "./cinema-lab";
+import CinemaLab, { type CinemaStep } from "./cinema-lab";
 import UploadLibrary from "./upload-library";
 import PromptInput, { PromptWithReferences } from "./prompt-input";
 import { useStudioChat, type ChatMessage } from "./use-studio-chat";
@@ -143,8 +143,9 @@ function VideoResult({
   );
 }
 
-export default function Studio({ cinema = false }: { cinema?: boolean }) {
+export default function Studio({ cinema = false, cinemaInitialStep = "Scene" }: { cinema?: boolean; cinemaInitialStep?: CinemaStep }) {
   const s = useStudioChat(cinema);
+  const [cinemaStep, setCinemaStep] = useState<CinemaStep>(cinemaInitialStep);
   const [settingsOpen, setSettingsOpen] = useState(cinema);
   const [fullHdOpen, setFullHdOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -152,6 +153,9 @@ export default function Studio({ cinema = false }: { cinema?: boolean }) {
   const [dragging, setDragging] = useState(false);
   const dragDepth = useRef(0);
   const promptRef = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    if (cinema && cinemaStep === "Review" && promptRef.current) promptRef.current.scrollTop = 0;
+  }, [cinema, cinemaStep]);
   const videoInput = useRef<HTMLInputElement>(null);
   const imageInput = useRef<HTMLInputElement>(null);
   const latestTurn = useRef<HTMLDivElement>(null);
@@ -161,6 +165,7 @@ export default function Studio({ cinema = false }: { cinema?: boolean }) {
     s.creditBalance !== null &&
     s.creditBalance < s.quote.credits;
   const canSend =
+    (!cinema || cinemaStep === "Review") &&
     (!!s.video || s.creating) &&
     !!s.quote &&
     !!s.ready &&
@@ -171,7 +176,7 @@ export default function Studio({ cinema = false }: { cinema?: boolean }) {
     !s.promptError &&
     !insufficient &&
     (s.consent || !s.needsConsent) &&
-    s.prompt.trim().length >= 10;
+    s.prompt.trim().length >= 10 && s.prompt.length <= 2000;
   const videoOptional = s.selectedModel.video === "optional";
   useEffect(() => {
     if (s.currentMessage)
@@ -203,6 +208,7 @@ export default function Studio({ cinema = false }: { cinema?: boolean }) {
   }
   function reset() {
     s.newChat();
+    setCinemaStep("Scene");
     setMenuOpen(false);
     setSettingsOpen(false);
     promptRef.current?.focus();
@@ -240,329 +246,22 @@ export default function Studio({ cinema = false }: { cinema?: boolean }) {
           : s.creating
             ? "Cost shown in a moment"
             : "Credit cost appears after upload";
-  return (
-    <div className={`studio-chat-layout${cinema ? " cinemalab-layout" : ""}`}>
-      <a className="skip-link" href="#studio-main">
-        Skip to studio
-      </a>
-      <aside
-        className={`studio-chat-sidebar ${menuOpen ? "is-open" : ""}`}
-        id="studio-navigation"
-      >
-        <div className="chat-sidebar-brand">
-          <Brand />
-          <button
-            className="chat-mobile-close"
-            aria-label="Close studio navigation"
-            onClick={() => setMenuOpen(false)}
-          >
-            <X size={20} />
-          </button>
-        </div>
-        <button className="chat-new-button" onClick={reset} disabled={!s.canLeave}>
-          <Plus size={17} /> New video <span aria-hidden="true">↗</span>
-        </button>
-        <nav aria-label="Studio navigation">
-          <Link prefetch={false} href="/studio" aria-current={cinema ? undefined : "page"}>
-            <AudioLines size={17} /> TransferLab
-          </Link>
-          <Link prefetch={false} href="/cinemalab" aria-current={cinema ? "page" : undefined}>
-            <Film size={17} /> CinemaLab
-          </Link>
-          <Link prefetch={false} href="/aura">
-            <Scissors size={17} /> Aura editor
-          </Link>
-          <Link prefetch={false} href="/account?tab=creations">
-            <Film size={17} /> My creations
-          </Link>
-          <Link prefetch={false} href="/community">
-            <Users size={17} /> Community
-          </Link>
-        </nav>
-        <details className="chat-other-tools" open={cinema || undefined}>
-          <summary>More video tools</summary>
-          <nav aria-label="Other video tools">
-            <Link prefetch={false} href="/studio?useCase=product-swap"><SlidersHorizontal size={17} /> Object Swap</Link>
-          </nav>
-        </details>
-        {s.backgroundVideos.length > 0 && (
-          <div className="chat-sidebar-ideas chat-background-list">
-            <span>YOUR OTHER VIDEOS</span>
-            {s.backgroundVideos.map((item) => (
-              <button
-                key={item.id}
-                disabled={!s.canLeave}
-                onClick={() => {
-                  s.openBackground(item.id);
-                  setMenuOpen(false);
-                }}
-              >
-                <span>
-                  {item.message.prompt}
-                  <small>{!item.done ? "Generating…" : item.result ? "Ready to watch" : "Needs attention"}</small>
-                </span>
-                {!item.done ? (
-                  <Sparkles size={13} className="chat-background-working" aria-hidden="true" />
-                ) : item.result ? (
-                  <Check size={13} aria-hidden="true" />
-                ) : (
-                  <CircleAlert size={13} aria-hidden="true" />
-                )}
-              </button>
-            ))}
-          </div>
-        )}
-        {!cinema && <div className="chat-sidebar-ideas">
-          <span>{s.trialMode ? "FREE EDIT IDEAS" : "MOTION PRESETS"}</span>
-          {(s.trialMode ? TRIAL_PROMPTS : useCases.filter(item => item.model === "genjutsu-motion" && item.sourceVideo)).map((scene) => (
-            <button
-              key={scene.id}
-              disabled={s.busy}
-              onClick={() => {
-                if (s.trialMode) s.setPrompt(scene.prompt);
-                else chooseScene(scene as UseCase);
-                setMenuOpen(false);
-              }}
-            >
-              <span>{scene.shortLabel}</span>
-              <ArrowUpRight size={13} />
-            </button>
-          ))}
-        </div>}
-        <div className="chat-sidebar-bottom">
-          <div className="chat-creator-note">
-            <ShieldCheck size={19} />
-            <strong>
-              Your imagination.
-              <br />
-              Your creation.
-            </strong>
-            <p>
-              Your videos stay private.
-              <br />
-              You keep the rights.
-            </p>
-          </div>
-          <Link prefetch={false} href="/account" className="chat-account-link">
-            <span className="chat-account-avatar">
-              <Users size={17} />
-            </span>
-            <span>
-              My account<small>Plans, credits & settings</small>
-            </span>
-            <ArrowUpRight size={14} />
-          </Link>
-          <Link prefetch={false} href="/" className="chat-back-home">
-            Back to Reelform
-          </Link>
-        </div>
-      </aside>
-      {menuOpen && (
-        <button
-          className="chat-nav-backdrop"
-          onClick={() => setMenuOpen(false)}
-          aria-label="Close navigation"
-        />
-      )}
-      <main
-        id="studio-main"
-        className={`studio-chat-main ${hasConversation ? "has-conversation" : "is-empty"}`}
-      >
-        <header className="studio-chat-header">
-          <div>
-            <button
-              className="chat-mobile-menu"
-              aria-label="Open studio navigation"
-              aria-expanded={menuOpen}
-              aria-controls="studio-navigation"
-              onClick={() => setMenuOpen(true)}
-            >
-              <Menu size={21} />
-            </button>
-            <span>{cinema ? "CinemaLab" : s.trialMode ? "Free Seedance edit" : "TransferLab"}</span>
-            <span className="chat-header-separator">/</span>
-            <small>
-              {hasConversation ? "Your conversation" : "New creation"}
-            </small>
-          </div>
-          <Link
-            prefetch={false}
-            className="chat-credit-balance"
-            href="/account?tab=credits"
-          >
-            <Sparkles size={14} />
-            {s.isAdmin
-              ? "Admin access"
-              : !cinema && s.trialMode && s.trial?.state === "available" ? "Free transformation"
-              : s.creditBalance === null
-                ? "My credits"
-                : `${s.creditBalance.toLocaleString()} credits`}
-            <Plus size={13} />
-          </Link>
-        </header>
-        <LowCreditNotice balance={s.creditBalance} plan={s.creditPlan} isAdmin={s.isAdmin || s.trialMode} />
-        <div className="chat-ready-banners" role="status" aria-live="polite">
-          {s.backgroundVideos
-            .filter((item) => item.done)
-            .map((item) => (
-              <div className="chat-ready-banner" key={item.id}>
-                {item.result ? <Check size={16} /> : <CircleAlert size={16} />}
-                <button
-                  type="button"
-                  disabled={!s.canLeave}
-                  onClick={() => s.openBackground(item.id)}
-                >
-                  <strong>{item.result ? "Your video is ready" : "A video needs your attention"}</strong>
-                  <span>{item.message.prompt}</span>
-                </button>
-                <button
-                  type="button"
-                  className="chat-ready-dismiss"
-                  aria-label="Dismiss. The video stays in My creations."
-                  title="Dismiss. The video stays in My creations."
-                  onClick={() => s.dismissBackground(item.id)}
-                >
-                  <X size={15} />
-                </button>
-              </div>
-            ))}
-        </div>
-        <div
-          className="studio-conversation"
-          aria-label="Video creation conversation"
-        >
-          {!hasConversation && (
-            <section className="chat-welcome">
-              {!cinema && <span className="workspace-kicker">{s.trialMode ? "YOUR FIRST CREATION" : "YOUR CREATIVE WORKSPACE"}</span>}
-              {cinema ? <>
-              <span className="chat-welcome-icon">
-                <AudioLines size={30} strokeWidth={1.7} />
-              </span>
-              <span className="chat-eyebrow">YOUR IMAGINATION, IN MOTION</span>
-              <h1>
-                {cinema ? <>Your scene. <span>Your direction.</span></> : <>What will you <span>create?</span></>}
-              </h1>
-              <p>
-                {cinema ? "Plan your shots, then bring them to life with words, photos, or a reference clip." : <>Start with your video. Add a little inspiration.<br />Tell us what you want to change.</>}
-              </p>
-              </> : <>
-              <h1>{s.trialMode ? "Try a free edit." : s.selectedModel.id === "genjutsu-motion" ? <>Motion <span>Transfer</span></> : s.selectedModel.shortName ?? s.selectedModel.name}</h1>
-              <p>{s.trialMode ? "Upload a 4–5 second clip and choose a look to try." : s.selectedModel.id === "genjutsu-motion" ? <>Upload your movement. Add your character photo.<br />Review the cost and generate.</> : s.selectedModel.description}</p>
-              </>}
-            </section>
-          )}
-          {hasConversation && (
-            <h1 className="sr-only">Your video creation conversation</h1>
-          )}
-          {s.history.map((message) => (
-            <section className="chat-turn" key={message.id}>
-              <SentMessage message={message} />
-              <AssistantMessage>
-                {message.result ? (
-                  <VideoResult
-                    url={message.result}
-                    onEdit={(url) => void s.editResult(url)}
-                    editing={s.openingEditor || s.busy}
-                  />
-                ) : (
-                  <p className="chat-generation-error">
-                    {message.error || "This generation did not complete."}
-                  </p>
-                )}
-              </AssistantMessage>
-            </section>
-          ))}
-          {s.currentMessage && (
-            <section className="chat-turn" ref={latestTurn}>
-              <SentMessage message={s.currentMessage} />
-              <AssistantMessage>
-                {s.result ? (
-                  <VideoResult
-                    url={s.result}
-                    onEdit={(url) => void s.editResult(url)}
-                    editing={s.openingEditor || s.busy}
-                  />
-                ) : (
-                  <div className="chat-generation-state">
-                    <div className="chat-generation-title">
-                      {s.busy && !s.pollStopped && !s.pending && (
-                        <span className="chat-working-mark" aria-hidden="true">
-                          <Sparkles size={19} />
-                        </span>
-                      )}
-                      <p role="status">
-                        {s.phase ||
-                          (s.pending
-                            ? "Let’s check that last request."
-                            : s.pollStopped
-                              ? "Your video is still being checked."
-                              : s.generationError
-                                ? "This generation needs your attention."
-                                : "Preparing your video…")}
-                      </p>
-                    </div>
-                    {s.jobActive && s.job && (
-                      <GenerationProgress
-                        started={s.job.started}
-                        status={s.job.status}
-                        paused={s.pollStopped}
-                      />
-                    )}
-                    {s.phase && !s.jobActive && (
-                      <div
-                        className="chat-preparing-line"
-                        role="progressbar"
-                        aria-label={s.phase}
-                      />
-                    )}
-                    {s.generationError && (
-                      <p className="chat-generation-error" role="alert">
-                        {s.generationError}
-                      </p>
-                    )}
-                    {s.pending && !s.phase && (
-                      <div className="chat-recovery">
-                        <p>
-                          The connection was interrupted. Checking this request
-                          reuses the original send so it won’t create a second
-                          charge.
-                        </p>
-                        <button onClick={() => void s.recoverSend()}>
-                          <RefreshCw size={15} /> Check request
-                        </button>
-                        <Link prefetch={false} href="/account?tab=creations">
-                          Check My creations
-                        </Link>
-                      </div>
-                    )}
-                    {s.pollStopped && !s.pending && (
-                      <button
-                        className="chat-inline-button"
-                        onClick={s.checkGeneration}
-                      >
-                        <RefreshCw size={15} /> Check generation
-                      </button>
-                    )}
-                    {s.job && (
-                      <details className="chat-job-details">
-                        <summary>Generation details</summary>
-                        <p>
-                          Generation ID: <code>{s.job.requestId}</code>
-                        </p>
-                        <Link prefetch={false} href="/account?tab=creations">
-                          View in My creations
-                        </Link>
-                      </details>
-                    )}
-                  </div>
-                )}
-              </AssistantMessage>
-            </section>
-          )}
-        </div>
-        <div className="studio-composer-area">
-          <div className="studio-composer-wrap">
-            {cinema && <CinemaLab disabled={s.busy} prompt={s.prompt} onApply={(prompt) => { s.setPrompt(prompt); promptRef.current?.focus(); }} />}
+  const sendControls = <div className="chat-send-controls">
+                  <span className="chat-prompt-count">
+                    {s.prompt.length}/2000
+                  </span>
+                  <button
+                    className="chat-send-button"
+                    type="submit"
+                    form="studio-generation-form"
+                    aria-label={cinema ? "Generate shot" : "Send and generate video"}
+                    disabled={!canSend}
+                  >
+                    <span>{s.busy ? "Generating" : cinema ? "Generate shot" : "Generate video"}</span>
+                    <ArrowUp size={19} />
+                  </button>
+                </div>;
+  const composer = <>
             {s.restoring && <div className="chat-notice" role="status"><RefreshCw size={16} /><p>Opening your saved chat and original uploads…</p></div>}
             {s.restoreError && <div className="chat-notice" role="alert"><Info size={16} /><p>{s.restoreError}</p><button type="button" onClick={s.retryRestore}>Retry opening chat</button></div>}
             {cinema && s.trial?.state === "available" && !s.isAdmin && <div className="chat-notice"><Info size={16} /><p>CinemaLab uses your credit balance. Your free video transformation is available in <Link prefetch={false} href="/studio?trial=1">the free edit trial</Link>.</p></div>}
@@ -623,10 +322,11 @@ export default function Studio({ cinema = false }: { cinema?: boolean }) {
               </div>
             )}
             <form
+              id="studio-generation-form"
               className={`studio-chat-composer ${dragging ? "is-dragging" : ""}`}
               onSubmit={(e) => {
                 e.preventDefault();
-                void s.generate();
+                if (canSend) void s.generate();
               }}
               onDragEnter={(e) => {
                 e.preventDefault();
@@ -656,6 +356,7 @@ export default function Studio({ cinema = false }: { cinema?: boolean }) {
                   <strong>Drop your video or reference images</strong>
                 </div>
               )}
+              <div hidden={cinema && cinemaStep !== "Output"}>
               {cinema ? <div className="cinemalab-model"><label>Generation model<AppSelect label="CinemaLab model" value={s.model} disabled={s.busy || s.trialMode} onValueChange={s.changeModel} options={VIDEO_MODELS.filter(model => model.video === "optional" || model.id === s.model).map(model => ({ value: model.id, label: model.name }))} /></label></div> : <ModelPicker
                 model={s.model}
                 onChange={(id) => {
@@ -861,8 +562,10 @@ export default function Studio({ cinema = false }: { cinema?: boolean }) {
                   ))}
                 </div>
               )}
-              <label className="sr-only" htmlFor="studio-prompt">
-                Describe your video transformation
+              </div>
+              <div hidden={cinema && cinemaStep !== "Review"}>
+              <label className={cinema ? "cinemalab-prompt-label" : "sr-only"} htmlFor="studio-prompt">
+                {cinema ? "Final generation prompt" : "Describe your video transformation"}
               </label>
               <PromptInput
                 value={s.prompt}
@@ -895,49 +598,37 @@ export default function Studio({ cinema = false }: { cinema?: boolean }) {
                   <button
                     type="button"
                     className="chat-settings-toggle"
-                    aria-expanded={settingsOpen}
-                    aria-controls="studio-generation-settings"
-                    onClick={() => setSettingsOpen(!settingsOpen)}
+                    aria-expanded={cinema ? undefined : settingsOpen}
+                    aria-controls={cinema ? undefined : "studio-generation-settings"}
+                    onClick={() => cinema ? setCinemaStep("Output") : setSettingsOpen(!settingsOpen)}
                     disabled={s.busy}
                   >
                     <SlidersHorizontal size={15} />
                     <span>
-                      {s.resolution}
+                      {cinema && `${s.selectedModel.name} · `}{s.resolution}
                       {s.creating && ` · ${s.createSeconds}s · ${s.aspectRatio}`}
                       {s.audio ? " · Generated audio" : s.video ? " · Original audio" : " · No sound"}
                     </span>
-                    <ChevronDown size={13} />
+                    {cinema ? <span className="cinemalab-change-output">Edit output</span> : <ChevronDown size={13} />}
                   </button>
                 </div>
-                <div className="chat-send-controls">
-                  <span className="chat-prompt-count">
-                    {s.prompt.length}/2000
-                  </span>
-                  <button
-                    className="chat-send-button"
-                    type="submit"
-                    aria-label="Send and generate video"
-                    disabled={!canSend}
-                  >
-                    <span>{s.busy ? "Generating" : cinema ? "Send" : "Generate video"}</span>
-                    <ArrowUp size={19} />
-                  </button>
-                </div>
+                {!cinema && sendControls}
               </div>
-              {settingsOpen && (
+              </div>
+              {(cinema ? cinemaStep === "Output" : settingsOpen) && (
                 <div
                   id="studio-generation-settings"
                   className="chat-settings-panel"
                 >
                   <div className="chat-settings-title">
                     <strong>Generation settings</strong>
-                    <button
+                    {!cinema && <button
                       type="button"
                       onClick={() => setSettingsOpen(false)}
                       aria-label="Close generation settings"
                     >
                       <X size={16} />
-                    </button>
+                    </button>}
                   </div>
                   <div className="chat-settings-grid is-compact">
                     <label>
@@ -1072,7 +763,7 @@ export default function Studio({ cinema = false }: { cinema?: boolean }) {
                 </div>
               )}
             </form>
-            <div className="chat-composer-details">
+            <div className="chat-composer-details" hidden={cinema}>
               <p id="studio-file-help">
                 {s.video
                   ? `Type @ to mention @video or a photo · JPG, PNG or WebP references up to 10 MB each`
@@ -1082,6 +773,8 @@ export default function Studio({ cinema = false }: { cinema?: boolean }) {
               </p>
               <span>⌘ / Ctrl + Enter to send</span>
             </div>
+            <div hidden={cinema && cinemaStep !== "Review"}>
+            {cinema && <p className="cinemalab-reference-summary">{s.images.length} reference photo{s.images.length === 1 ? "" : "s"}{s.video ? ` · Reference clip: ${s.video.file.name}` : " · No reference clip"}</p>}
             {(s.video || s.creating) && (
               <div className="chat-send-consent">
                 {s.needsConsent ? (
@@ -1113,7 +806,7 @@ export default function Studio({ cinema = false }: { cinema?: boolean }) {
                   ? "One successful transformation is free. Failed attempts can be retried, up to three attempts total while the pilot is available."
                   : s.isAdmin
                   ? "No Reelform credits charged. Provider usage is billed to your Higgsfield account."
-                  : `Credits are used when you press ${cinema ? "Send" : "Generate video"}. Failed generations return your credits.`}
+                  : `Credits are used when you press ${cinema ? "Generate shot" : "Generate video"}. Failed generations return your credits.`}
               </p>
             )}
             <p className="chat-credit-explanation">
@@ -1121,12 +814,14 @@ export default function Studio({ cinema = false }: { cinema?: boolean }) {
               images. Any Reelform credits charged for these generations will be
               refunded.
             </p>
+            {cinema && <div className="cinemalab-generate-action">{sendControls}</div>}
+            </div>
             {s.modelError && (
               <p className="chat-composer-error" role="alert">
                 {s.modelError}
               </p>
             )}
-            {s.promptError && (
+            {(!cinema || cinemaStep === "Review") && s.promptError && (
               <p className="chat-composer-error" role="alert">
                 {s.promptError}
               </p>
@@ -1169,10 +864,321 @@ export default function Studio({ cinema = false }: { cinema?: boolean }) {
                 </div>
               </div>
             )}
-            <p className="chat-footer-note">
+            <p className="chat-footer-note" hidden={cinema}>
               <ShieldCheck size={12} /> Your videos stay private. Your creations
               stay yours.
             </p>
+  </>;
+  return (
+    <div className={`studio-chat-layout${cinema ? " cinemalab-layout" : ""}`}>
+      <a className="skip-link" href="#studio-main">
+        Skip to studio
+      </a>
+      <aside
+        className={`studio-chat-sidebar ${menuOpen ? "is-open" : ""}`}
+        id="studio-navigation"
+      >
+        <div className="chat-sidebar-brand">
+          <Brand />
+          <button
+            className="chat-mobile-close"
+            aria-label="Close studio navigation"
+            onClick={() => setMenuOpen(false)}
+          >
+            <X size={20} />
+          </button>
+        </div>
+        <button className="chat-new-button" onClick={reset} disabled={!s.canLeave}>
+          <Plus size={17} /> New video <span aria-hidden="true">↗</span>
+        </button>
+        <nav aria-label="Studio navigation">
+          <Link prefetch={false} href="/studio" aria-current={cinema ? undefined : "page"}>
+            <AudioLines size={17} /> TransferLab
+          </Link>
+          <Link prefetch={false} href="/cinemalab" aria-current={cinema ? "page" : undefined}>
+            <Film size={17} /> CinemaLab
+          </Link>
+          <Link prefetch={false} href="/aura">
+            <Scissors size={17} /> Aura editor
+          </Link>
+          <Link prefetch={false} href="/account?tab=creations">
+            <Film size={17} /> My creations
+          </Link>
+          <Link prefetch={false} href="/community">
+            <Users size={17} /> Community
+          </Link>
+        </nav>
+        <details className="chat-other-tools" open={cinema || undefined}>
+          <summary>More video tools</summary>
+          <nav aria-label="Other video tools">
+            <Link prefetch={false} href="/studio?useCase=product-swap"><SlidersHorizontal size={17} /> Object Swap</Link>
+          </nav>
+        </details>
+        {s.backgroundVideos.length > 0 && (
+          <div className="chat-sidebar-ideas chat-background-list">
+            <span>YOUR OTHER VIDEOS</span>
+            {s.backgroundVideos.map((item) => (
+              <button
+                key={item.id}
+                disabled={!s.canLeave}
+                onClick={() => {
+                  s.openBackground(item.id);
+                  setMenuOpen(false);
+                }}
+              >
+                <span>
+                  {item.message.prompt}
+                  <small>{!item.done ? "Generating…" : item.result ? "Ready to watch" : "Needs attention"}</small>
+                </span>
+                {!item.done ? (
+                  <Sparkles size={13} className="chat-background-working" aria-hidden="true" />
+                ) : item.result ? (
+                  <Check size={13} aria-hidden="true" />
+                ) : (
+                  <CircleAlert size={13} aria-hidden="true" />
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+        {!cinema && <div className="chat-sidebar-ideas">
+          <span>{s.trialMode ? "FREE EDIT IDEAS" : "MOTION PRESETS"}</span>
+          {(s.trialMode ? TRIAL_PROMPTS : useCases.filter(item => item.model === "genjutsu-motion" && item.sourceVideo)).map((scene) => (
+            <button
+              key={scene.id}
+              disabled={s.busy}
+              onClick={() => {
+                if (s.trialMode) s.setPrompt(scene.prompt);
+                else chooseScene(scene as UseCase);
+                setMenuOpen(false);
+              }}
+            >
+              <span>{scene.shortLabel}</span>
+              <ArrowUpRight size={13} />
+            </button>
+          ))}
+        </div>}
+        <div className="chat-sidebar-bottom">
+          <div className="chat-creator-note">
+            <ShieldCheck size={19} />
+            <strong>
+              Your imagination.
+              <br />
+              Your creation.
+            </strong>
+            <p>
+              Your videos stay private.
+              <br />
+              You keep the rights.
+            </p>
+          </div>
+          <Link prefetch={false} href="/account" className="chat-account-link">
+            <span className="chat-account-avatar">
+              <Users size={17} />
+            </span>
+            <span>
+              My account<small>Plans, credits & settings</small>
+            </span>
+            <ArrowUpRight size={14} />
+          </Link>
+          <Link prefetch={false} href="/" className="chat-back-home">
+            Back to Reelform
+          </Link>
+        </div>
+      </aside>
+      {menuOpen && (
+        <button
+          className="chat-nav-backdrop"
+          onClick={() => setMenuOpen(false)}
+          aria-label="Close navigation"
+        />
+      )}
+      <main
+        id="studio-main"
+        className={`studio-chat-main ${hasConversation ? "has-conversation" : "is-empty"}`}
+      >
+        <header className="studio-chat-header">
+          <div>
+            <button
+              className="chat-mobile-menu"
+              aria-label="Open studio navigation"
+              aria-expanded={menuOpen}
+              aria-controls="studio-navigation"
+              onClick={() => setMenuOpen(true)}
+            >
+              <Menu size={21} />
+            </button>
+            <span>{cinema ? "CinemaLab" : s.trialMode ? "Free Seedance edit" : "TransferLab"}</span>
+            <span className="chat-header-separator">/</span>
+            <small>
+              {hasConversation ? "Your conversation" : "New creation"}
+            </small>
+          </div>
+          <Link
+            prefetch={false}
+            className="chat-credit-balance"
+            href="/account?tab=credits"
+          >
+            <Sparkles size={14} />
+            {s.isAdmin
+              ? "Admin access"
+              : !cinema && s.trialMode && s.trial?.state === "available" ? "Free transformation"
+              : s.creditBalance === null
+                ? "My credits"
+                : `${s.creditBalance.toLocaleString()} credits`}
+            <Plus size={13} />
+          </Link>
+        </header>
+        <LowCreditNotice balance={s.creditBalance} plan={s.creditPlan} isAdmin={s.isAdmin || s.trialMode} />
+        <div className="chat-ready-banners" role="status" aria-live="polite">
+          {s.backgroundVideos
+            .filter((item) => item.done)
+            .map((item) => (
+              <div className="chat-ready-banner" key={item.id}>
+                {item.result ? <Check size={16} /> : <CircleAlert size={16} />}
+                <button
+                  type="button"
+                  disabled={!s.canLeave}
+                  onClick={() => s.openBackground(item.id)}
+                >
+                  <strong>{item.result ? "Your video is ready" : "A video needs your attention"}</strong>
+                  <span>{item.message.prompt}</span>
+                </button>
+                <button
+                  type="button"
+                  className="chat-ready-dismiss"
+                  aria-label="Dismiss. The video stays in My creations."
+                  title="Dismiss. The video stays in My creations."
+                  onClick={() => s.dismissBackground(item.id)}
+                >
+                  <X size={15} />
+                </button>
+              </div>
+            ))}
+        </div>
+        <div
+          className="studio-conversation"
+          aria-label="Video creation conversation"
+        >
+          {!hasConversation && !cinema && (
+            <section className="chat-welcome">
+              <span className="workspace-kicker">{s.trialMode ? "YOUR FIRST CREATION" : "YOUR CREATIVE WORKSPACE"}</span>
+              <h1>{s.trialMode ? "Try a free edit." : s.selectedModel.id === "genjutsu-motion" ? <>Motion <span>Transfer</span></> : s.selectedModel.shortName ?? s.selectedModel.name}</h1>
+              <p>{s.trialMode ? "Upload a 4–5 second clip and choose a look to try." : s.selectedModel.id === "genjutsu-motion" ? <>Upload your movement. Add your character photo.<br />Review the cost and generate.</> : s.selectedModel.description}</p>
+            </section>
+          )}
+          {hasConversation && !cinema && (
+            <h1 className="sr-only">Your video creation conversation</h1>
+          )}
+          {s.history.map((message) => (
+            <section className="chat-turn" key={message.id}>
+              <SentMessage message={message} />
+              <AssistantMessage>
+                {message.result ? (
+                  <VideoResult
+                    url={message.result}
+                    onEdit={(url) => void s.editResult(url)}
+                    editing={s.openingEditor || s.busy}
+                  />
+                ) : (
+                  <p className="chat-generation-error">
+                    {message.error || "This generation did not complete."}
+                  </p>
+                )}
+              </AssistantMessage>
+            </section>
+          ))}
+          {s.currentMessage && (
+            <section className="chat-turn" ref={latestTurn}>
+              <SentMessage message={s.currentMessage} />
+              <AssistantMessage>
+                {s.result ? (
+                  <VideoResult
+                    url={s.result}
+                    onEdit={(url) => void s.editResult(url)}
+                    editing={s.openingEditor || s.busy}
+                  />
+                ) : (
+                  <div className="chat-generation-state">
+                    <div className="chat-generation-title">
+                      {s.busy && !s.pollStopped && !s.pending && (
+                        <span className="chat-working-mark" aria-hidden="true">
+                          <Sparkles size={19} />
+                        </span>
+                      )}
+                      <p role="status">
+                        {s.phase ||
+                          (s.pending
+                            ? "Let’s check that last request."
+                            : s.pollStopped
+                              ? "Your video is still being checked."
+                              : s.generationError
+                                ? "This generation needs your attention."
+                                : "Preparing your video…")}
+                      </p>
+                    </div>
+                    {s.jobActive && s.job && (
+                      <GenerationProgress
+                        started={s.job.started}
+                        status={s.job.status}
+                        paused={s.pollStopped}
+                      />
+                    )}
+                    {s.phase && !s.jobActive && (
+                      <div
+                        className="chat-preparing-line"
+                        role="progressbar"
+                        aria-label={s.phase}
+                      />
+                    )}
+                    {s.generationError && (
+                      <p className="chat-generation-error" role="alert">
+                        {s.generationError}
+                      </p>
+                    )}
+                    {s.pending && !s.phase && (
+                      <div className="chat-recovery">
+                        <p>
+                          The connection was interrupted. Checking this request
+                          reuses the original send so it won’t create a second
+                          charge.
+                        </p>
+                        <button onClick={() => void s.recoverSend()}>
+                          <RefreshCw size={15} /> Check request
+                        </button>
+                        <Link prefetch={false} href="/account?tab=creations">
+                          Check My creations
+                        </Link>
+                      </div>
+                    )}
+                    {s.pollStopped && !s.pending && (
+                      <button
+                        className="chat-inline-button"
+                        onClick={s.checkGeneration}
+                      >
+                        <RefreshCw size={15} /> Check generation
+                      </button>
+                    )}
+                    {s.job && (
+                      <details className="chat-job-details">
+                        <summary>Generation details</summary>
+                        <p>
+                          Generation ID: <code>{s.job.requestId}</code>
+                        </p>
+                        <Link prefetch={false} href="/account?tab=creations">
+                          View in My creations
+                        </Link>
+                      </details>
+                    )}
+                  </div>
+                )}
+              </AssistantMessage>
+            </section>
+          )}
+        </div>
+        <div className="studio-composer-area">
+          <div className="studio-composer-wrap">
+            {cinema ? <CinemaLab disabled={s.busy} prompt={s.prompt} onApply={s.setPrompt} step={cinemaStep} onStepChange={setCinemaStep}>{composer}</CinemaLab> : composer}
           </div>
         </div>
       </main>

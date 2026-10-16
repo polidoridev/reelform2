@@ -166,8 +166,13 @@ export function quoteVideo(media: MediaInfo, resolution: VideoResolution, modelI
   const outputDuration = model.kind.includes("reference") ? Math.ceil(duration) : duration;
   const tokens = Math.ceil(((duration + outputDuration) * short * long * 24) / 1024);
   const rate = modelRate(model, resolution);
+  // Wan bills measured source seconds plus the requested whole output seconds.
+  // Other per-second models bill one duration; text/photo-only Wan uses quoteCreation.
+  const billableSeconds = model.kind === "wan-reference"
+    ? media.duration + outputDuration
+    : Math.ceil(duration);
   const providerUsd = model.secondRate !== undefined
-    ? Math.ceil(duration) * rate
+    ? billableSeconds * rate
     : tokens * (rate / 1000);
   return {
     credits: creditsForProviderCost(providerUsd, CREDITS_PER_PROVIDER_DOLLAR),

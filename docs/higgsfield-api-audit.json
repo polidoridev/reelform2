@@ -1,5 +1,6 @@
 {
   "checkedAt": "2026-10-12",
+  "pricingCheckedAt": "2026-10-15",
   "scope": "Public Higgsfield API additions relevant to Reelform's video studio",
   "catalog": "https://open.higgsfield.ai/explore",
   "implemented": [
@@ -9,7 +10,7 @@
       "referenceDocs": "https://open.higgsfield.ai/models/alibaba/wan-3.0/reference-to-video/api-reference",
       "textDocs": "https://open.higgsfield.ai/models/alibaba/wan-3.0/text-to-video/api-reference",
       "pricingSource": "https://open.higgsfield.ai/models/alibaba/wan-3.0/reference-to-video/playground",
-      "standardUsdPerOutputSecond": { "480p": 0.05, "720p": 0.10, "1080p": 0.20 }
+      "standardUsdPerBillableSecond": { "480p": 0.05, "720p": 0.10, "1080p": 0.20 }
     },
     {
       "model": "Wan 3.0 Prime Create",
@@ -17,7 +18,7 @@
       "referenceDocs": "https://open.higgsfield.ai/models/alibaba/wan-3.0-prime/reference-to-video/api-reference",
       "textDocs": "https://open.higgsfield.ai/models/alibaba/wan-3.0-prime/text-to-video/api-reference",
       "pricingSource": "https://open.higgsfield.ai/models/alibaba/wan-3.0-prime/reference-to-video/playground",
-      "standardUsdPerOutputSecond": { "480p": 0.068, "720p": 0.14, "1080p": 0.28 }
+      "standardUsdPerBillableSecond": { "480p": 0.068, "720p": 0.14, "1080p": 0.28 }
     }
   ],
   "integration": {
@@ -27,7 +28,7 @@
     "aspectRatios": ["16:9", "9:16", "1:1", "4:3", "3:4"],
     "planLimitsStillApply": true,
     "generatedAudioOptional": true,
-    "billing": "Round output duration up to whole seconds. Use standard prices; temporary discounts and cashback are not assumed.",
+    "billing": "Bill measured input reference video duration plus requested output duration. Reelform requests output duration rounded up to whole seconds. Without input video, bill output duration only. Use standard prices; temporary discounts and cashback are not assumed.",
     "verification": "Documented schemas, local unit tests, and browser contract tests with simulated services. Account access and paid generation output are not verified."
   },
   "katana": {

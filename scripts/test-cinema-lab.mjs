@@ -35,6 +35,10 @@ await context.route(`${base}/api/**`, async route => {
     submissions.push({ ...p, request, endpoint: modelEndpoint(model, { hasVideo: !!p.videoToken, imageCount: p.imageTokens.length }) });
     return json({ token: "test-job", requestId: generationId, status: "queued", balance: 9000 });
   }
+  if (path === `/api/generations/${generationId}`) {
+    const saved = submissions.at(-1);
+    return json({ generation: { id: generationId, prompt: saved.prompt, model: saved.model, resolution: saved.resolution, generateAudio: saved.generateAudio, duration: saved.request.duration, aspectRatio: saved.request.aspect_ratio, trial: false, createdAt: new Date().toISOString(), status: "completed", result: "/media/alpine.mp4", assets: [] }, history: [], token: "test-job" });
+  }
   if (path === "/api/jobs") return json({ status: "completed", videoUrl: "/media/alpine.mp4", balance: 9000 });
   return json({ error: `Unexpected test API ${path}` }, 501);
 });
@@ -43,37 +47,63 @@ async function option(label, name) {
   await page.getByRole("combobox", { name: label, exact: true }).click();
   await page.getByRole("option", { name, exact: true }).click();
 }
-const send = page.getByRole("button", { name: "Send and generate video" });
+async function step(name) {
+  await page.getByRole("navigation", { name: "CinemaLab steps" }).getByRole("button", { name: new RegExp(name + "$" ) }).click();
+}
+const prompt = page.getByLabel("Final generation prompt", { exact: true });
+const next = () => page.getByRole("button", { name: "Continue", exact: true }).click();
+const back = () => page.getByRole("button", { name: "Back", exact: true }).click();
+const send = page.getByRole("button", { name: "Generate shot" });
 try {
   await page.goto(`${base}/cinemalab`);
+  await page.getByRole("button", { name: "Essential only", exact: true }).click();
   await page.getByText("10,000 credits", { exact: true }).waitFor();
   assert.equal(await page.getByRole("link", { name: "CinemaLab", exact: true }).getAttribute("aria-current"), "page");
-  assert.match(await page.getByRole("combobox", { name: "CinemaLab model" }).innerText(), /Seedance 2.5 Create/);
-  assert.equal(await send.isDisabled(), true);
+  assert.equal(await page.getByRole("combobox", { name: "CinemaLab model" }).isVisible(), false);
+  assert.equal(await send.isVisible(), false);
+  assert.equal(await page.getByRole("button", { name: "Back", exact: true }).isDisabled(), true);
+  await step("Review");
+  await page.getByText("Describe your shot in at least 10 characters before reviewing.", { exact: true }).waitFor();
+  assert.equal(await page.getByLabel("What happens in this shot?").isVisible(), true);
   await page.getByLabel("What happens in this shot?").fill("A woman in a red coat walks through a rainy city.");
   await page.getByRole("button", { name: "Night exterior" }).click();
-  await page.getByRole("tab", { name: "Camera", exact: true }).click();
+  assert.equal(await page.getByLabel("What happens in this shot?").isVisible(), true);
+  await next();
+  assert.equal(await page.getByLabel("What happens in this shot?").isVisible(), false);
   await page.getByLabel("Lens feel", { exact: true }).selectOption("85mm portrait");
-  await page.getByRole("tab", { name: "Sequence", exact: true }).click();
+  await back();
+  assert.match(await page.getByLabel("What happens in this shot?").inputValue(), /red coat/);
+  await next();
+  assert.equal(await page.getByLabel("Lens feel", { exact: true }).inputValue(), "85mm portrait");
+  await next();
+  assert.equal(await page.getByRole("heading", { name: "Look", exact: true }).isVisible(), true);
+  assert.equal(await page.getByLabel("Lens feel", { exact: true }).isVisible(), false);
+  await step("Sequence");
   await page.getByLabel("Continuity notes for every shot").fill("Keep the red coat and silver watch.");
   await page.getByRole("button", { name: "Expand into 3 shots" }).click();
   assert.equal(await page.locator(".cinemalab-shotlist li").count(), 3);
   await page.getByRole("button", { name: "Duplicate shot" }).click();
+  assert.equal(await page.getByLabel("Shot name").isVisible(), true);
+  await step("Sequence");
   assert.equal(await page.locator(".cinemalab-shotlist li").count(), 4);
-  await page.getByRole("tab", { name: "Sequence", exact: true }).click();
   await page.getByRole("button", { name: "Move shot earlier" }).click();
   await page.getByRole("button", { name: "Remove selected shot" }).click();
   assert.equal(await page.locator(".cinemalab-shotlist li").count(), 3);
   await page.reload();
   await page.getByText("10,000 credits", { exact: true }).waitFor();
+  await step("Sequence");
   assert.equal(await page.locator(".cinemalab-shotlist li").count(), 3);
-  await page.getByRole("button", { name: "Use this shot" }).click();
-  assert.match(await page.getByLabel("Describe your video transformation").inputValue(), /85mm portrait/);
-  assert.match(await page.getByLabel("Describe your video transformation").inputValue(), /Keep the red coat and silver watch/);
-  await page.getByRole("tab", { name: "Camera", exact: true }).click();
+  await step("Review");
+  assert.match(await prompt.inputValue(), /85mm portrait/);
+  assert.match(await prompt.inputValue(), /Keep the red coat and silver watch/);
+  await step("Camera");
   await page.getByLabel("Camera angle", { exact: true }).selectOption("Low angle");
-  assert.equal(await page.getByRole("button", { name: "Use this shot" }).isEnabled(), true);
-  await page.getByRole("button", { name: "Use this shot" }).click();
+  await step("Review");
+  assert.match(await prompt.inputValue(), /Low angle/);
+  await back();
+  assert.equal(await prompt.isVisible(), false);
+  assert.equal(await send.isVisible(), false);
+  assert.match(await page.getByRole("combobox", { name: "CinemaLab model" }).innerText(), /Seedance 2.5 Create/);
   await option("Video shape", "21:9 · Cinematic");
   await option("CinemaLab model", "Wan 3.0 Create");
   assert.match(await page.getByRole("combobox", { name: "Video shape" }).innerText(), /16:9/);
@@ -82,10 +112,18 @@ try {
   await option("Output quality", "720p HD");
   await option("Sound", "Generate audio");
   await page.getByLabel("Upload reference images", { exact: true }).setInputFiles(resolve("public/media/arrival.jpg"));
-  await page.getByLabel("Describe your video transformation").fill((await page.getByLabel("Describe your video transformation").inputValue()) + "\nUse the person in @image1.");
+  await page.getByRole("button", { name: "Review shot", exact: true }).click();
+  assert.equal(await page.getByRole("combobox", { name: "CinemaLab model" }).isVisible(), false);
+  await prompt.fill((await prompt.inputValue()) + "\nUse the person in @image1.");
+  const editedPrompt = await prompt.inputValue();
+  await page.getByRole("button", { name: /Edit output/ }).click();
+  assert.match(await page.getByRole("combobox", { name: "Video shape" }).innerText(), /9:16/);
+  assert.equal(await page.getByRole("button", { name: "Remove reference 1" }).isVisible(), true);
+  await page.getByRole("button", { name: "Review shot", exact: true }).click();
+  assert.equal(await prompt.inputValue(), editedPrompt);
   assert.equal(await send.isDisabled(), true); // Files require consent, including reference-only generation.
   await page.getByRole("checkbox").check();
-  await page.waitForFunction(() => !document.querySelector('[aria-label="Send and generate video"]').disabled);
+  await page.waitForFunction(() => !document.querySelector('[aria-label="Generate shot"]').disabled);
   await mkdir("outputs", { recursive: true });
   await page.screenshot({ path: "outputs/cinemalab-desktop.png", fullPage: true });
   await send.click();
@@ -100,21 +138,41 @@ try {
   assert.match(page.url(), /\/cinemalab\?generation=/);
   await page.getByRole("button", { name: "New video", exact: true }).click();
   assert.equal(new URL(page.url()).pathname, "/cinemalab");
-  await page.getByRole("button", { name: "Use this shot" }).click();
-  await page.waitForFunction(() => !document.querySelector('[aria-label="Send and generate video"]').disabled);
+  await step("Review");
+  await page.waitForFunction(() => !document.querySelector('[aria-label="Generate shot"]').disabled);
   await send.click();
   await page.getByText("Your video is ready.", { exact: true }).waitFor();
   assert.equal(submissions[1].endpoint, "alibaba/wan-3.0/text-to-video");
   assert.equal(submissions[1].request.image_urls, undefined);
+  const savedPrompt = await prompt.inputValue();
+  await page.reload();
+  await page.getByText("Your video is ready.", { exact: true }).waitFor();
+  assert.equal(await prompt.isVisible(), true);
+  assert.equal(await prompt.inputValue(), savedPrompt);
+  await back();
+  await page.getByRole("button", { name: "Review shot", exact: true }).click();
+  assert.equal(await prompt.inputValue(), savedPrompt);
+  assert.equal(await prompt.evaluate(el => el.scrollTop), 0);
   await page.getByRole("button", { name: "New video", exact: true }).click();
   await page.setViewportSize({ width: 390, height: 844 });
   assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
   await page.screenshot({ path: "outputs/cinemalab-mobile.png", fullPage: true });
+  for (const name of ["Camera", "Look", "Sequence", "Output", "Review"]) {
+    await step(name);
+    assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `No overflow in ${name}`);
+    await page.screenshot({ path: `outputs/cinemalab-mobile-${name.toLowerCase()}.png`, fullPage: true });
+  }
   signedIn = false;
   await page.reload();
+  await step("Review");
   await page.getByRole("link", { name: "Sign in", exact: true }).waitFor();
   assert.equal(await page.getByRole("link", { name: "Sign in", exact: true }).getAttribute("href"), "/login?next=%2Fcinemalab");
+  await step("Review");
   assert.equal(await send.isDisabled(), true);
+  await page.goto(`${base}/studio`);
+  await page.getByLabel("Describe your video transformation").waitFor();
+  assert.equal(await page.getByRole("button", { name: "Send and generate video" }).isVisible(), true);
+  assert.equal(await page.getByRole("navigation", { name: "CinemaLab steps" }).count(), 0);
   assert.deepEqual(errors, []);
-  console.log("PASS CinemaLab planning, camera/look prompts, sequence editing, draft reload, model constraints, reference-only uploads, consent, generation requests, result display, reset, sign-in destination and mobile layout. No paid provider calls.");
+  console.log("PASS CinemaLab one-step navigation, back/forward state and prompt preservation, standard studio smoke, planning, camera/look prompts, sequence editing, draft reload, model constraints, reference-only uploads, consent, generation requests, result display, reset, sign-in destination and mobile layout. No paid provider calls.");
 } finally { await browser.close(); }

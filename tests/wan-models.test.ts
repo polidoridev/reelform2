@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { getVideoModel, modelAspectRatios, modelEndpoint, modelRequest, validateModel } from "../lib/video-models";
 import { quoteCreation, quoteVideo } from "../lib/commerce/pricing";
+import { validateQuotedCredits } from "../lib/commerce/economics";
 
 const input = {
   prompt: "A red kite flying over a beach at sunset",
@@ -41,23 +42,58 @@ test("Wan selects text or reference endpoints and sends only supported parameter
   }
 });
 
-test("Wan quotes charge output seconds at standard resolution rates with and without footage", () => {
-  const rates = {
-    "wan-3-reference": { "480p": 0.05, "720p": 0.10, "1080p": 0.20 },
-    "wan-3-prime-reference": { "480p": 0.068, "720p": 0.14, "1080p": 0.28 },
-  } as const;
-  for (const [id, prices] of Object.entries(rates)) {
-    for (const resolution of ["480p", "720p", "1080p"] as const) {
-      const expectedUsd = 9 * prices[resolution];
-      const video = quoteVideo(input.media, resolution, id);
-      const created = quoteCreation(8.2, resolution, "9:16", id);
-      for (const quote of [video, created]) {
-        assert.equal(quote.duration, 9);
-        assert.equal(quote.estimatedProviderUsd, expectedUsd);
-        assert.equal(quote.credits, Math.ceil(expectedUsd * 360 / 10) * 10);
-      }
-      assert.equal(quoteCreation(9, resolution, "1:1", id).credits, created.credits);
-    }
+test("Wan bills source plus generated seconds; text and photo creation bill only output", () => {
+  // Published list rates, checked 2026-10-15. An 8.2s source produces 9s:
+  // bill 17.2s with a video, or just 9s for text/photo creation.
+  const cases = [
+    ["wan-3-reference", "480p", 0.86, 310, 0.45, 170],
+    ["wan-3-reference", "720p", 1.72, 620, 0.90, 330],
+    ["wan-3-reference", "1080p", 3.44, 1240, 1.80, 650],
+    ["wan-3-prime-reference", "480p", 1.1696, 430, 0.612, 230],
+    ["wan-3-prime-reference", "720p", 2.408, 870, 1.26, 460],
+    ["wan-3-prime-reference", "1080p", 4.816, 1740, 2.52, 910],
+  ] as const;
+  for (const [id, resolution, videoUsd, videoCredits, creationUsd, creationCredits] of cases) {
+    const video = quoteVideo(input.media, resolution, id);
+    const created = quoteCreation(8.2, resolution, "9:16", id);
+    assert.equal(video.duration, 9);
+    assert.ok(Math.abs(video.estimatedProviderUsd - videoUsd) < 1e-9);
+    assert.equal(video.credits, videoCredits);
+    assert.equal(created.duration, 9);
+    assert.ok(Math.abs(created.estimatedProviderUsd - creationUsd) < 1e-9);
+    assert.equal(created.credits, creationCredits);
+    assert.equal(quoteCreation(9, resolution, "1:1", id).credits, creationCredits);
+  }
+});
+
+test("Wan includes measured fractional source duration and covers both duration limits", () => {
+  for (const [id, duration, usd, credits] of [
+    ["wan-3-reference", 4, 0.8, 290],
+    ["wan-3-reference", 4.01, 0.901, 330],
+    ["wan-3-reference", 30, 6, 2160],
+    ["wan-3-prime-reference", 4, 1.12, 410],
+    ["wan-3-prime-reference", 4.01, 1.2614, 460],
+    ["wan-3-prime-reference", 30, 8.4, 3030],
+  ] as const) {
+    const media = { ...input.media, duration };
+    const quote = quoteVideo(media, "720p", id);
+    const request = modelRequest(getVideoModel(id), { ...input, media, videoUrl: "https://example.com/source.mp4" });
+    assert.equal(quote.duration, request.duration);
+    assert.ok(Math.abs(quote.estimatedProviderUsd - usd) < 1e-9);
+    assert.equal(quote.credits, credits);
+  }
+});
+
+test("old Wan video quotes require review before the corrected charge", () => {
+  for (const [id, oldCredits, newCredits, usd] of [
+    ["wan-3-reference", 360, 720, 2],
+    ["wan-3-prime-reference", 510, 1010, 2.8],
+  ] as const) {
+    const quote = quoteVideo({ ...input.media, duration: 10 }, "720p", id);
+    assert.ok(Math.abs(quote.estimatedProviderUsd - usd) < 1e-9);
+    assert.equal(quote.credits, newCredits);
+    assert.throws(() => validateQuotedCredits(oldCredits, quote.credits), /Refresh the quote/);
+    assert.doesNotThrow(() => validateQuotedCredits(newCredits, quote.credits));
   }
 });
 

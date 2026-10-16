@@ -1,17 +1,41 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { ArrowDown, ArrowRight, ArrowUp, Camera, Check, Clapperboard, Copy, Download, Film, Plus, Trash2 } from "lucide-react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Camera, Clapperboard, Copy, Download, Film, Plus, Trash2 } from "lucide-react";
 import { CAMERA_CONTROLS, LOOK_CONTROLS, CINEMA_CONTROLS, CINEMA_PRESETS, CINEMA_PROMPT_LIMIT, DEFAULT_DIRECTION, MAX_CINEMA_SHOTS, compileCinemaPrompt, createCinemaSequence, initialCinemaPlan, newCinemaShot, parseCinemaPlan, type CinemaControl, type CinemaPlan, type CinemaShot } from "@/lib/cinema-lab";
 import "./cinema-lab.css";
 
 const STORAGE_KEY = "reelform-cinemalab-plan-v1";
-const tabs = ["Scene", "Camera", "Look", "Sequence"] as const;
-type Tab = typeof tabs[number];
+export const CINEMA_STEPS = ["Scene", "Camera", "Look", "Sequence", "Output", "Review"] as const;
+export type CinemaStep = typeof CINEMA_STEPS[number];
+const stepDescriptions: Record<CinemaStep, string> = {
+  Scene: "Start with the subject, action, and setting for your shot.",
+  Camera: "Choose how the camera sees and follows the scene.",
+  Look: "Shape the lighting, color, and texture. These choices are optional.",
+  Sequence: "Keep one shot, or plan a sequence with shared continuity notes.",
+  Output: "Choose your model and video settings. Add references if you have them.",
+  Review: "Review your prompt, confirm the credit cost, then generate this shot.",
+};
 
-export default function CinemaLab({ disabled, prompt, onApply }: { disabled: boolean; prompt: string; onApply: (prompt: string) => void }) {
+export default function CinemaLab({ disabled, prompt, onApply, step, onStepChange, children }: {
+  disabled: boolean;
+  prompt: string;
+  onApply: (prompt: string) => void;
+  step: CinemaStep;
+  onStepChange: (step: CinemaStep) => void;
+  children: ReactNode;
+}) {
   const [plan, setPlan] = useState<CinemaPlan>(initialCinemaPlan);
-  const [tab, setTab] = useState<Tab>("Scene");
+  const lastApplied = useRef("");
+  const startsInReview = useRef(step === "Review");
+  const heading = useRef<HTMLHeadingElement>(null);
+  const previousStep = useRef(step);
+  useEffect(() => {
+    if (previousStep.current === step) return;
+    previousStep.current = step;
+    heading.current?.focus({ preventScroll: true });
+    heading.current?.scrollIntoView({ block: "nearest", behavior: "instant" });
+  }, [step]);
   const [loaded, setLoaded] = useState(false);
   const [storageError, setStorageError] = useState(false);
   const [notice, setNotice] = useState("");
@@ -22,6 +46,12 @@ export default function CinemaLab({ disabled, prompt, onApply }: { disabled: boo
       // Restore browser-only drafts after hydration without overwriting storage first.
       // eslint-disable-next-line react-hooks/set-state-in-effect
       if (restored) setPlan(restored);
+      // A saved generation already has its own prompt. Keep it when revisiting Output.
+      if (startsInReview.current) {
+        const baseline = restored ?? initialCinemaPlan();
+        const selected = baseline.shots.find(item => item.id === baseline.selected) ?? baseline.shots[0];
+        lastApplied.current = `${selected.id}:${compileCinemaPrompt(selected, baseline.continuity)}`;
+      }
     } catch { setStorageError(true); }
     setLoaded(true);
   }, []);
@@ -36,8 +66,28 @@ export default function CinemaLab({ disabled, prompt, onApply }: { disabled: boo
   const index = plan.shots.indexOf(shot);
   const compiled = compileCinemaPrompt(shot, plan.continuity);
   const valid = shot.scene.trim().length >= 10 && compiled.length <= CINEMA_PROMPT_LIMIT;
-  const applied = !!compiled && prompt === compiled;
+  const stepIndex = CINEMA_STEPS.indexOf(step);
+  const planning = stepIndex < 4;
   const locked = disabled || !loaded;
+
+  function navigate(next: CinemaStep) {
+    if (locked) return;
+    if (next === "Review") {
+      const revision = `${shot.id}:${compiled}`;
+      const needsApply = lastApplied.current !== revision || !prompt.trim();
+      if (needsApply && !valid) {
+        setNotice(shot.scene.trim().length < 10 ? "Describe your shot in at least 10 characters before reviewing." : `Shorten your scene or continuity notes by ${compiled.length - CINEMA_PROMPT_LIMIT} characters before reviewing.`);
+        onStepChange("Scene");
+        requestAnimationFrame(() => heading.current?.focus());
+        return;
+      }
+      // Returning to Review preserves manual prompt edits unless the shot direction changed.
+      if (needsApply) onApply(compiled);
+      lastApplied.current = revision;
+    }
+    setNotice("");
+    onStepChange(next);
+  }
 
   function updateShot(patch: Partial<CinemaShot>) {
     setPlan(previous => ({ ...previous, shots: previous.shots.map(item => item.id === shot.id ? { ...item, ...patch } : item) }));
@@ -47,7 +97,7 @@ export default function CinemaLab({ disabled, prompt, onApply }: { disabled: boo
     if (plan.shots.length >= MAX_CINEMA_SHOTS) return;
     const added = duplicate ? { ...shot, id: crypto.randomUUID(), title: `${shot.title.slice(0, 70)} · Take 2` } : newCinemaShot(crypto.randomUUID(), `Shot ${plan.shots.length + 1}`);
     setPlan(previous => ({ ...previous, selected: added.id, shots: [...previous.shots, added] }));
-    setTab("Scene");
+    onStepChange("Scene");
     setNotice(duplicate ? "Shot duplicated. Change the camera or look to plan another take." : "New shot added.");
   }
   function moveShot(offset: number) {
@@ -90,37 +140,41 @@ export default function CinemaLab({ disabled, prompt, onApply }: { disabled: boo
 
   return <section className="cinemalab" aria-label="CinemaLab shot planner">
     <div className="cinemalab-heading">
-      <div><span className="cinemalab-eyebrow"><Clapperboard size={15} /> REELFORM CINEMALAB</span><h2>Every frame starts with a decision.</h2><p>Find your angle. Shape the light. Build the scene.</p></div>
+      <div><span className="cinemalab-eyebrow"><Clapperboard size={15} /> REELFORM CINEMALAB</span><h1>Build your shot, one step at a time.</h1></div>
       <span className="cinemalab-draft">{storageError ? "Draft in this tab" : "Draft saved on this device"}</span>
     </div>
-    <fieldset disabled={locked} className="cinemalab-workspace">
-      <legend className="sr-only">Plan your cinematic shots</legend>
-      <aside className="cinemalab-shotlist" aria-label="Planned shots">
-        <div className="cinemalab-list-heading"><span>SHOT LIST</span><span>{plan.shots.length} / {MAX_CINEMA_SHOTS}</span></div>
-        <ol>{plan.shots.map((item, i) => <li key={item.id}><button type="button" aria-pressed={item.id === shot.id} onClick={() => { setPlan(previous => ({ ...previous, selected: item.id })); setNotice(""); }}>
-          <span className="cinemalab-shot-number">{String(i + 1).padStart(2, "0")}</span><span><strong>{item.title || "Untitled shot"}</strong><small>{item.direction.framing === "Director's choice" ? "Choose your frame" : item.direction.framing}</small></span>
-        </button></li>)}</ol>
-        <button className="cinemalab-add" type="button" disabled={plan.shots.length >= MAX_CINEMA_SHOTS} onClick={() => addShot()}><Plus size={14} /> Add shot</button>
-        <p>A shot plan, ready to make. Generate each shot separately below.</p>
-      </aside>
-      <div className="cinemalab-detail">
-        <div className="cinemalab-tabs" role="tablist" aria-label="Shot controls">{tabs.map((item, i) => <button key={item} type="button" id={`cinemalab-tab-${item}`} role="tab" aria-selected={tab === item} aria-controls={`cinemalab-panel-${item}`} tabIndex={tab === item ? 0 : -1} onClick={() => setTab(item)} onKeyDown={event => {
-          const next = event.key === "ArrowRight" ? (i + 1) % tabs.length : event.key === "ArrowLeft" ? (i + tabs.length - 1) % tabs.length : event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 : null;
-          if (next !== null) { event.preventDefault(); setTab(tabs[next]); document.getElementById(`cinemalab-tab-${tabs[next]}`)?.focus(); }
-        }}>{item}</button>)}</div>
-        <div className="cinemalab-panel" role="tabpanel" id={`cinemalab-panel-${tab}`} aria-labelledby={`cinemalab-tab-${tab}`} tabIndex={0}>
-          {tab === "Scene" && <>
+    <nav className="cinemalab-steps" aria-label="CinemaLab steps">
+      <ol>{CINEMA_STEPS.map((item, i) => <li key={item}><button type="button" disabled={locked} aria-label={`${i + 1}. ${item}`} aria-current={step === item ? "step" : undefined} onClick={() => navigate(item)}><span>{i + 1}</span>{item}</button></li>)}</ol>
+    </nav>
+    <div className="cinemalab-workspace">
+      <div className="cinemalab-step-heading">
+        <span>STEP {stepIndex + 1} OF {CINEMA_STEPS.length}</span>
+        <h2 ref={heading} tabIndex={-1}>{step === "Review" ? "Review & generate" : step}</h2>
+        <p>{stepDescriptions[step]}</p>
+      </div>
+      {planning && <fieldset disabled={locked} className="cinemalab-planning">
+        <legend className="sr-only">{step} settings</legend>
+        <div className="cinemalab-panel">
+          {step === "Scene" && <>
             <div className="cinemalab-scene-heading"><Camera size={17} /><span>SHOT {String(index + 1).padStart(2, "0")}</span></div>
             <label>Shot name<input value={shot.title} maxLength={80} onChange={event => updateShot({ title: event.target.value })} /></label>
             <label>What happens in this shot?<textarea rows={4} maxLength={1000} value={shot.scene} onChange={event => updateShot({ scene: event.target.value })} placeholder="A woman in a red coat steps out of a midnight diner. Rain catches the neon light as she turns toward the camera…" /></label>
-            <p className="cinemalab-help">Describe the subject, action, and setting. Add reference photos below and use @image1 to refer to the first photo.</p>
+            <p className="cinemalab-help">Describe the subject, action, and setting. Add reference photos in the Output step and use @image1 to refer to the first photo.</p>
             <div className="cinemalab-preset-heading">START WITH A LOOK</div>
-            <div className="cinemalab-presets">{CINEMA_PRESETS.map(preset => <button type="button" key={preset.name} onClick={() => { updateShot({ direction: { ...DEFAULT_DIRECTION, ...preset.direction } }); setTab("Look"); }}>{preset.name}<ArrowRight size={13} /></button>)}</div>
+            <div className="cinemalab-presets">{CINEMA_PRESETS.map(preset => <button type="button" key={preset.name} onClick={() => { updateShot({ direction: { ...DEFAULT_DIRECTION, ...preset.direction } }); setNotice(`${preset.name} applied. You can adjust it in the Camera and Look steps.`); }}>{preset.name}<ArrowRight size={13} /></button>)}</div>
           </>}
-          {tab === "Camera" && <><h3>Direct the camera.</h3><p className="cinemalab-help">Lens, focus, and movement describe the look you want. The model interprets this direction; exact optics and motion may vary.</p>{controls(CAMERA_CONTROLS)}</>}
-          {tab === "Look" && <><h3>Set the mood.</h3><p className="cinemalab-help">Shape the lighting, color, and texture of this shot.</p>{controls(LOOK_CONTROLS)}<button className="cinemalab-text-button" type="button" onClick={() => updateShot({ direction: { ...DEFAULT_DIRECTION } })}>Reset camera and look</button></>}
-          {tab === "Sequence" && <>
-            <h3>Think beyond one shot.</h3><p className="cinemalab-help">Expand this scene into an establishing shot, an action shot, and a detail. This is an editable structure; it does not generate or charge for videos.</p>
+          {step === "Camera" && <><p className="cinemalab-help">Lens, focus, and movement describe the look you want. The model interprets this direction; exact optics and motion may vary.</p>{controls(CAMERA_CONTROLS)}</>}
+          {step === "Look" && <><p className="cinemalab-help">Shape the lighting, color, and texture of this shot.</p>{controls(LOOK_CONTROLS)}<button className="cinemalab-text-button" type="button" onClick={() => updateShot({ direction: { ...DEFAULT_DIRECTION } })}>Reset camera and look</button></>}
+          {step === "Sequence" && <>
+            <aside className="cinemalab-shotlist" aria-label="Planned shots">
+              <div className="cinemalab-list-heading"><span>SHOT LIST</span><span>{plan.shots.length} / {MAX_CINEMA_SHOTS}</span></div>
+              <ol>{plan.shots.map((item, i) => <li key={item.id}><button type="button" aria-pressed={item.id === shot.id} onClick={() => { setPlan(previous => ({ ...previous, selected: item.id })); setNotice("Selected shot. Use the Scene, Camera, and Look steps to edit it."); }}>
+                <span className="cinemalab-shot-number">{String(i + 1).padStart(2, "0")}</span><span><strong>{item.title || "Untitled shot"}</strong><small>{item.direction.framing === "Director's choice" ? "Choose your frame" : item.direction.framing}</small></span>
+              </button></li>)}</ol>
+              <button className="cinemalab-add" type="button" disabled={plan.shots.length >= MAX_CINEMA_SHOTS} onClick={() => addShot()}><Plus size={14} /> Add shot</button>
+              <p>Each shot is generated separately. Your current shot is {index + 1}: {shot.title || "Untitled shot"}.</p>
+            </aside>
+            <p className="cinemalab-help">Expand this scene into an establishing shot, an action shot, and a detail. This is an editable structure; it does not generate or charge for videos.</p>
             <button className="cinemalab-secondary" type="button" disabled={shot.scene.trim().length < 10 || plan.shots.length + 2 > MAX_CINEMA_SHOTS} onClick={buildSequence}><Film size={15} /> Expand into 3 shots</button>
             <label>Continuity notes for every shot<textarea rows={3} maxLength={400} value={plan.continuity} onChange={event => setPlan(previous => ({ ...previous, continuity: event.target.value }))} placeholder="Same red coat, silver watch, wet pavement, midnight. Keep the subject and location consistent." /></label>
             <p className="cinemalab-help">Reuse the same photos across generations to guide continuity. Appearance may still vary between shots.</p>
@@ -133,12 +187,14 @@ export default function CinemaLab({ disabled, prompt, onApply }: { disabled: boo
             <button className="cinemalab-text-button" type="button" onClick={downloadPlan}><Download size={14} /> Download shot plan</button>
           </>}
         </div>
-        <div className="cinemalab-apply">
-          <div><strong>{applied ? "Shot applied to prompt" : "Ready for the generation prompt"}</strong><span>{compiled.length > CINEMA_PROMPT_LIMIT ? `Shorten this shot by ${compiled.length - CINEMA_PROMPT_LIMIT} characters.` : "Review the prompt and credit cost before generating."}</span></div>
-          <button type="button" className="cinemalab-primary" disabled={!valid || applied} onClick={() => { onApply(compiled); setNotice("Shot applied. Your generation prompt is ready to review below."); }}>{applied ? <Check size={15} /> : <ArrowDown size={15} />}{applied ? "Applied" : "Use this shot"}</button>
-        </div>
+      </fieldset>}
+      <div className="cinemalab-generation" hidden={planning}>{children}</div>
+      <div className="cinemalab-navigation">
+        <button type="button" className="cinemalab-secondary" disabled={locked || stepIndex === 0} onClick={() => navigate(CINEMA_STEPS[stepIndex - 1])}><ArrowLeft size={15} /> Back</button>
+        <span>{step === "Sequence" ? "A single shot is fine. Continue when you’re ready." : step === "Review" ? "Generation only starts when you press Generate shot." : "Your choices stay with you as you move between steps."}</span>
+        {stepIndex < CINEMA_STEPS.length - 1 && <button type="button" className="cinemalab-primary" disabled={locked} onClick={() => navigate(CINEMA_STEPS[stepIndex + 1])}>{step === "Output" ? "Review shot" : "Continue"}<ArrowRight size={15} /></button>}
       </div>
-    </fieldset>
-    <div className="cinemalab-status" role="status">{notice || (storageError ? "Browser storage is unavailable. Download your shot plan to keep a copy." : "Planning is free. Each generation uses the credit cost shown below.")}</div>
+    </div>
+    <div className="cinemalab-status" role="status">{notice || (storageError ? "Browser storage is unavailable. Download your shot plan to keep a copy." : "Planning is free. Credits are only used when you generate a shot.")}</div>
   </section>;
 }

@@ -1,6 +1,6 @@
 .cinemalab-layout .studio-conversation { max-width: 1120px; }
 .cinemalab-layout .is-empty .studio-conversation { padding-top: 28px; padding-bottom: 0; }
-.cinemalab-layout .studio-composer-wrap { max-width: 1056px; }
+.cinemalab-layout .studio-composer-wrap { max-width: 880px; }
 .cinemalab-layout .chat-welcome { text-align: left; }
 .cinemalab-layout .chat-welcome h1 { margin: 0 0 10px; font-size: 30px; letter-spacing: -1px; }
 .cinemalab-layout .chat-welcome p { margin: 0; }
@@ -8,11 +8,11 @@
 .cinemalab { margin-bottom: 22px; }
 .cinemalab-heading { display: flex; justify-content: space-between; gap: 20px; align-items: flex-start; padding: 26px 0 22px; }
 .cinemalab-eyebrow { display: flex; align-items: center; gap: 8px; font-size: 10px; letter-spacing: 1.5px; font-weight: 750; color: var(--muted); }
-.cinemalab-heading h2 { font-size: clamp(21px, 2.5vw, 30px); font-weight: 650; line-height: 1.2; letter-spacing: -.9px; margin: 12px 0 8px; }
+.cinemalab-heading h1 { font-size: clamp(21px, 2.5vw, 30px); font-weight: 650; line-height: 1.2; letter-spacing: -.9px; margin: 12px 0 8px; }
 .cinemalab-heading p { font-size: 13px; color: var(--muted); margin: 0; }
 .cinemalab-draft { font-size: 10px; color: var(--muted); padding-top: 3px; white-space: nowrap; }
-.cinemalab-workspace { padding: 0; margin: 0; min-width: 0; display: grid; grid-template-columns: 218px minmax(0, 1fr); border: 1px solid var(--border); border-radius: 14px; background: var(--surface); overflow: hidden; }
-.cinemalab-shotlist { background: var(--background); border-right: 1px solid var(--border); padding: 20px 12px; }
+.cinemalab-workspace { padding: 0; margin: 0; min-width: 0; display: block; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); overflow: hidden; }
+.cinemalab-shotlist { background: var(--background); border: 1px solid var(--border); border-radius: 9px; padding: 16px; margin-bottom: 24px; }
 .cinemalab-list-heading { display: flex; justify-content: space-between; padding: 0 8px 15px; font-size: 10px; letter-spacing: 1px; font-weight: 700; color: var(--muted); }
 .cinemalab-shotlist ol { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
 .cinemalab-shotlist li { min-width: 0; }
@@ -24,10 +24,6 @@
 .cinemalab-shotlist small { display: block; font-size: 10px; color: var(--muted); margin-top: 4px; }
 .cinemalab-add { width: 100%; border: 1px dashed var(--border); border-radius: 8px; background: transparent; margin-top: 12px; padding: 11px; display: flex; align-items: center; justify-content: center; gap: 7px; font-size: 11px !important; color: var(--muted); }
 .cinemalab-shotlist > p { margin: 20px 8px 0; color: var(--muted); font-size: 11px; line-height: 1.7; }
-.cinemalab-detail { min-width: 0; }
-.cinemalab-tabs { display: flex; padding: 0 22px; gap: 24px; border-bottom: 1px solid var(--border); }
-.cinemalab-tabs button { border: 0; border-bottom: 2px solid transparent; background: transparent; padding: 17px 0 14px; font-size: 12px !important; color: var(--muted); }
-.cinemalab-tabs button[aria-selected="true"] { border-bottom-color: var(--accent); color: var(--accent-dark); font-weight: 700; }
 .cinemalab-panel { padding: 22px; min-height: 338px; }
 .cinemalab-panel h3 { font-size: 18px; letter-spacing: -.5px; font-weight: 650; margin: 0 0 9px; }
 .cinemalab-panel label { display: grid; gap: 8px; font-size: 11px; font-weight: 650; margin-bottom: 17px; }
@@ -41,9 +37,6 @@
 .cinemalab-presets { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
 .cinemalab-presets button { display: flex; align-items: center; justify-content: space-between; gap: 8px; border: 1px solid var(--border); border-radius: 7px; padding: 10px 12px; background: var(--surface); text-align: left; font-size: 11px !important; }
 .cinemalab-presets button:hover { background: var(--background); border-color: var(--border); }
-.cinemalab-apply { border-top: 1px solid var(--border); padding: 17px 22px; display: flex; align-items: center; gap: 16px; justify-content: space-between; background: var(--surface); }
-.cinemalab-apply strong { display: block; font-size: 11px; font-weight: 650; }
-.cinemalab-apply span { display: block; font-size: 10px; color: var(--muted); margin-top: 4px; }
 .cinemalab-primary, .cinemalab-secondary { display: inline-flex; align-items: center; justify-content: center; gap: 7px; border-radius: 7px; font-size: 11px !important; font-weight: 650 !important; padding: 12px 15px; white-space: nowrap; }
 .cinemalab-primary { border: 1px solid var(--accent); background: var(--accent); color: var(--on-accent); }
 .cinemalab-secondary { border: 1px solid var(--border); background: var(--background); color: var(--accent-dark); margin: 0 0 23px; }
@@ -55,20 +48,52 @@
 .cinemalab-model { padding-bottom: 16px; border-bottom: 1px solid var(--border); margin-bottom: 15px; }
 .cinemalab-model label { display: flex; align-items: center; gap: 16px; font-size: 12px; font-weight: 650; }
 .cinemalab-model .reelform-select-trigger { flex: 1; }
-@media (max-width: 1100px) { .cinemalab-workspace { grid-template-columns: 180px minmax(0, 1fr); } .cinemalab-draft { display: none; } }
+
+.cinemalab [hidden] { display: none !important; }
+.cinemalab-steps { margin: 0 0 18px; }
+.cinemalab-steps ol { list-style: none; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; padding: 0; margin: 0; }
+.cinemalab-steps button { display: flex; align-items: center; justify-content: center; gap: 7px; width: 100%; padding: 12px 6px; border: 1px solid transparent; border-radius: 8px; color: var(--muted); background: transparent; font-size: 12px; }
+.cinemalab-steps button span { display: grid; place-items: center; width: 23px; height: 23px; border-radius: 50%; background: var(--soft); font-size: 10px; }
+.cinemalab-steps button:hover { background: var(--background); }
+.cinemalab-steps button[aria-current="step"] { color: var(--accent-dark); background: var(--background); border-color: var(--border); font-weight: 700; }
+.cinemalab-steps button[aria-current="step"] span { background: var(--accent); color: var(--on-accent); }
+.cinemalab-step-heading { padding: 26px 26px 0; }
+.cinemalab-step-heading > span { color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: 1.2px; }
+.cinemalab-step-heading h2 { margin: 8px 0; font-size: 25px; font-weight: 650; letter-spacing: -.7px; }
+.cinemalab-step-heading h2:focus { outline: none; }
+.cinemalab-step-heading p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.6; }
+.cinemalab-planning { padding: 0; margin: 0; border: 0; min-width: 0; }
+.cinemalab-panel { padding: 24px 26px; min-height: 300px; }
+.cinemalab-navigation { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 26px; border-top: 1px solid var(--border); background: var(--surface); }
+.cinemalab-navigation > span { max-width: 280px; font-size: 11px; color: var(--muted); line-height: 1.6; text-align: center; }
+.cinemalab-navigation .cinemalab-secondary { margin: 0; background: var(--surface); }
+.cinemalab-generation { padding: 24px 26px; min-height: 300px; }
+.cinemalab-generation .studio-chat-composer { border: 0; border-radius: 0; padding: 0; box-shadow: none; }
+.cinemalab-generation .chat-composer-toolbar { flex-wrap: wrap; gap: 16px; }
+.cinemalab-generation .chat-model-summary { flex-basis: 100%; }
+.cinemalab-generation .chat-settings-toggle { width: 100%; justify-content: space-between; }
+.cinemalab-generation .chat-settings-toggle > span { max-width: none; white-space: normal; }
+.cinemalab-generation .chat-send-controls { margin-left: auto; }
+.cinemalab-prompt-label { display: block; font-size: 12px; font-weight: 650; }
+.cinemalab-change-output { color: var(--accent-dark); flex-shrink: 0; }
+.cinemalab-reference-summary { margin: 18px 0 10px; color: var(--muted); font-size: 11px; }
 @media (max-width: 640px) {
-  .cinemalab-workspace { grid-template-columns: minmax(0, 1fr); }
-  .cinemalab-shotlist { border-right: 0; border-bottom: 1px solid var(--border); padding: 14px; }
-  .cinemalab-shotlist ol { display: flex; overflow-x: auto; padding-bottom: 5px; }
-  .cinemalab-shotlist li { flex: 0 0 165px; }
-  .cinemalab-shotlist > p { display: none; }
-  .cinemalab-add { margin-top: 8px; padding: 8px; }
-  .cinemalab-tabs { padding: 0 16px; gap: 22px; }
-  .cinemalab-panel { padding: 18px 16px; }
+  .cinemalab-draft { display: none; }
+  .cinemalab-heading { padding-top: 14px; }
+  .cinemalab-heading h1 { max-width: 310px; }
+  .cinemalab-steps ol { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .cinemalab-steps button { justify-content: flex-start; padding: 9px 6px; }
+  .cinemalab-step-heading { padding: 20px 16px 0; }
+  .cinemalab-panel, .cinemalab-generation { padding: 22px 16px; }
+  .cinemalab-shotlist { padding: 12px; }
   .cinemalab-controls { column-gap: 10px; }
-  .cinemalab-apply { padding: 16px; align-items: flex-start; flex-direction: column; gap: 12px; }
-  .cinemalab-primary { width: 100%; }
+  .cinemalab-navigation { padding: 16px; flex-wrap: wrap; gap: 12px; }
+  .cinemalab-navigation > span { order: 3; max-width: none; width: 100%; }
+  .cinemalab-navigation .cinemalab-primary { margin-left: auto; }
   .cinemalab-layout .studio-chat-header small, .cinemalab-layout .chat-header-separator { display: none; }
-  .cinemalab-heading h2 { max-width: 280px; }
+  .cinemalab-generation .chat-settings-toggle { align-items: flex-start; text-align: left; }
 }
 @media (max-width: 380px) { .cinemalab-controls, .cinemalab-presets { grid-template-columns: minmax(0, 1fr); } }
+
+.cinemalab-generate-action { display: flex; justify-content: flex-end; margin-top: 20px; }
+.cinemalab-generation .studio-chat-composer textarea { min-height: 230px; padding-top: 12px; }

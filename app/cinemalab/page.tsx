@@ -11,5 +11,5 @@ export const metadata = pageMetadata({
 export default async function CinemaLabPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const params = await searchParams;
   const key = typeof params.generation === "string" ? params.generation : typeof params.request === "string" ? params.request : "new";
-  return <Studio key={`cinema-${key}`} cinema />;
+  return <Studio key={`cinema-${key}`} cinema cinemaInitialStep={key === "new" ? "Scene" : "Review"} />;
 }

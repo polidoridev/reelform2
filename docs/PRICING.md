@@ -1,6 +1,6 @@
 # Reelform pricing and unit economics
 
-Prices are USD. Economics and Genjutsu API list prices reviewed October 14, 2026. Keep the existing prices and credit conversion for now; positive contribution is modeled, not verified net profit.
+Prices are USD. Economics and Genjutsu API list prices reviewed October 14, 2026; Wan reference-video billing corrected October 15, 2026. Keep the existing subscription prices and credit conversion for now; positive contribution is modeled, not verified net profit.
 
 | Plan | Monthly | Annual upfront | Credits released each month | 5s Genjutsu 720p clips / monthly grant |
 | --- | ---: | ---: | ---: | ---: |
@@ -104,3 +104,18 @@ The offline audit now covers 201 offers and 297 edit/creation quote combinations
 These are modeled contribution margins: 45.4%–58.2% across current offers under the stated reserves, before overhead and excluded expenses. Actual provider invoices, discounts, payment fees, paid retention, and net business profit were not reconciled in this review. The provider-overrun reserve does not automatically discover or cap future API price increases.
 
 No live Stripe prices, subscriptions, ad budgets, or deployments were changed in this review.
+
+### Wan reference-video billing correction — October 15, 2026
+
+The current [Wan 3.0](https://open.higgsfield.ai/models/alibaba/wan-3.0/reference-to-video/playground) and [Wan 3.0 Prime](https://open.higgsfield.ai/models/alibaba/wan-3.0-prime/reference-to-video/playground) pricing descriptions bill both input reference video duration and generated output duration. The per-second list rates still match the configured values; the earlier output-only estimate omitted the source-video charge. This check does not establish when Higgsfield introduced or clarified that rule.
+
+`quoteVideo` now includes the measured source duration plus the requested whole-second output duration for both Wan models. Text-only and photo-only creation still bills output duration only. For an 8.2-second source, Reelform requests 9 seconds of output and estimates 17.2 billable seconds.
+
+| 10-second input + 10-second output at 720p | API list cost | Corrected Reelform credits | Previous credits |
+| --- | ---: | ---: | ---: |
+| Wan 3.0 | $2.00 | 720 | 360 |
+| Wan 3.0 Prime | $2.80 | 1,010 | 510 |
+
+The existing 360 credits per provider dollar restores the modeled subscription contribution margins to 45.4%–54.8% under full credit use and the stated reserves, before overhead and excluded costs. Subscription prices, allowances, top-up prices, and other models' formulas are unchanged. The existing server quote revalidation rejects old lower quotes before reserving credits or submitting a generation, requiring the customer to review a fresh quote.
+
+Regression checks: `node --import tsx --test tests/wan-models.test.ts tests/video-models.test.ts tests/generation-pricing.test.ts tests/topup-pricing.test.ts`. The Wan cases cover both models, all three resolutions, fractional input duration, duration limits, unchanged creation pricing, and stale quotes. The offline audit remains `node --import tsx scripts/audit-pricing.ts 770`; actual provider debits and account discounts have not been reconciled.
